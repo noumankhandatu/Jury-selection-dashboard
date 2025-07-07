@@ -23,11 +23,11 @@ interface PasswordData {
   confirm: string;
 }
 
-interface Notification {
-  id: number;
-  message: string;
-  type: "success" | "error";
-}
+// interface Notification {
+//   id: number;
+//   message: string;
+//   type: "success" | "error";
+// }
 
 interface EditingState {
   personal: boolean;
@@ -70,21 +70,21 @@ export default function AccountPage() {
     confirm: "",
   });
 
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const generateAvatar = (name: string): string => {
     const seed = name.toLowerCase().replace(/\s+/g, "");
     return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
   };
 
-  const showNotification = (message: string, type: "success" | "error" = "success"): void => {
-    const id = Date.now();
-    const notification: Notification = { id, message, type };
-    setNotifications((prev) => [...prev, notification]);
-    setTimeout(() => {
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-    }, 3000);
-  };
+  // const showNotification = (message: string, type: "success" | "error" = "success"): void => {
+  //   const id = Date.now();
+  //   const notification: Notification = { id, message, type };
+  //   setNotifications((prev) => [...prev, notification]);
+  //   setTimeout(() => {
+  //     setNotifications((prev) => prev.filter((n) => n.id !== id));
+  //   }, 3000);
+  // };
 
   const handleEdit = (section: keyof EditingState): void => {
     setIsEditing((prev) => ({ ...prev, [section]: true }));
@@ -109,16 +109,16 @@ export default function AccountPage() {
           lastName: editData.lastName,
           phoneNumber: editData.phoneNumber,
         }));
-        showNotification("Personal information updated successfully!");
+        // showNotification("Personal information updated successfully!");
       } else if (section === "email") {
         setUserData((prev) => ({ ...prev, email: editData.email }));
-        showNotification("Email address updated successfully!");
+        // showNotification("Email address updated successfully!");
       }
 
       setIsEditing((prev) => ({ ...prev, [section]: false }));
     } catch (error: unknown) {
       console.error("Error updating information:", error);
-      showNotification("Failed to update information", "error");
+      // showNotification("Failed to update information", "error");
     } finally {
       setIsLoading(false);
     }
@@ -126,23 +126,23 @@ export default function AccountPage() {
 
   const handlePasswordUpdate = async (): Promise<void> => {
     if (passwordData.new !== passwordData.confirm) {
-      showNotification("New passwords don't match", "error");
+      // showNotification("New passwords don't match", "error");
       return;
     }
 
     if (passwordData.new.length < 8) {
-      showNotification("Password must be at least 8 characters long", "error");
+      // showNotification("Password must be at least 8 characters long", "error");
       return;
     }
 
     setIsLoading(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      showNotification("Password updated successfully!");
+      // showNotification("Password updated successfully!");
       setPasswordData({ current: "", new: "", confirm: "" });
     } catch (error: unknown) {
       console.error("Error updating password:", error);
-      showNotification("Failed to update password", "error");
+      // showNotification("Failed to update password", "error");
     } finally {
       setIsLoading(false);
     }

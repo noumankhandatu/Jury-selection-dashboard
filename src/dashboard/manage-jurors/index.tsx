@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { SelectCase, type Case } from "@/components/shared/select-case";
@@ -11,9 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Send, CheckCircle } from "lucide-react";
 import { itemVariants } from "@/utils/fn";
-import { mockCases } from "@/raw/static-data";
 import TagBtnJuror from "@/components/shared/tag/tag-btn-manage-juror";
-import { createJurorsApi , getCasesApi } from "@/api/api";
+import { createJurorsApi, getCasesApi } from "@/api/api";
 import { toast } from "sonner";
 
 export default function ManageJurorsPage() {

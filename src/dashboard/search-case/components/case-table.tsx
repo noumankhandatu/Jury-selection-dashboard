@@ -1,4 +1,4 @@
-import { Scale, Calendar, ListChecks, Eye, Edit, Trash2 } from "lucide-react";
+import { Scale, Calendar, ListChecks, Eye, Edit } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +21,9 @@ interface CaseTableProps {
   cases: Case[];
   onViewCase: (case_: Case) => void;
   onEditCase: (case_: Case) => void;
-  onDeleteCase: (caseId: string) => void;
 }
 
-export default function CaseTable({ cases, onViewCase, onEditCase, onDeleteCase }: CaseTableProps) {
+export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTableProps) {
   return (
     <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 ">
       <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
@@ -69,7 +68,7 @@ export default function CaseTable({ cases, onViewCase, onEditCase, onDeleteCase 
                         <Badge
                           variant="outline"
                           className={
-                            case_.type === "Criminal" ? "bg-red-100 text-red-700 border-red-200" : "bg-blue-100 text-blue-700 border-blue-200"
+                            case_.type === "CRIMINAL" ? "bg-red-100 text-red-700 border-red-200  " : "  bg-blue-100 text-blue-700 border-blue-200"
                           }
                         >
                           {case_.type}
@@ -119,14 +118,14 @@ export default function CaseTable({ cases, onViewCase, onEditCase, onDeleteCase 
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
+                          {/* <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onDeleteCase(case_.id)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
-                          </Button>
+                          </Button> */}
                         </div>
                       </TableCell>
                     </motion.tr>

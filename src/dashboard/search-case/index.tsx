@@ -1,4 +1,5 @@
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
 import SearchPanel from "./components/search-panel";
@@ -6,6 +7,7 @@ import CaseTable from "./components/case-table";
 import ViewCaseDialog from "./components/view-case-dialog";
 import EditCaseDialog from "./components/edit-case-dialog";
 import { itemVariants } from "@/utils/fn";
+import { getCasesApi } from "@/api/api";
 
 interface Case {
   id: string;
@@ -20,81 +22,8 @@ interface Case {
 }
 
 export default function SearchCasePage() {
-  const [cases, setCases] = useState<Case[]>([
-    {
-      id: "1",
-      number: "CV-2025-001",
-      name: "Smith vs. Johnson",
-      type: "Civil",
-      status: "Active",
-      createdDate: "2025-01-15",
-      description: "Contract dispute between two business partners",
-      jurorTraits: "Looking for jurors with business experience",
-      questions: [
-        "Have you ever been involved in a business partnership?",
-        "Do you have experience with contract law?",
-        "Can you remain impartial in a business dispute?",
-      ],
-    },
-    {
-      id: "2",
-      number: "CR-2025-002",
-      name: "State vs. Williams",
-      type: "Criminal",
-      status: "Pending",
-      createdDate: "2025-01-20",
-      description: "Assault and battery case",
-      jurorTraits: "Seeking jurors with no prior criminal history",
-      questions: [
-        "Have you or a family member been a victim of assault?",
-        "Do you have any law enforcement background?",
-        "Can you evaluate evidence objectively?",
-      ],
-    },
-    {
-      id: "3",
-      number: "CV-2025-003",
-      name: "Tech Corp vs. Startup Inc",
-      type: "Civil",
-      status: "Pending",
-      createdDate: "2025-01-25",
-      description: "Intellectual property dispute between technology companies",
-      jurorTraits: "Prefer jurors with basic understanding of technology and patents",
-      questions: [
-        "Do you work in the technology industry?",
-        "Are you familiar with intellectual property concepts?",
-        "Do you own stock in any technology companies?",
-      ],
-    },
-    {
-      id: "4",
-      number: "CR-2025-004",
-      name: "State vs. Anderson",
-      type: "Criminal",
-      status: "Active",
-      createdDate: "2025-01-28",
-      description: "Drug possession and distribution charges",
-      jurorTraits: "Looking for unbiased jurors regarding drug-related offenses",
-      questions: [
-        "What are your views on drug legalization?",
-        "Have you or family members struggled with addiction?",
-        "Can you judge based on evidence rather than personal beliefs?",
-      ],
-    },
-    {
-      id: "5",
-      number: "CV-2025-005",
-      name: "Property Dispute - Miller vs. Davis",
-      type: "Civil",
-      status: "Draft",
-      createdDate: "2025-02-01",
-      description: "Boundary dispute between neighboring property owners",
-      jurorTraits: "Seeking property owners who understand real estate matters",
-      questions: ["Do you own property?", "Have you had boundary disputes with neighbors?", "Are you familiar with property law basics?"],
-    },
-  ]);
-
-  const [filteredCases, setFilteredCases] = useState<Case[]>(cases);
+  const [cases, setCases] = useState<Case[]>([]);
+  const [filteredCases, setFilteredCases] = useState<Case[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -110,8 +39,38 @@ export default function SearchCasePage() {
     questions: [] as string[],
   });
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const casesPerPage = 5;
+
+  const fetchCases = async () => {
+    try {
+      const response = await getCasesApi();
+      const mappedCases: Case[] = response.map((item: any) => ({
+        id: String(item.id),
+        number: item.caseNumber,
+        name: item.caseName,
+        type: item.caseType,
+        status: "Active",
+        createdDate: item.createdAt,
+        description: item.description,
+        jurorTraits: item.idealJurorTraits,
+        questions: item.caseQuestions || [],
+      }));
+      setCases(mappedCases);
+      setFilteredCases(mappedCases);
+    } catch (error) {
+      console.error("Failed to fetch cases:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCases();
+  }, []);
+
   const handleSearch = (term: string) => {
     setSearchTerm(term);
+    setCurrentPage(1); // reset to first page on new search
     setFilteredCases(
       cases.filter(
         (case_) =>
@@ -135,21 +94,6 @@ export default function SearchCasePage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteCase = (caseId: string) => {
-    const updatedCases = cases.filter((case_) => case_.id !== caseId);
-    setCases(updatedCases);
-    setFilteredCases(
-      updatedCases.filter(
-        (case_) =>
-          searchTerm === "" ||
-          case_.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          case_.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          case_.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          case_.status.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-  };
-
   const handleEditFormDataChange = (field: string, value: string | string[]) => {
     setEditFormData((prev) => ({
       ...prev,
@@ -159,14 +103,7 @@ export default function SearchCasePage() {
 
   const handleSaveEdit = () => {
     if (editingCase) {
-      const updatedCases = cases.map((case_) =>
-        case_.id === editingCase.id
-          ? {
-              ...case_,
-              ...editFormData,
-            }
-          : case_
-      );
+      const updatedCases = cases.map((case_) => (case_.id === editingCase.id ? { ...case_, ...editFormData } : case_));
       setCases(updatedCases);
       setFilteredCases(
         updatedCases.filter(
@@ -182,6 +119,28 @@ export default function SearchCasePage() {
     }
   };
 
+  // Pagination logic
+  const indexOfLastCase = currentPage * casesPerPage;
+  const indexOfFirstCase = indexOfLastCase - casesPerPage;
+  const currentCases = filteredCases.slice(indexOfFirstCase, indexOfLastCase);
+  const totalPages = Math.ceil(filteredCases.length / casesPerPage);
+
+  const renderPagination = () => (
+    <div className="mt-4 flex justify-center space-x-2">
+      {[...Array(totalPages)].map((_, idx) => (
+        <button
+          key={idx}
+          onClick={() => setCurrentPage(idx + 1)}
+          className={`px-3 py-1 rounded border ${
+            currentPage === idx + 1 ? "bg-indigo-500 text-white" : "bg-white text-indigo-500 border-indigo-300"
+          }`}
+        >
+          {idx + 1}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-20 px-4 lg:p-8">
       <motion.div className="mx-auto space-y-6" initial="hidden" animate="visible" variants={itemVariants}>
@@ -194,7 +153,9 @@ export default function SearchCasePage() {
 
         <SearchPanel searchTerm={searchTerm} onSearch={handleSearch} />
 
-        <CaseTable cases={filteredCases} onViewCase={handleViewCase} onEditCase={handleEditCase} onDeleteCase={handleDeleteCase} />
+        <CaseTable cases={currentCases} onViewCase={handleViewCase} onEditCase={handleEditCase} />
+
+        {renderPagination()}
 
         <ViewCaseDialog isOpen={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} selectedCase={selectedCase} />
 

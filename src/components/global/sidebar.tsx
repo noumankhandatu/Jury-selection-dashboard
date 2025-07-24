@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 // import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, PlusCircle, Search, Radio, UserCog, BarChart3, Scale, FileSearch } from "lucide-react";
+import { LayoutDashboard, Users, PlusCircle, Search, Radio, UserCog, Scale, FileSearch } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 // import { Separator } from "../ui/separator";
 import { FaCircleArrowLeft } from "react-icons/fa6";
@@ -50,13 +50,13 @@ export function Sidebar({ onClose }: SidebarProps) {
       active: location.pathname === "/dashboard/live-session",
       color: "white",
     },
-    {
-      label: "Juror Analysis",
-      icon: BarChart3,
-      href: "/dashboard/juror-analysis",
-      active: location.pathname === "/dashboard/juror-analysis",
-      color: "white",
-    },
+    // {
+    //   label: "Juror Analysis",
+    //   icon: BarChart3,
+    //   href: "/dashboard/juror-analysis",
+    //   active: location.pathname === "/dashboard/juror-analysis",
+    //   color: "white",
+    // },
     {
       label: "Session Analysis",
       icon: FileSearch,

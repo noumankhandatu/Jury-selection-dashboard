@@ -644,6 +644,7 @@ export default function LiveSession() {
                     <div className="space-y-2">
                       {selectedJurors.map((jurorId) => {
                         const juror = mockJurors.find((j) => j.id === jurorId);
+
                         return (
                           <div key={jurorId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                             <div className="flex items-center gap-2">

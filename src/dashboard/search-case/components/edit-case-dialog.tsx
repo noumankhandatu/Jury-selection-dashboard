@@ -71,8 +71,8 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
                   <SelectValue placeholder="Select case type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Civil">Civil</SelectItem>
-                  <SelectItem value="Criminal">Criminal</SelectItem>
+                  <SelectItem value="CIVIL">Civil</SelectItem>
+                  <SelectItem value="CRIMINAL">Criminal</SelectItem>
                 </SelectContent>
               </Select>
             </div>

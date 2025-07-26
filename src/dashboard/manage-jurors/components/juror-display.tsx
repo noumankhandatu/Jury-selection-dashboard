@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,13 +20,18 @@ interface JurorDisplayProps {
 export function JurorDisplay({ selectedCase, jurors, viewMode, onViewModeChange, onViewDetails }: JurorDisplayProps) {
   if (!selectedCase) return null;
 
+  const isNewJurorList = jurors.some((j: any) => !j.submitted);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.5, ease: "easeOut", delay: 0.8 } }} className="space-y-6">
-      {/* Available Jurors Section */}
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1, transition: { duration: 0.7, ease: "easeOut", delay: 1.0 } }}>
         <Card className="bg-white/80 relative backdrop-blur-md shadow-xl rounded-2xl overflow-hidden">
-          <CardHeaderTag title=" Available Jurors" description="Available jurors for case" Icon={Users} />
-          <div className="flex items-center justify-end absolute top-6 right-4  gap-2">
+          <CardHeaderTag
+            title={isNewJurorList ? "Available Jurors" : "Old Jurors"}
+            description={isNewJurorList ? "Available jurors for case" : "Previously submitted jurors"}
+            Icon={Users}
+          />
+          <div className="flex items-center justify-end absolute top-6 right-4 gap-2">
             <Tabs value={viewMode} onValueChange={(value) => onViewModeChange(value as "table" | "grid")}>
               <TabsList className="bg-white/60">
                 <TabsTrigger value="grid" className="flex items-center gap-2">
@@ -55,7 +59,7 @@ export function JurorDisplay({ selectedCase, jurors, viewMode, onViewModeChange,
             ) : (
               <div className="text-center py-8 sm:py-12">
                 <Scale className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" />
-                <p className="text-gray-500 text-base sm:text-lg">No available jurors. Upload a PDF file to add jurors.</p>
+                <p className="text-gray-500 text-base sm:text-lg">No jurors available.</p>
               </div>
             )}
           </CardContent>

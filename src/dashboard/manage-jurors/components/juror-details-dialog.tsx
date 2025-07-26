@@ -8,7 +8,6 @@ import type { Juror } from "./types";
 import { generateAvatar } from "./utils";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { BiasGauge } from "@/components/shared/bias-gauge";
 
 interface JurorDetailsDialogProps {
   juror: Juror | null;
@@ -85,9 +84,6 @@ export function JurorDetailsDialog({ juror, isOpen, onClose, onSave }: JurorDeta
                     .join("")}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -top-2 -right-2">
-                <BiasGauge biasStatus={juror.isStrikedOut ? "low" : juror.biasStatus} size="md" />
-              </div>
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-lg sm:text-xl font-bold truncate">{juror.name}</h2>

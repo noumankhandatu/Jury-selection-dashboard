@@ -65,8 +65,6 @@ export default function CreateCasePage() {
       caseQuestions: questions,
     };
 
-    console.log(newCase, "newCase");
-
     try {
       await createCaseApi(newCase);
       toast.success(`Case created successfully with ${questions.length} questions!`);

@@ -116,7 +116,6 @@ export default function PDFUploader({ onQuestionsExtracted }: PDFUploaderProps) 
         }
       } catch (parseError) {
         console.error("Error parsing OpenAI response:", parseError);
-        console.log("Raw OpenAI response:", extractedText);
 
         // Fallback: try to extract questions manually from the response
         const lines = extractedText.split("\n").filter((line) => line.trim());
@@ -138,8 +137,6 @@ export default function PDFUploader({ onQuestionsExtracted }: PDFUploaderProps) 
       if (!extractedData.questions || !Array.isArray(extractedData.questions)) {
         extractedData = { questions: [] };
       }
-
-      console.log(`🎯 Extracted ${extractedData.questions.length} questions from PDF:`, extractedData.questions);
 
       if (extractedData.questions && extractedData.questions.length > 0) {
         setExtractedCount(extractedData.questions.length);

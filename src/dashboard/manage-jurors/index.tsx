@@ -60,7 +60,6 @@ export default function ManageJurorsPage() {
         ...j,
         submitted: false,
       }));
-      console.log(parsedJurors, "parsedJurors");
 
       if (parsedJurors.length === 0) {
         setUploadError("No juror data found in the PDF.");
@@ -183,7 +182,7 @@ export default function ManageJurorsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-20 px-4 lg:p-8">
-      <motion.div className="max-w-7xl mx-auto space-y-6" initial="hidden" animate="visible" variants={itemVariants}>
+      <motion.div className=" mx-auto space-y-6" initial="hidden" animate="visible" variants={itemVariants}>
         <TagBtnJuror setIsAddJurorOpen={setIsAddJurorOpen} />
         <div className="grid gap-6">
           <SelectCase

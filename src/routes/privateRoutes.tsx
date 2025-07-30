@@ -9,6 +9,7 @@ import LiveSessionPage from "@/dashboard/live-session";
 import JurorAnalysisPage from "@/dashboard/juror-analysis";
 import NotFoundPage from "@/pages/not-found";
 import SessionAnalysisPage from "@/dashboard/session-analysis";
+import LiveSession from "@/dashboard/live-session-two";
 
 const PrivateRoutes = () => {
   return (
@@ -71,6 +72,15 @@ const PrivateRoutes = () => {
           element={
             <Layout>
               <SessionAnalysisPage />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/dashboard/live-session-two"
+          element={
+            <Layout>
+              <LiveSession />
             </Layout>
           }
         />

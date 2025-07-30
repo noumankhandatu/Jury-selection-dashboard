@@ -68,7 +68,6 @@ export const extractAndParseJurorsFromPDF = async (file: File, caseId: string): 
       return new Promise((resolve, reject) => {
         // Check if PDF.js is already loaded
         if (typeof window !== "undefined" && (window as any).pdfjsLib) {
-          console.log("PDF.js already loaded");
           resolve((window as any).pdfjsLib);
           return;
         }
@@ -300,7 +299,6 @@ IMPORTANT EXTRACTION INSTRUCTIONS:
     }
   } catch (parseError) {
     console.error("JSON parsing failed for batch:", parseError);
-    console.log("Text that failed to parse:", extractedText);
     return []; // Return empty array instead of throwing error
   }
 };

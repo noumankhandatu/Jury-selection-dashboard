@@ -13,8 +13,6 @@ BaseUrl.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
 
-    console.log("🔐 Access Token from localStorage:", token); // Log the token being sent
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -49,7 +47,6 @@ BaseUrl.interceptors.response.use(
 // Logout Function
 export const handleLogout = () => {
   try {
-    console.log("🚪 Logging out user...");
     localStorage.clear();
     toast.success("Logged out successfully");
     window.location.reload();

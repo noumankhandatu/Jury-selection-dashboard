@@ -1,12 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FaRotateLeft } from "react-icons/fa6";
 
 const generateAvatar = (name: any) => {
   return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`;
 };
 
 const CourtroomLayout = ({ allJurors = [] }: any) => {
+  const [benchAbove, setBenchAbove] = useState(false);
+
   const renderJurorSeat = (juror: any) => (
     <div
       key={juror.id}
@@ -40,6 +44,15 @@ const CourtroomLayout = ({ allJurors = [] }: any) => {
     );
   };
 
+  const judgeBench = (
+    <div className="flex justify-center my-8">
+      <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-8 py-4 rounded-lg shadow-lg text-center">
+        <div className="text-lg font-bold">JUDGE'S BENCH</div>
+        <div className="text-xs opacity-75 mt-1">Honorable Court</div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6 bg-gradient-to-b from-slate-50 to-slate-100 p-6 rounded-lg h-screen overflow-auto">
       {/* Header */}
@@ -48,18 +61,30 @@ const CourtroomLayout = ({ allJurors = [] }: any) => {
           <h2 className="text-xl font-bold text-gray-900">U.S. Courtroom Jury Box Layout</h2>
           <p className="text-sm text-gray-600">36 Jurors • 6 Boxes • 6 Seats per Box</p>
         </div>
+        <button
+          type="button"
+          onClick={() => setBenchAbove((prev) => !prev)}
+          className="p-2 rounded hover:bg-gray-200 transition"
+          aria-label="Toggle Judge's Bench Position"
+        >
+          <FaRotateLeft />
+        </button>
       </div>
 
-      {/* Jury Grid */}
-      <div className="grid grid-cols-2 gap-6">{Array.from({ length: 6 }, (_, i) => renderJuryCluster(i * 6, i + 1))}</div>
-
-      {/* Judge's Bench */}
-      <div className="flex justify-center my-8">
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-8 py-4 rounded-lg shadow-lg text-center">
-          <div className="text-lg font-bold">JUDGE'S BENCH</div>
-          <div className="text-xs opacity-75 mt-1">Honorable Court</div>
-        </div>
-      </div>
+      {/* If benchAbove, show bench above grid and hide grid. If not, show grid then bench below */}
+      {benchAbove ? (
+        <>
+          {judgeBench}
+          <div className="grid grid-cols-2 gap-6">{Array.from({ length: 6 }, (_, i) => renderJuryCluster(i * 6, i + 1))}</div>
+        </>
+      ) : (
+        <>
+          {/* Jury Grid */}
+          <div className="grid grid-cols-2 gap-6">{Array.from({ length: 6 }, (_, i) => renderJuryCluster(i * 6, i + 1))}</div>
+          {/* Judge's Bench */}
+          {judgeBench}
+        </>
+      )}
     </div>
   );
 };

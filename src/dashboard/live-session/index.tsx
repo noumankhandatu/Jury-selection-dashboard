@@ -14,6 +14,7 @@ const LiveSession = () => {
     id: i + 1,
     name: `Juror ${i + 1}`,
   }));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-20 px-4 lg:p-8">
       <motion.div className="mx-auto space-y-6" initial="hidden" animate="visible" variants={itemVariants}>
@@ -34,7 +35,7 @@ const LiveSession = () => {
             <LiveSessionData caseSelected={selectedCase} />
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-6">
           <div className="">
             <CourtroomLayout allJurors={fakeJurors} />;{" "}
           </div>

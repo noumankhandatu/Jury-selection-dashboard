@@ -5,6 +5,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FaUpload } from "react-icons/fa6";
+import { IoMdAdd } from "react-icons/io";
+import { QuestionModal } from "../modal/QuestionModal";
+import QuestionsManager from "@/dashboard/create-case/components/questions-manager";
+import AddQuestionAI from "./AddQuestionAI";
 
 interface Question {
   id: string;
@@ -20,39 +25,7 @@ interface Question {
 }
 
 export default function QuestionAnswer() {
-  const [questions, setQuestions] = useState<Question[]>([
-    {
-      id: "1",
-      text: "Have you or a family member ever been treated by the defendant doctor?",
-      answered: false,
-      jurorAnswers: {},
-    },
-    {
-      id: "2",
-      text: "Do you have any medical training or background?",
-      answered: false,
-      jurorAnswers: {},
-    },
-    {
-      id: "3",
-      text: "Have you ever been involved in a medical malpractice case?",
-      answered: false,
-      jurorAnswers: {},
-    },
-    {
-      id: "4",
-      text: "Do you have strong feelings about the medical profession?",
-      answered: false,
-      jurorAnswers: {},
-    },
-    {
-      id: "5",
-      text: "Can you be impartial in evaluating medical evidence?",
-      answered: false,
-      jurorAnswers: {},
-    },
-  ]);
-
+  const [questions, setQuestions] = useState<string[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [textAnswer, setTextAnswer] = useState("");
@@ -165,14 +138,15 @@ export default function QuestionAnswer() {
     return "";
   };
 
+  console.log(questions, "questions");
+
   return (
     <div className=" mx-auto space-y-6  bg-white/80 backdrop-blur-md shadow-xl rounded-2xl ">
       <div className="space-y-2 p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg ">
         <h1 className="text-2xl font-bold">Jury Selection Questionnaire</h1>
-        <p>Please answer the following questions by clicking on each checkbox.</p>
       </div>
 
-      <div className="space-y-4 p-3 pt-0">
+      <div className="space-y-4 p-3 pt-0 h-[400px] overflow-y-scroll">
         {questions.map((question) => (
           <div key={question.id} className="space-y-2">
             <div
@@ -186,6 +160,7 @@ export default function QuestionAnswer() {
           </div>
         ))}
       </div>
+      <AddQuestionAI />
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md">

@@ -18,7 +18,6 @@ interface Case {
   createdDate: string;
   description: string;
   jurorTraits: string;
-  questions: string[];
 }
 
 export default function SearchCasePage() {
@@ -36,7 +35,6 @@ export default function SearchCasePage() {
     status: "",
     description: "",
     jurorTraits: "",
-    questions: [] as string[],
   });
 
   // Pagination
@@ -55,7 +53,6 @@ export default function SearchCasePage() {
         createdDate: item.createdAt,
         description: item.description,
         jurorTraits: item.idealJurorTraits,
-        questions: item.caseQuestions || [],
       }));
       setCases(mappedCases);
       setFilteredCases(mappedCases);
@@ -94,7 +91,7 @@ export default function SearchCasePage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleEditFormDataChange = (field: string, value: string | string[]) => {
+  const handleEditFormDataChange = (field: string, value: string) => {
     setEditFormData((prev) => ({
       ...prev,
       [field]: value,

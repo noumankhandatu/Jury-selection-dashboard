@@ -14,7 +14,6 @@ interface Case {
   createdDate: string;
   description: string;
   jurorTraits: string;
-  questions: string[];
 }
 
 interface CaseTableProps {
@@ -97,7 +96,7 @@ export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTablePr
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <ListChecks className="h-4 w-4 text-gray-400" />
-                          <span>{case_.questions.length} questions</span>
+                          <span className="text-gray-500">View to see</span>
                         </div>
                       </TableCell>
                       <TableCell>

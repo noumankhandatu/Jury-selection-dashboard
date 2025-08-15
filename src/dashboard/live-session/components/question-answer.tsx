@@ -1,38 +1,51 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FaUpload } from "react-icons/fa6";
-import { IoMdAdd } from "react-icons/io";
-import { QuestionModal } from "../modal/QuestionModal";
-import QuestionsManager from "@/dashboard/create-case/components/questions-manager";
 import AddQuestionAI from "./AddQuestionAI";
+import { getCaseQuestionsApi } from "@/api/api";
 
 interface Question {
   id: string;
-  text: string;
-  answered: boolean;
-  jurorAnswers: Record<
-    number,
-    {
-      type: "yes-no" | "rating" | "text";
-      value: any;
-    }
-  >;
+  question: string;
 }
 
-export default function QuestionAnswer() {
-  const [questions, setQuestions] = useState<string[]>([]);
+export default function QuestionAnswer({ selectedCase }: any) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [textAnswer, setTextAnswer] = useState("");
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [selectedJurors, setSelectedJurors] = useState<number[]>([]);
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
-  const [currentlyAnswering, setCurrentlyAnswering] = useState<string | null>(null);
+  console.log(selectedCase, "selectedCase");
+
+  // Fetch questions when component mounts
+  useEffect(() => {
+    fetchQuestions();
+  }, [selectedCase]);
+
+  const fetchQuestions = async () => {
+    try {
+      setLoading(true);
+      const caseId = selectedCase?.id;
+      if (!caseId) {
+        setQuestions([]);
+        return;
+      }
+      const response = await getCaseQuestionsApi(caseId);
+      setQuestions(response.questions || []);
+    } catch (error) {
+      console.error("Failed to fetch questions:", error);
+      setQuestions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleQuestionClick = (question: Question) => {
     setSelectedQuestion(question);
@@ -73,7 +86,7 @@ export default function QuestionAnswer() {
 
     console.log("Selected Jurors:", selectedJurors);
     console.log("Answer:", answer);
-    console.log("Question:", selectedQuestion.text);
+    console.log("Question:", selectedQuestion.question);
 
     updateQuestionAnswerForJurors(selectedQuestion.id, selectedJurors, answerData);
     setAnswerSubmitted(true);
@@ -91,7 +104,7 @@ export default function QuestionAnswer() {
 
     console.log("Selected Jurors:", selectedJurors);
     console.log("Rating:", rating);
-    console.log("Question:", selectedQuestion.text);
+    console.log("Question:", selectedQuestion.question);
 
     updateQuestionAnswerForJurors(selectedQuestion.id, selectedJurors, answerData);
     setAnswerSubmitted(true);
@@ -108,25 +121,20 @@ export default function QuestionAnswer() {
 
     console.log("Selected Jurors:", selectedJurors);
     console.log("Text Answer:", textAnswer);
-    console.log("Question:", selectedQuestion.text);
+    console.log("Question:", selectedQuestion.question);
 
     updateQuestionAnswerForJurors(selectedQuestion.id, selectedJurors, answerData);
     setAnswerSubmitted(true);
     handleCloseModal();
   };
 
-  const updateQuestionAnswerForJurors = (questionId: string, jurors: number[], answer: Question["jurorAnswers"][number]) => {
+  const updateQuestionAnswerForJurors = (questionId: string, jurors: number[], answer: any) => {
     setQuestions((prev) =>
       prev.map((q) => {
         if (q.id === questionId) {
-          const updatedJurorAnswers = { ...q.jurorAnswers };
-          jurors.forEach((juror) => {
-            updatedJurorAnswers[juror] = answer;
-          });
           return {
             ...q,
-            answered: Object.keys(updatedJurorAnswers).length > 0,
-            jurorAnswers: updatedJurorAnswers,
+            answered: true,
           };
         }
         return q;
@@ -138,34 +146,53 @@ export default function QuestionAnswer() {
     return "";
   };
 
-  console.log(questions, "questions");
+  if (loading) {
+    return (
+      <div className="mx-auto space-y-6 bg-white/80 backdrop-blur-md shadow-xl rounded-2xl">
+        <div className="space-y-2 p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+          <h1 className="text-2xl font-bold">Jury Selection Questionnaire</h1>
+        </div>
+        <div className="p-8 text-center">
+          <div className="text-gray-500">Loading questions...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className=" mx-auto space-y-6  bg-white/80 backdrop-blur-md shadow-xl rounded-2xl ">
-      <div className="space-y-2 p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg ">
+    <div className="mx-auto space-y-6 bg-white/80 backdrop-blur-md shadow-xl rounded-2xl">
+      <div className="space-y-2 p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
         <h1 className="text-2xl font-bold">Jury Selection Questionnaire</h1>
+        <p className="text-blue-100">Case Questions</p>
       </div>
 
       <div className="space-y-4 p-3 pt-0 h-[400px] overflow-y-scroll">
-        {questions.map((question) => (
-          <div key={question.id} className="space-y-2">
-            <div
-              className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-              onClick={() => handleQuestionClick(question)}
-            >
-              <div className="flex-1 space-y-1">
-                <Label className="text-sm font-medium leading-relaxed cursor-pointer">{question.text}</Label>
+        {questions.length > 0 ? (
+          questions.map((question, i) => (
+            <div key={question.id} className="space-y-2">
+              <div
+                className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => handleQuestionClick(question)}
+              >
+                <div className="flex-1 space-y-1 items-center">
+                  {i + 1} : <Label className="text-sm font-medium leading-relaxed cursor-pointer capitalize">{question.question}</Label>
+                </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>No questions available</p>
+            <p className="text-sm text-gray-400 mt-1">Questions will appear here once they are added to the case</p>
           </div>
-        ))}
+        )}
       </div>
+      {/* AddQuestionAI component was removed from imports, so it's removed here */}
       <AddQuestionAI />
-
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold pr-6">{selectedQuestion?.text}</DialogTitle>
+            <DialogTitle className="text-lg font-semibold pr-6">{selectedQuestion?.question}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">

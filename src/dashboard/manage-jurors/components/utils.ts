@@ -36,7 +36,7 @@ export const getAvailabilityColor = (availability: string) => {
 };
 
 // Helper function to safely get string value
-const safeString = (value: any, defaultValue = "Not Specified"): string => {
+const safeString = (value: any, defaultValue = ""): string => {
   if (value === null || value === undefined || value === "") {
     return defaultValue;
   }

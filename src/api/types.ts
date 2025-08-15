@@ -3,7 +3,6 @@ export interface CaseData {
   caseName: string;
   description: string;
   idealJurorTraits: string;
-  caseQuestions: string[];
 }
 export interface Juror {
   id: string;

@@ -40,3 +40,87 @@ export const getJurorsApi = async () => {
     throw error;
   }
 };
+
+// Create a new question for a case
+export const createQuestionApi = async (
+  caseId: string,
+  payload: {
+    question: string;
+    questionType: string;
+    options?: string[];
+    isRequired?: boolean;
+    order?: number;
+  }
+) => {
+  try {
+    const response = await BaseUrl.post(`/questions/cases/${caseId}/questions`, payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error creating question:", error);
+    throw error;
+  }
+};
+
+// Get all questions for a case
+export const getCaseQuestionsApi = async (caseId: string) => {
+  try {
+    const response = await BaseUrl.get(`/questions/cases/${caseId}/questions`);
+    return response.data.data;
+  } catch (error: any) {
+    console.error("Error fetching case questions:", error);
+    throw error;
+  }
+};
+
+// Get a single question by ID
+export const getQuestionApi = async (questionId: string) => {
+  try {
+    const response = await BaseUrl.get(`/questions/${questionId}`);
+    return response.data.data;
+  } catch (error: any) {
+    console.error("Error fetching question:", error);
+    throw error;
+  }
+};
+
+// Update a question by ID
+export const updateQuestionApi = async (
+  questionId: string,
+  payload: {
+    question?: string;
+    questionType?: string;
+    options?: string[];
+    isRequired?: boolean;
+    order?: number;
+  }
+) => {
+  try {
+    const response = await BaseUrl.put(`/questions/questions/${questionId}`, payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating question:", error);
+    throw error;
+  }
+};
+
+// Delete a question by ID
+export const deleteQuestionApi = async (questionId: string) => {
+  try {
+    const response = await BaseUrl.delete(`/questions/questions/${questionId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error deleting question:", error);
+    throw error;
+  }
+};
+
+// Reorder questions for a case
+export const reorderQuestionsApi = async (caseId: string, payload: { questionIds: string[] }) => {
+  try {
+    const response = await BaseUrl.put(`/questions/cases/${caseId}/questions/reorder`, payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error reordering questions:", error);
+    throw error;
+  }
+};

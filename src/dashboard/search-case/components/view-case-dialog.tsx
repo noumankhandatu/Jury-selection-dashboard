@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
+import { getCaseQuestionsApi } from "@/api/api";
 
 interface Case {
   id: string;
@@ -13,7 +15,15 @@ interface Case {
   createdDate: string;
   description: string;
   jurorTraits: string;
-  questions: string[];
+}
+
+interface Question {
+  id: string;
+  question: string;
+  questionType: string;
+  options?: string[];
+  isRequired: boolean;
+  order: number;
 }
 
 interface ViewCaseDialogProps {
@@ -23,6 +33,30 @@ interface ViewCaseDialogProps {
 }
 
 export default function ViewCaseDialog({ isOpen, onOpenChange, selectedCase }: ViewCaseDialogProps) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && selectedCase) {
+      fetchQuestions();
+    }
+  }, [isOpen, selectedCase]);
+
+  const fetchQuestions = async () => {
+    if (!selectedCase) return;
+
+    setLoadingQuestions(true);
+    try {
+      const response = await getCaseQuestionsApi(selectedCase.id);
+      setQuestions(response.questions || []);
+    } catch (error) {
+      console.error("Failed to fetch questions:", error);
+      setQuestions([]);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
   if (!selectedCase) return null;
 
   return (
@@ -77,14 +111,20 @@ export default function ViewCaseDialog({ isOpen, onOpenChange, selectedCase }: V
 
           <div>
             <Label className="text-sm font-medium text-gray-700">Questions</Label>
-            <div className="mt-2 space-y-2">
-              {selectedCase.questions.map((question, index) => (
-                <div key={index} className="flex items-start space-x-2">
-                  <span className="text-gray-500">{index + 1}.</span>
-                  <p className="text-gray-600">{question}</p>
-                </div>
-              ))}
-            </div>
+            {loadingQuestions ? (
+              <div className="mt-2 text-gray-500">Loading questions...</div>
+            ) : questions.length > 0 ? (
+              <div className="mt-2 space-y-2">
+                {questions.map((question, index) => (
+                  <div key={question.id} className="flex items-start space-x-2">
+                    <span className="text-gray-500">{index + 1}.</span>
+                    <p className="text-gray-600">{question.question}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-2 text-gray-500">No questions available</div>
+            )}
           </div>
         </motion.div>
       </DialogContent>

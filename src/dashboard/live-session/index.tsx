@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { itemVariants } from "@/utils/fn";
 import { useLiveSession } from "./useLiveSession";
 import LiveSessionData from "./components/live-session-data";
-import QuestionAnswer from "./components/question-answer";
 import CourtroomLayout from "./components/CourtroomLayout";
 
 const LiveSession = () => {
@@ -38,7 +37,10 @@ const LiveSession = () => {
         {selectedCase && (
           <div className="grid grid-cols-1  gap-6">
             <div className="">
-              <CourtroomLayout allJurors={fakeJurors} />{" "}
+              <CourtroomLayout 
+                allJurors={fakeJurors} 
+                selectedCaseId={selectedCase?.id}
+              />
             </div>
             {/* <div>
               <QuestionAnswer selectedCase={selectedCase} />

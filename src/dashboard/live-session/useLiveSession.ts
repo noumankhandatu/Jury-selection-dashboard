@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { getCasesApi } from "@/api/api";
+import { Case } from "@/components/shared/select-case";
 
 export const useLiveSession = () => {
-  const [cases, setCases] = useState([]);
-  const [selectedCase, setSelectedCase] = useState(null);
+  const [cases, setCases] = useState<Case[]>([]);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
   useEffect(() => {
     const getCases = async () => {

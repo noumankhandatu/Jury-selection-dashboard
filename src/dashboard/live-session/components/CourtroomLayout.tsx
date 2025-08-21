@@ -27,10 +27,10 @@ const CourtroomLayout = ({ allJurors = [] }: any) => {
       </Avatar>
       <span className="text-xs font-medium text-gray-700 text-center">{juror.name}</span>
     </div>
-  );
+  )
 
   const renderJuryCluster = (startIndex: any, clusterNumber: any) => {
-    const clusterJurors = allJurors.slice(startIndex, startIndex + 6);
+    const clusterJurors = allJurors.slice(startIndex, startIndex + 6)
 
     return (
       <div key={`cluster-${clusterNumber}`} className="bg-white rounded-lg border border-gray-200 shadow p-4 group">
@@ -41,8 +41,8 @@ const CourtroomLayout = ({ allJurors = [] }: any) => {
         </div>
         <div className="grid grid-cols-3 gap-3">{clusterJurors.map((juror: any) => renderJurorSeat(juror))}</div>
       </div>
-    );
-  };
+    )
+  }
 
   const judgeBench = (
     <div className="flex justify-center my-8">
@@ -51,7 +51,7 @@ const CourtroomLayout = ({ allJurors = [] }: any) => {
         <div className="text-xs opacity-75 mt-1">Honorable Court</div>
       </div>
     </div>
-  );
+  )
 
   return (
     <div className="space-y-6 bg-gradient-to-b from-slate-50 to-slate-100 p-6 rounded-lg h-screen overflow-auto">
@@ -72,21 +72,16 @@ const CourtroomLayout = ({ allJurors = [] }: any) => {
       </div>
 
       {/* If benchAbove, show bench above grid and hide grid. If not, show grid then bench below */}
-      {benchAbove ? (
-        <>
-          {judgeBench}
-          <div className="grid grid-cols-2 gap-6">{Array.from({ length: 6 }, (_, i) => renderJuryCluster(i * 6, i + 1))}</div>
-        </>
-      ) : (
-        <>
-          {/* Jury Grid */}
-          <div className="grid grid-cols-2 gap-6">{Array.from({ length: 6 }, (_, i) => renderJuryCluster(i * 6, i + 1))}</div>
-          {/* Judge's Bench */}
-          {judgeBench}
-        </>
-      )}
+      {/* Render judgeBench and jury grid based on benchAbove */}
+      <div className="flex flex-col gap-6">
+        {benchAbove && judgeBench}
+        <div className="grid grid-cols-2 gap-6">
+          {Array.from({ length: 6 }, (_, i) => renderJuryCluster(i * 6, i + 1))}
+        </div>
+        {!benchAbove && judgeBench}
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default CourtroomLayout;
+export default CourtroomLayout

@@ -36,13 +36,13 @@ const LiveSession = () => {
           </div>
         </div>
         {selectedCase && (
-          <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-6">
+          <div className="grid grid-cols-1  gap-6">
             <div className="">
-              <CourtroomLayout allJurors={fakeJurors} />;{" "}
+              <CourtroomLayout allJurors={fakeJurors} />{" "}
             </div>
-            <div>
+            {/* <div>
               <QuestionAnswer selectedCase={selectedCase} />
-            </div>
+            </div> */}
           </div>
         )}
       </motion.div>

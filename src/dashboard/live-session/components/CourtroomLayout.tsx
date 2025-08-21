@@ -36,12 +36,19 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId }: CourtroomLayoutProp
     handleAskMultipleJurors,
   } = useCourtroomState();
 
-  // Helper function to get jury boxes
+  // Helper function to get dynamic jury boxes
   const getJuryBoxes = () => {
-    return Array.from({ length: 6 }, (_, i) => {
-      const startIndex = i * 6;
-      const endIndex = startIndex + 6;
+    const jurorsPerBox = 6;
+    const totalBoxes = Math.ceil(allJurors.length / jurorsPerBox);
+    
+    // Only create boxes that have jurors
+    return Array.from({ length: totalBoxes }, (_, i) => {
+      const startIndex = i * jurorsPerBox;
+      const endIndex = startIndex + jurorsPerBox;
       const boxJurors = allJurors.slice(startIndex, endIndex);
+      
+      // Only render box if it has jurors
+      if (boxJurors.length === 0) return null;
       
       return (
         <JuryBox
@@ -52,7 +59,7 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId }: CourtroomLayoutProp
           onJurorClick={handleJurorClick}
         />
       );
-    });
+    }).filter(Boolean); // Remove null entries
   };
 
   return (
@@ -67,9 +74,15 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId }: CourtroomLayoutProp
 
       <div className="flex flex-col gap-6">
         {benchAbove && <JudgesBench />}
-        <div className="grid grid-cols-2 gap-6">
-          {getJuryBoxes()}
-        </div>
+        {allJurors.length === 0 ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="text-lg text-gray-600">No jurors available</div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {getJuryBoxes()}
+          </div>
+        )}
         {!benchAbove && <JudgesBench />}
       </div>
 

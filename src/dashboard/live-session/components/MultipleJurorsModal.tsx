@@ -112,7 +112,7 @@ const MultipleJurorsModal = ({
             <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-md border max-h-24 overflow-y-auto">
               {selectedJurors.map((juror) => (
                 <Badge key={juror.id} variant="secondary" className="text-xs">
-                  {juror.name}
+                  #{juror.jurorNumber}
                 </Badge>
               ))}
             </div>

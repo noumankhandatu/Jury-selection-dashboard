@@ -90,7 +90,7 @@ const SingleJurorModal = ({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
-            Question Juror: {juror?.name}
+            Question Juror: #{juror?.jurorNumber}
           </DialogTitle>
         </DialogHeader>
         

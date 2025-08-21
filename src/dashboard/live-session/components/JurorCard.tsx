@@ -62,7 +62,7 @@ const JurorCard = ({ juror, isSelected, onClick }: JurorCardProps) => {
       onClick={() => onClick(juror)}
       className={getCardStyles()}
     >
-      <Avatar className="h-10 w-10 border-2 border-white shadow">
+      <Avatar className="h-12 w-12 border-2 border-white shadow">
         <AvatarImage src={generateAvatar(juror.name)} alt={juror.name} />
         <AvatarFallback className="bg-gray-200 text-gray-700 text-xs font-semibold">
           {juror.name
@@ -72,9 +72,6 @@ const JurorCard = ({ juror, isSelected, onClick }: JurorCardProps) => {
         </AvatarFallback>
       </Avatar>
       <span className="text-xs font-medium text-gray-700 text-center">
-        {juror.name}
-      </span>
-      <span className="text-xs text-gray-500 text-center">
         #{juror.jurorNumber}
       </span>
       {isSelected && (

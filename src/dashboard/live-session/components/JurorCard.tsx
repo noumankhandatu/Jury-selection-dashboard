@@ -2,8 +2,40 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Types
 export interface Juror {
-  id: string | number;
+  id: string;
   name: string;
+  jurorNumber: string;
+  age: number;
+  dateOfBirth: string;
+  gender: string;
+  race: string;
+  email: string;
+  phone: string;
+  workPhone: string;
+  address: string;
+  mailingAddress: string;
+  county: string;
+  location: string;
+  occupation: string;
+  employer: string;
+  employmentDuration: string;
+  education: string;
+  maritalStatus: string;
+  spouse: string;
+  children: string;
+  citizenship: string;
+  tdl: string;
+  panelPosition: string;
+  criminalCase: string;
+  accidentalInjury: string;
+  civilJury: string;
+  criminalJury: string;
+  biasStatus: string;
+  availability: string;
+  experience: string;
+  caseId: string;
+  source: string;
+  createdAt: string;
 }
 
 interface JurorCardProps {
@@ -41,6 +73,9 @@ const JurorCard = ({ juror, isSelected, onClick }: JurorCardProps) => {
       </Avatar>
       <span className="text-xs font-medium text-gray-700 text-center">
         {juror.name}
+      </span>
+      <span className="text-xs text-gray-500 text-center">
+        #{juror.jurorNumber}
       </span>
       {isSelected && (
         <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">

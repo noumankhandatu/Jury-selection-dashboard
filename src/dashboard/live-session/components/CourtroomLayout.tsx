@@ -67,6 +67,7 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId }: CourtroomLayoutProp
       <CourtroomHeader
         isMultiSelectMode={isMultiSelectMode}
         selectedJurorsCount={selectedJurors.length}
+        selectedCaseId={selectedCaseId}
         onToggleMultiSelect={handleToggleMultiSelect}
         onAskMultipleJurors={handleAskMultipleJurors}
         onToggleBenchPosition={handleToggleBenchPosition}

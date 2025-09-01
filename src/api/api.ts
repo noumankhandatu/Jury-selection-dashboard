@@ -124,3 +124,20 @@ export const reorderQuestionsApi = async (caseId: string, payload: { questionIds
     throw error;
   }
 };
+
+// Create a new live session
+export const createSessionApi = async (payload: {
+  name: string;
+  description: string;
+  caseId: string;
+  startTime: string;
+  endTime: string;
+}) => {
+  try {
+    const response = await BaseUrl.post("/sessions", payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error creating session:", error);
+    throw error;
+  }
+};

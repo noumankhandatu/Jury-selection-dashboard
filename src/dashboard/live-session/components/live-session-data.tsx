@@ -3,20 +3,96 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, CheckCircle, XCircle, Edit, HelpCircle, Play, Square as StopIcon } from "lucide-react";
+import { Users, CheckCircle, XCircle, Edit, HelpCircle, Play, Square as StopIcon, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { createSessionApi } from "@/api/api";
+import { toast } from "sonner";
 
 const LiveSessionData = ({ caseSelected }: any) => {
   const [sessionActive, setSessionActive] = useState(false);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleStartSession = () => {
-    setSessionActive(true);
-    // You can add additional logic like API call here
+  const handleStartSession = async () => {
+    // Reset error state
+    setError(null);
+
+    // Validate case selection
+    if (!caseSelected) {
+      setError("Please select a case first");
+      toast.error("Please select a case first");
+      return;
+    }
+
+    // Validate case data
+    if (!caseSelected.id || !caseSelected.name || !caseSelected.type) {
+      setError("Invalid case data. Please select a valid case.");
+      toast.error("Invalid case data. Please select a valid case.");
+      return;
+    }
+
+    setIsCreatingSession(true);
+    
+    try {
+      const currentTime = new Date().toISOString();
+      const endTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours from now
+      
+      const sessionPayload = {
+        name: `${caseSelected.name} - Jury Selection Session`,
+        description: `Live Q&A session for ${caseSelected.name} (${caseSelected.type} case)`,
+        caseId: caseSelected.id,
+        startTime: currentTime,
+        endTime: endTime,
+      };
+
+      console.log("Creating session with payload:", sessionPayload);
+
+      const response = await createSessionApi(sessionPayload);
+      
+      setSessionActive(true);
+      setError(null);
+      toast.success("Live session started successfully!");
+      
+      console.log("Session created successfully:", response);
+    } catch (error: any) {
+      console.error("Error starting session:", error);
+      
+      // Handle different types of errors
+      let errorMessage = "Failed to start session";
+      
+      if (error?.response?.status === 401) {
+        errorMessage = "Authentication failed. Please log in again.";
+      } else if (error?.response?.status === 404) {
+        errorMessage = "Case not found. Please select a valid case.";
+      } else if (error?.response?.status === 400) {
+        errorMessage = error?.response?.data?.error || "Invalid request data";
+      } else if (error?.response?.status >= 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsCreatingSession(false);
+    }
   };
 
   const handleEndSession = () => {
-    setSessionActive(false);
-    // You can add additional logic like API call here
+    try {
+      setSessionActive(false);
+      setError(null);
+      toast.success("Session ended");
+      // You can add additional logic like API call here
+    } catch (error) {
+      console.error("Error ending session:", error);
+      toast.error("Error ending session");
+    }
   };
 
   const containerVariants = {
@@ -49,17 +125,29 @@ const LiveSessionData = ({ caseSelected }: any) => {
           <div className="h-3 bg-gradient-to-r from-primary-500 to-primary-600" />
 
           <CardHeader className="pb-4">
-                         <CardTitle className="flex items-center justify-center gap-3 text-gray-700">
-               <div className="p-2 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg shadow-lg">
-                 <Users className="h-5 w-5 text-white" />
-               </div>
-               <span className="text-lg font-semibold">Live Session Data</span>
-             </CardTitle>
+            <CardTitle className="flex items-center justify-center gap-3 text-gray-700">
+              <div className="p-2 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg shadow-lg">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-lg font-semibold">Live Session Data</span>
+            </CardTitle>
           </CardHeader>
 
           <CardContent>
             {caseSelected ? (
               <motion.div className="space-y-6" variants={itemVariants}>
+                {/* Error Display */}
+                {error && (
+                  <motion.div 
+                    className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                    <p className="text-red-700 text-sm font-medium">{error}</p>
+                  </motion.div>
+                )}
+
                 {/* Live Session Stats */}
                 <div className="grid grid-cols-2 gap-4">
                   <motion.div variants={itemVariants}>
@@ -106,18 +194,33 @@ const LiveSessionData = ({ caseSelected }: any) => {
                 {/* Session Controls */}
                 <motion.div className="flex flex-col gap-4 items-center" variants={itemVariants}>
                   {!sessionActive ? (
-                    <div>
+                    <div className="w-full">
                       <Button
                         onClick={handleStartSession}
-                        className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 font-semibold shadow-lg transition-all duration-300 w-full min-w-[200px]"
+                        disabled={isCreatingSession || !caseSelected?.id}
+                        className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 font-semibold shadow-lg transition-all duration-300 w-full min-w-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <div className="w-2 h-2 bg-white rounded-full" />
-                        <Play className="h-4 w-4" />
-                        Start Session
+                        {isCreatingSession ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                            Starting Session...
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-2 h-2 bg-white rounded-full" />
+                            <Play className="h-4 w-4" />
+                            Start Session
+                          </>
+                        )}
                       </Button>
+                      {!caseSelected?.id && (
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                          Please select a valid case to start session
+                        </p>
+                      )}
                     </div>
                   ) : (
-                    <div>
+                    <div className="w-full">
                       <Button
                         onClick={handleEndSession}
                         variant="destructive"

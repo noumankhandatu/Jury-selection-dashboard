@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { getCasesApi, getSessionByIdApi, getSessionsByCaseApi, getResponseAssessmentApi } from "@/api/api";
+import { getCasesApi, getSessionsByCaseApi, getSessionStatisticsApi } from "@/api/api";
 import type { Case as UISelectCase } from "@/components/shared/select-case";
 import type { SessionItem } from "@/components/shared/select-session";
-import type { ApiCase, ApiSession, ApiSessionById } from "../types";
+import type { ApiCase, ApiSession, ApiSessionById, ApiSessionStatisticsResponse } from "../types";
 
 export const useSessionAnalysis = () => {
   const [cases, setCases] = useState<UISelectCase[]>([]);
@@ -15,9 +15,7 @@ export const useSessionAnalysis = () => {
 
   const [sessionDetail, setSessionDetail] = useState<ApiSessionById | null>(null);
   const [selectedResponseId, setSelectedResponseId] = useState<string>("");
-  const [responseAssessment, setResponseAssessment] = useState<any | null>(null);
-  const [isAssessLoading, setIsAssessLoading] = useState(false);
-  const [assessError, setAssessError] = useState("");
+  const [sessionStats, setSessionStats] = useState<ApiSessionStatisticsResponse | null>(null);
 
   useEffect(() => {
     const fetchCases = async () => {
@@ -79,38 +77,41 @@ export const useSessionAnalysis = () => {
       if (!selectedSession?.id) {
         setSessionDetail(null);
         setSelectedResponseId("");
-        setResponseAssessment(null);
         return;
       }
       try {
-        const data = await getSessionByIdApi(selectedSession.id);
-        setSessionDetail((data?.session as ApiSessionById) || null);
+        const stats = await getSessionStatisticsApi(selectedSession.id);
+        setSessionStats(stats as ApiSessionStatisticsResponse);
+        // Provide minimal sessionDetail for existing consumers
+        const session: ApiSessionById = {
+          id: stats?.session?.id,
+          name: stats?.session?.name,
+          description: "",
+          status: "",
+          startTime: "",
+          endTime: null,
+          createdAt: "",
+          updatedAt: "",
+          caseId: stats?.session?.case?.id || "",
+          case: {
+            caseNumber: stats?.session?.case?.caseNumber || "",
+            caseName: stats?.session?.case?.caseName || "",
+            caseType: stats?.session?.case?.caseType || "",
+          },
+          assignments: [],
+          responses: [],
+          scores: [],
+        } as any;
+        setSessionDetail(session);
       } catch {
+        setSessionStats(null);
         setSessionDetail(null);
       }
     };
     fetchDetail();
   }, [selectedSession?.id]);
 
-  useEffect(() => {
-    const fetchAssessment = async () => {
-      if (!selectedResponseId) {
-        setResponseAssessment(null);
-        return;
-      }
-      setIsAssessLoading(true);
-      setAssessError("");
-      try {
-        const data = await getResponseAssessmentApi(selectedResponseId);
-        setResponseAssessment(data?.assessment || null);
-      } catch (e) {
-        setAssessError(e instanceof Error ? e.message : "Failed to load assessment");
-      } finally {
-        setIsAssessLoading(false);
-      }
-    };
-    fetchAssessment();
-  }, [selectedResponseId]);
+  // assessment fetching removed as it's unused in UI
 
   return {
     cases,
@@ -120,11 +121,9 @@ export const useSessionAnalysis = () => {
     selectedSession,
     setSelectedSession,
     sessionDetail,
+    sessionStats,
     selectedResponseId,
     setSelectedResponseId,
-    responseAssessment,
-    isAssessLoading,
-    assessError,
     isLoading,
     error,
   };

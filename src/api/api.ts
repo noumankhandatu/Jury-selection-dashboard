@@ -232,6 +232,17 @@ export const getSessionByIdApi = async (sessionId: string) => {
   }
 };
 
+// Get session statistics (overview + top jurors)
+export const getSessionStatisticsApi = async (sessionId: string) => {
+  try {
+    const response = await BaseUrl.get(`/scores/session/${sessionId}/statistics`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching session statistics:", error);
+    throw error;
+  }
+};
+
 // Get detailed assessment for a specific response
 export const getResponseAssessmentApi = async (responseId: string) => {
   try {

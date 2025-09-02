@@ -7,76 +7,90 @@ import { BiasGauge } from "@/components/shared/bias-gauge";
 import { Eye } from "lucide-react";
 
 interface JurorMiniCardProps {
-	juror: Juror;
-	score?: number | null;
-	isHighlighted?: boolean;
-	onDetails: () => void;
+  juror: Juror;
+  score?: number | null;
+  isHighlighted?: boolean;
+  onDetails: () => void;
 }
 
-export function JurorMiniCard({ juror, score, isHighlighted = false, onDetails }: JurorMiniCardProps) {
-	const effectiveBiasStatus = juror.isStrikedOut ? "high" : juror.biasStatus;
-	const displayId = juror.jurorNumber || juror.id;
+export function JurorMiniCard({
+  juror,
+  score,
+  isHighlighted = false,
+  onDetails,
+}: JurorMiniCardProps) {
+  const effectiveBiasStatus = juror.isStrikedOut ? "high" : juror.biasStatus;
+  const displayId = juror.jurorNumber || juror.id;
 
-	// Determine border color from suitability score (preferred) or bias status
-	const normalizedScore = typeof score === "number" ? (score > 1 ? Math.min(100, Math.max(0, score)) : Math.min(100, Math.max(0, score * 100))) : null;
-	let borderColorClass = "border-gray-200";
-	if (typeof normalizedScore === "number") {
-		if (normalizedScore <= 25) borderColorClass = "border-red-300";
-		else if (normalizedScore <= 75) borderColorClass = "border-yellow-300";
-		else borderColorClass = "border-green-300";
-	} else {
-		borderColorClass =
-			effectiveBiasStatus === "high"
-				? "border-red-300"
-				: effectiveBiasStatus === "moderate"
-				? "border-yellow-300"
-				: "border-green-300";
-	}
-	return (
-		<Card
-			className={`relative h-full bg-white shadow-sm border ${borderColorClass} ${isHighlighted ? "ring-2 ring-blue-500" : ""} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-opacity-80`}
-		>
-			<CardContent className="p-5">
-				<div className="flex flex-col items-center text-center">
-					<Avatar className="h-16 w-16 mb-3">
-						<AvatarImage src={generateAvatar(juror.name)} alt={juror.name} />
-						<AvatarFallback>
-							{juror.name
-								.split(" ")
-								.map((n) => n[0])
-								.join("")}
-						</AvatarFallback>
-					</Avatar>
+  // Determine border color from suitability score (preferred) or bias status
+  const normalizedScore =
+    typeof score === "number"
+      ? score > 1
+        ? Math.min(100, Math.max(0, score))
+        : Math.min(100, Math.max(0, score * 100))
+      : null;
+  let borderColorClass = "border-gray-200";
+  if (typeof normalizedScore === "number") {
+    if (normalizedScore <= 25) borderColorClass = "border-red-300";
+    else if (normalizedScore <= 75) borderColorClass = "border-yellow-300";
+    else borderColorClass = "border-green-300";
+  } else {
+    borderColorClass =
+      effectiveBiasStatus === "high"
+        ? "border-red-300"
+        : effectiveBiasStatus === "moderate"
+        ? "border-yellow-300"
+        : "border-green-300";
+  }
+  return (
+    <Card
+      className={`relative h-full bg-white shadow-sm border ${borderColorClass} ${
+        isHighlighted ? "ring-2 ring-blue-500" : ""
+      } transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-opacity-80`}
+    >
+      <CardContent className="p-5">
+        <div className="flex flex-col items-center text-center">
+          <Avatar className="h-16 w-16 mb-3">
+            <AvatarImage src={generateAvatar(juror.name)} alt={juror.name} />
+            <AvatarFallback>
+              {juror.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")}
+            </AvatarFallback>
+          </Avatar>
 
-					<div className="font-semibold text-gray-900 truncate max-w-full">{juror.name}</div>
-					<div className="text-xs text-gray-600 mt-1">{displayId ? `#${displayId}` : null}</div>
+          <div className="font-semibold text-gray-900 truncate max-w-full">
+            {juror.name}
+          </div>
+          <div className="text-xs text-gray-600 mt-1">
+            {displayId ? `#${displayId}` : null}
+          </div>
 
-					<div className="mt-3 flex flex-col items-center gap-1 w-full">
-						<BiasGauge
-							biasStatus={effectiveBiasStatus}
-							size="md"
-							isHighlighted={isHighlighted}
-							scorePercent={typeof score === "number" ? score : undefined}
-						/>
-					</div>
+          <div className="mt-3 flex flex-col items-center gap-1 w-full">
+            <BiasGauge
+              biasStatus={effectiveBiasStatus}
+              size="md"
+              isHighlighted={isHighlighted}
+              scorePercent={typeof score === "number" ? score : undefined}
+            />
+          </div>
 
-					<div className="mt-4 w-full">
-						<Button
-							variant="outline"
-							size="sm"
-							className="w-full border-blue-300 text-blue-700 hover:text-blue-800 hover:border-blue-400 hover:bg-blue-50"
-							onClick={onDetails}
-						>
-							<Eye className="h-4 w-4 mr-2" />
-							View Full Details
-						</Button>
-					</div>
-				</div>
-			</CardContent>
-		</Card>
-	);
+          <div className="mt-4 w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-blue-300 text-blue-700 hover:text-blue-800 hover:border-blue-400 hover:bg-blue-50"
+              onClick={onDetails}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View Full Details
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default JurorMiniCard;
-
-

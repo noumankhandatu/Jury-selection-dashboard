@@ -57,18 +57,18 @@ const toDisplayJuror = (item: any, session: any): Juror => {
 
 export const JurorResponses = ({
   session,
+  sessionStats,
   onSelectResponse,
   selectedResponseId,
 }: {
   session: any;
+  sessionStats?: any | null;
   onSelectResponse: (responseId: string) => void;
   selectedResponseId: string;
-  assessment: any | null;
-  isAssessLoading: boolean;
-  assessError: string;
 }) => {
   const [filter, setFilter] = useState<"all" | "unfavorable" | "moderate" | "favorable">("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [manualResponse, setManualResponse] = useState<any | null>(null);
 
   // Always call hooks at the top level, before any early return
   const responses = useMemo(() => (Array.isArray(session?.responses) && session?.responses?.length > 0 ? session.responses : []), [session]);
@@ -85,17 +85,33 @@ export const JurorResponses = ({
         responseText: r.response,
         assessment: r.assessment,
       }));
-    } else {
-      return assignments.map((a: any) => ({
-        kind: "assignment",
-        id: `assignment-${a.id}`,
-        juror: a.juror,
-        question: a.question,
+    }
+
+    if (Array.isArray(sessionStats?.topJurors) && sessionStats.topJurors.length > 0) {
+      return sessionStats.topJurors.map((tj: any) => ({
+        kind: "statistics",
+        id: tj.juror?.id || String(tj.rank),
+        juror: {
+          id: tj.juror?.id,
+          name: tj.juror?.name,
+          jurorNumber: tj.juror?.jurorNumber,
+        },
+        question: undefined,
         responseText: undefined,
-        assessment: undefined,
+        // Put score under suitabilityScore so existing UI picks it up
+        assessment: { suitabilityScore: tj.overallScore },
       }));
     }
-  }, [responses, assignments]);
+
+    return assignments.map((a: any) => ({
+      kind: "assignment",
+      id: `assignment-${a.id}`,
+      juror: a.juror,
+      question: a.question,
+      responseText: undefined,
+      assessment: undefined,
+    }));
+  }, [responses, assignments, sessionStats]);
 
   const getPercent = (item: any): number | null => {
     const raw = item?.assessment?.suitabilityScore ?? item?.assessment?.score;
@@ -128,8 +144,8 @@ export const JurorResponses = ({
     });
   }, [searchTerm, filter, jurorItems, filteredByScore, session]);
 
-  // Compute activeResponse after hooks
-  const activeResponse = session && responses.find((x: any) => x.id === selectedResponseId) || null;
+  // Compute activeResponse after hooks (from selectedResponseId or manual selection for stats/assignments)
+  const activeResponse = (session && responses.find((x: any) => x.id === selectedResponseId)) || manualResponse || null;
 
   const filterDescription = {
     unfavorable:
@@ -209,7 +225,16 @@ export const JurorResponses = ({
                     score={typeof score === "number" ? score : null}
                     isHighlighted={selectedResponseId === item.id}
                     onDetails={() => {
-                      if (item.kind === "response") onSelectResponse(item.id);
+                      if (item.kind === "response") {
+                        onSelectResponse(item.id);
+                      } else {
+                        const sid = session?.id || sessionStats?.session?.id;
+                        setManualResponse({
+                          id: item.id,
+                          sessionId: sid,
+                          juror: { id: juror.id, name: juror.name, jurorNumber: juror.jurorNumber },
+                        });
+                      }
                     }}
                   />
                 );
@@ -223,7 +248,12 @@ export const JurorResponses = ({
 
       <ResponseDetailsDialog
         open={Boolean(activeResponse)}
-        onOpenChange={() => onSelectResponse("")}
+        onOpenChange={(open) => {
+          if (!open) {
+            setManualResponse(null);
+            onSelectResponse("");
+          }
+        }}
         response={activeResponse}
       />
     </div>

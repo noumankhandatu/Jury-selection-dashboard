@@ -17,11 +17,9 @@ const SessionAnalysisPage = () => {
     selectedSession,
     setSelectedSession,
     sessionDetail,
+    sessionStats,
     selectedResponseId,
     setSelectedResponseId,
-    responseAssessment,
-    isAssessLoading,
-    assessError,
     isLoading,
     error,
   } = useSessionAnalysis();
@@ -46,11 +44,9 @@ const SessionAnalysisPage = () => {
           <div className="space-y-6">
             <JurorResponses
               session={sessionDetail}
+              sessionStats={sessionStats}
               onSelectResponse={setSelectedResponseId}
               selectedResponseId={selectedResponseId}
-              assessment={responseAssessment}
-              isAssessLoading={isAssessLoading}
-              assessError={assessError}
             />
           </div>
         )}

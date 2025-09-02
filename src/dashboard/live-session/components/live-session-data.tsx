@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { createSessionApi } from "@/api/api";
 import { toast } from "sonner";
 
-const LiveSessionData = ({ caseSelected }: any) => {
+const LiveSessionData = ({ caseSelected, onSessionCreated }: any) => {
   const [sessionActive, setSessionActive] = useState(false);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +54,10 @@ const LiveSessionData = ({ caseSelected }: any) => {
       toast.success("Live session started successfully!");
       
       console.log("Session created successfully:", response);
+      const createdId = response?.session?.id || response?.data?.session?.id;
+      if (createdId && typeof onSessionCreated === "function") {
+        onSessionCreated(createdId);
+      }
     } catch (error: any) {
       console.error("Error starting session:", error);
       

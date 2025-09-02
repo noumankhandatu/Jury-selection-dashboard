@@ -13,6 +13,7 @@ const LiveSession = () => {
   const { cases, selectedCase, handleCaseSelect } = useLiveSession();
   const [jurors, setJurors] = useState<Juror[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Fetch jurors from API
   useEffect(() => {
@@ -49,7 +50,7 @@ const LiveSession = () => {
             />
           </div>
           <div>
-            <LiveSessionData caseSelected={selectedCase} />
+            <LiveSessionData caseSelected={selectedCase} onSessionCreated={(id: string) => setSessionId(id)} />
           </div>
         </div>
         {selectedCase && (
@@ -63,6 +64,7 @@ const LiveSession = () => {
                 <CourtroomLayout 
                   allJurors={jurors} 
                   selectedCaseId={selectedCase?.id}
+                  sessionId={sessionId || undefined}
                 />
               )}
             </div>

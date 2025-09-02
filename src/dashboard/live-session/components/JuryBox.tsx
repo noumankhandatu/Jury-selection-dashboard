@@ -6,9 +6,12 @@ interface JuryBoxProps {
   boxNumber: number;
   selectedJurors: Juror[];
   onJurorClick: (juror: Juror) => void;
+  scoresByJurorId?: Record<string, {
+    overallScore?: number;
+  }>;
 }
 
-const JuryBox = ({ jurors, boxNumber, selectedJurors, onJurorClick }: JuryBoxProps) => {
+const JuryBox = ({ jurors, boxNumber, selectedJurors, onJurorClick, scoresByJurorId }: JuryBoxProps) => {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow p-4 group">
       <div className="text-center mb-3">
@@ -23,6 +26,7 @@ const JuryBox = ({ jurors, boxNumber, selectedJurors, onJurorClick }: JuryBoxPro
             juror={juror}
             isSelected={selectedJurors.some(j => j.id === juror.id)}
             onClick={onJurorClick}
+            overallScore={scoresByJurorId?.[juror.id]?.overallScore}
           />
         ))}
       </div>

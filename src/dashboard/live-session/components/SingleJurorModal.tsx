@@ -30,6 +30,7 @@ interface SingleJurorModalProps {
   juror: Juror | null;
   selectedCaseId?: string;
   onSubmit: (questionId: string, answer: string) => void;
+  onQuestionSelected?: (questionId: string) => void;
 }
 
 const SingleJurorModal = ({
@@ -37,7 +38,8 @@ const SingleJurorModal = ({
   onOpenChange,
   juror,
   selectedCaseId,
-  onSubmit
+  onSubmit,
+  onQuestionSelected
 }: SingleJurorModalProps) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
@@ -101,7 +103,10 @@ const SingleJurorModal = ({
             </Label>
             <Select 
               value={selectedQuestionId} 
-              onValueChange={setSelectedQuestionId}
+              onValueChange={(value) => {
+                setSelectedQuestionId(value);
+                if (value && onQuestionSelected) onQuestionSelected(value);
+              }}
               disabled={loading}
             >
               <SelectTrigger className="w-full h-auto min-h-[40px] py-2">

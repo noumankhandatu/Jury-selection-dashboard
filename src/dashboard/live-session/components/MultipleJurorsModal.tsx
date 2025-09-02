@@ -30,6 +30,7 @@ interface MultipleJurorsModalProps {
   selectedJurors: Juror[];
   selectedCaseId?: string;
   onSubmit: (questionId: string, responseType: 'yes-no' | 'rating', responseValue: string) => void;
+  onQuestionSelected?: (questionId: string) => void;
 }
 
 const MultipleJurorsModal = ({
@@ -37,7 +38,8 @@ const MultipleJurorsModal = ({
   onOpenChange,
   selectedJurors,
   selectedCaseId,
-  onSubmit
+  onSubmit,
+  onQuestionSelected
 }: MultipleJurorsModalProps) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
@@ -125,7 +127,10 @@ const MultipleJurorsModal = ({
             </Label>
             <Select 
               value={selectedQuestionId} 
-              onValueChange={setSelectedQuestionId}
+              onValueChange={(value) => {
+                setSelectedQuestionId(value);
+                if (value && onQuestionSelected) onQuestionSelected(value);
+              }}
               disabled={loading}
             >
               <SelectTrigger className="w-full h-auto min-h-[40px] py-2">

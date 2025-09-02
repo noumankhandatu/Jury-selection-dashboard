@@ -141,3 +141,60 @@ export const createSessionApi = async (payload: {
     throw error;
   }
 };
+
+// Assign one or more questions to one or more jurors for a session
+export const assignQuestionsToJurorsApi = async (payload: {
+  sessionId: string;
+  assignments: Array<{
+    questionId: string;
+    jurorIds: string[];
+    dueAt?: string;
+  }>;
+}) => {
+  try {
+    const response = await BaseUrl.post("/assignments/assign", payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error assigning questions:", error);
+    throw error;
+  }
+};
+
+// Save a juror response
+export const saveJurorResponseApi = async (payload: {
+  sessionId: string;
+  questionId: string;
+  jurorId: string;
+  response: string;
+  responseType: "TEXT" | "YES_NO" | "RATING";
+}) => {
+  try {
+    const response = await BaseUrl.post("/responses/save", payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error saving juror response:", error);
+    throw error;
+  }
+};
+
+// Assess a saved response with AI
+export const assessResponseApi = async (responseId: string) => {
+  try {
+    const response = await BaseUrl.post(`/responses/${responseId}/assess`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error assessing response:", error);
+    throw error;
+  }
+};
+
+// Get scores for all jurors in a session
+export const getSessionScoresApi = async (sessionId: string) => {
+  try {
+    const response = await BaseUrl.get(`/scores/session/${sessionId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching session scores:", error);
+    throw error;
+  }
+};

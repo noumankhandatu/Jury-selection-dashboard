@@ -36,8 +36,6 @@ export const useCourtroomState = () => {
       questionId,
       answer
     });
-    // Here you would typically make an API call to submit the answer
-    // For now, we'll just log it
   };
 
   const handleMultipleJurorsSubmit = (questionId: string, responseType: 'yes-no' | 'rating', responseValue: string) => {
@@ -47,8 +45,6 @@ export const useCourtroomState = () => {
       responseType,
       responseValue
     });
-    // Here you would typically make an API call to submit the answers
-    // For now, we'll just log it
   };
 
   const handleToggleMultiSelect = () => {

@@ -2,43 +2,107 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FileText, Edit, Save } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 import type { Juror } from "./types";
 import { generateAvatar } from "./utils";
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useMemo } from "react";
+import { getJurorDetailsAnalysisApi } from "@/api/api";
 
 interface JurorDetailsDialogProps {
   juror: Juror | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (updatedJuror: Juror) => void;
+  sessionId?: string;
 }
 
-export function JurorDetailsDialog({ juror, isOpen, onClose, onSave }: JurorDetailsDialogProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedJuror, setEditedJuror] = useState<Juror | null>(null);
+interface JurorAnalysisResponse {
+  score: {
+    overallScore?: number;
+    averageScore?: number;
+    biasScore?: number;
+    suitabilityRank?: number | string;
+    [key: string]: unknown;
+  };
+  juror: Partial<Juror> & {
+    status?: string;
+  };
+  assessments: Array<{
+    assessment?: string;
+    score?: number;
+    reasoning?: string;
+    biasAnalysis?: string | Record<string, unknown>;
+    suitabilityScore?: number;
+    question?: { id?: string; text?: string; questionType?: string };
+    response?: { id?: string; text?: string; responseType?: string; createdAt?: string };
+  }>;
+  scoreAnalysis?: {
+    totalQuestions?: number;
+    high?: number;
+    medium?: number;
+    low?: number;
+    [key: string]: unknown;
+  };
+  strengths?: Array<{ questionId?: string; text?: string; reason?: string }> | string[];
+  weaknesses?: Array<{ questionId?: string; text?: string; reason?: string }> | string[];
+  biasAnalysis?: Array<{ questionId?: string; bias?: string; details?: string }> | Record<string, unknown>;
+}
+
+type JurorProfile = Partial<Juror> & { status?: string };
+
+export function JurorDetailsDialog({ juror, isOpen, onClose, sessionId }: JurorDetailsDialogProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<JurorAnalysisResponse | null>(null);
+
+  const jurorInitials = useMemo(() => {
+    const name = analysis?.juror?.name || juror?.name || "";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("");
+  }, [analysis?.juror?.name, juror?.name]);
 
   useEffect(() => {
-    if (juror) {
-      setEditedJuror({ ...juror });
-    }
-  }, [juror]);
+    const fetchDetails = async () => {
+      if (!isOpen || !juror?.id || !sessionId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getJurorDetailsAnalysisApi(sessionId, juror.id);
+        setAnalysis(res?.data || res);
+      } catch (e: unknown) {
+        const message = e && typeof e === "object" && "message" in e ? String((e as { message?: unknown }).message) : null;
+        setError(message || "Failed to load juror details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetails();
+  }, [isOpen, juror?.id, sessionId]);
 
-  const handleSave = () => {
-    if (editedJuror && onSave) {
-      onSave(editedJuror);
-      setIsEditing(false);
+  const strengthsList: string[] = useMemo(() => {
+    const s = analysis?.strengths;
+    if (!s) return [];
+    if (Array.isArray(s)) {
+      return s.map((item) => (typeof item === "string" ? item : item?.text || item?.reason || "-"));
     }
-  };
+    return [];
+  }, [analysis?.strengths]);
 
-  const handleCancel = () => {
-    setEditedJuror(juror ? { ...juror } : null);
-    setIsEditing(false);
-  };
+  const weaknessesList: string[] = useMemo(() => {
+    const w = analysis?.weaknesses;
+    if (!w) return [];
+    if (Array.isArray(w)) {
+      return w.map((item) => (typeof item === "string" ? item : item?.text || item?.reason || "-"));
+    }
+    return [];
+  }, [analysis?.weaknesses]);
 
   if (!juror) return null;
+
+  const jurorProfile: JurorProfile = (analysis?.juror as JurorProfile) || (juror as JurorProfile);
+  const overall = analysis?.score;
+  const scoreBreakdown = analysis?.scoreAnalysis;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -49,26 +113,8 @@ export function JurorDetailsDialog({ juror, isOpen, onClose, onSave }: JurorDeta
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               Juror Details
             </DialogTitle>
-            <div className="flex items-center gap-2">
-              {!isEditing ? (
-                <Button variant="outline" className="mt-4 bg-primary text-white" size="sm" onClick={() => setIsEditing(true)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <>
-                  <Button variant="outline" size="sm" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={handleSave}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                </>
-              )}
-            </div>
           </div>
-          <DialogDescription>Complete information from juror questionnaire</DialogDescription>
+          <DialogDescription>Detailed juror analysis and profile</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6" onClick={(e) => e.stopPropagation()}>
@@ -76,331 +122,240 @@ export function JurorDetailsDialog({ juror, isOpen, onClose, onSave }: JurorDeta
           <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
             <div className="relative">
               <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-white shadow-md">
-                <AvatarImage src={generateAvatar(juror.name) || "/placeholder.svg"} alt={juror.name} />
+                <AvatarImage src={generateAvatar(jurorProfile?.name || "") || "/placeholder.svg"} alt={jurorProfile?.name || "Juror"} />
                 <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm sm:text-lg font-semibold">
-                  {juror.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
+                  {jurorInitials}
                 </AvatarFallback>
               </Avatar>
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-xl font-bold truncate">{juror.name}</h2>
+              <h2 className="text-lg sm:text-xl font-bold truncate">{jurorProfile?.name}</h2>
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Badge variant="outline" className="font-medium text-xs">
-                  Juror #{juror.jurorNumber}
-                </Badge>
+                {jurorProfile?.jurorNumber && (
+                  <Badge variant="outline" className="font-medium text-xs">Juror #{jurorProfile.jurorNumber}</Badge>
+                )}
+                {jurorProfile && jurorProfile.status && (
+                  <Badge variant="secondary" className="text-xs">{jurorProfile.status}</Badge>
+                )}
                 {juror.isStrikedOut && (
-                  <Badge variant="destructive" className="text-xs">
-                    STRUCK
-                  </Badge>
+                  <Badge variant="destructive" className="text-xs">STRUCK</Badge>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Complete juror information */}
+          {/* Loading / Error states */}
+          {loading && (
+            <Card>
+              <CardContent className="py-6 text-center text-gray-600">Loading juror analysis...</CardContent>
+            </Card>
+          )}
+          {error && (
+            <Card>
+              <CardContent className="py-6 text-center text-red-600">{error}</CardContent>
+            </Card>
+          )}
+
+          {/* Overall scores */}
+          {overall && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg">Overall Scores</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="p-3 rounded-md bg-slate-50">
+                    <p className="text-xs text-gray-500">Overall Score</p>
+                    <p className="text-lg font-semibold">{overall.overallScore ?? "-"}</p>
+                  </div>
+                  <div className="p-3 rounded-md bg-slate-50">
+                    <p className="text-xs text-gray-500">Average Score</p>
+                    <p className="text-lg font-semibold">{overall.averageScore ?? "-"}</p>
+                  </div>
+                  <div className="p-3 rounded-md bg-slate-50">
+                    <p className="text-xs text-gray-500">Bias Score</p>
+                    <p className="text-lg font-semibold">{overall.biasScore ?? "-"}</p>
+                  </div>
+                  <div className="p-3 rounded-md bg-slate-50">
+                    <p className="text-xs text-gray-500">Suitability Rank</p>
+                    <p className="text-lg font-semibold">{overall.suitabilityRank ?? "-"}</p>
+                  </div>
+                </div>
+                {scoreBreakdown && (
+                  <div className="grid grid-cols-3 gap-4 mt-4">
+                    <div className="p-3 rounded-md bg-green-50">
+                      <p className="text-xs text-gray-600">High</p>
+                      <p className="text-base font-semibold">{scoreBreakdown.high ?? 0}</p>
+                    </div>
+                    <div className="p-3 rounded-md bg-amber-50">
+                      <p className="text-xs text-gray-600">Medium</p>
+                      <p className="text-base font-semibold">{scoreBreakdown.medium ?? 0}</p>
+                    </div>
+                    <div className="p-3 rounded-md bg-red-50">
+                      <p className="text-xs text-gray-600">Low</p>
+                      <p className="text-base font-semibold">{scoreBreakdown.low ?? 0}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Profile details */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base sm:text-lg">Complete Juror Information</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Profile</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Juror #</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.jurorNumber || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, jurorNumber: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.jurorNumber}</p>
-                    )}
+                    <p className="text-base">{jurorProfile?.jurorNumber || "-"}</p>
                   </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Name</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.name || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, name: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.name}</p>
-                    )}
-                  </div>
-
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Gender</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.gender || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, gender: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.gender}</p>
-                    )}
+                    <p className="text-base">{jurorProfile?.gender || "-"}</p>
                   </div>
-
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Race</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.race || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, race: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.race}</p>
-                    )}
+                    <p className="text-base">{jurorProfile?.race || "-"}</p>
                   </div>
-
                   <div>
-                    <p className="text-sm font-semibold text-gray-700">Date of Birth</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.dateOfBirth || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, dateOfBirth: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.dateOfBirth}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Home Address</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.address || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, address: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.address}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Mailing Address</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.mailingAddress || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, mailingAddress: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.mailingAddress}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">TDL#</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.tdl || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, tdl: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.tdl}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Home Phone</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.phone || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, phone: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.phone}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">County of Residence</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.county || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, county: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.county}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Criminal Case Experience</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.criminalCase || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, criminalCase: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.criminalCase}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Accidental Injury</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.accidentalInjury || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, accidentalInjury: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.accidentalInjury}</p>
-                    )}
+                    <p className="text-sm font-semibold text-gray-700">Age</p>
+                    <p className="text-base">{jurorProfile?.age ?? "-"}</p>
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Education</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.education || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, education: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.education}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Civil Jury Service</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.civilJury || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, civilJury: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.civilJury}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Criminal Jury Service</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.criminalJury || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, criminalJury: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.criminalJury}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">U.S. Citizen</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.citizenship || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, citizenship: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.citizenship}</p>
-                    )}
-                  </div>
-
+                <div className="space-y-3">
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Occupation</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.occupation || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, occupation: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.occupation}</p>
-                    )}
+                    <p className="text-base">{jurorProfile?.occupation || "-"}</p>
                   </div>
-
                   <div>
-                    <p className="text-sm font-semibold text-gray-700">Work Phone</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.workPhone || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, workPhone: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.workPhone}</p>
-                    )}
+                    <p className="text-sm font-semibold text-gray-700">Education</p>
+                    <p className="text-base">{jurorProfile?.education || "-"}</p>
                   </div>
-
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Marital Status</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.maritalStatus || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, maritalStatus: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.maritalStatus}</p>
-                    )}
+                    <p className="text-base">{jurorProfile?.maritalStatus || "-"}</p>
                   </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Spouse</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.spouse || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, spouse: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.spouse}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Employer</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.employer || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, employer: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.employer}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Length of Employment</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.employmentDuration || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, employmentDuration: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.employmentDuration}</p>
-                    )}
-                  </div>
-
                   <div>
                     <p className="text-sm font-semibold text-gray-700">Children</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.children || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, children: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.children}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Panel Position</p>
-                    {isEditing ? (
-                      <Input
-                        value={editedJuror?.panelPosition || ""}
-                        onChange={(e) => setEditedJuror((prev) => (prev ? { ...prev, panelPosition: e.target.value } : null))}
-                      />
-                    ) : (
-                      <p className="text-base">{juror.panelPosition}</p>
-                    )}
+                    <p className="text-base">{jurorProfile?.children || "-"}</p>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Assessments */}
+          {analysis?.assessments && analysis.assessments.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg">Assessment Results</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {analysis.assessments.map((a, idx) => (
+                  <div key={idx} className="p-4 rounded-lg border bg-white space-y-2">
+                    <div className="flex flex-wrap justify-between gap-2">
+                      <div className="text-sm text-gray-700">
+                        <span className="font-semibold">Question:</span> {a.question?.text || "-"}
+                      </div>
+                      <div className="flex gap-2 text-xs">
+                        {typeof a.score !== "undefined" && <Badge variant="outline">Score: {a.score}</Badge>}
+                        {typeof a.suitabilityScore !== "undefined" && <Badge variant="secondary">Suitability: {a.suitabilityScore}</Badge>}
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-700">
+                      <span className="font-semibold">Response:</span> {a.response?.text || "-"}
+                    </div>
+                    {a.assessment && (
+                      <div className="text-sm text-gray-700">
+                        <span className="font-semibold">Assessment:</span> {a.assessment}
+                      </div>
+                    )}
+                    {a.reasoning && (
+                      <div className="text-sm text-gray-700">
+                        <span className="font-semibold">Reasoning:</span> {a.reasoning}
+                      </div>
+                    )}
+                    {a.biasAnalysis && (
+                      <div className="text-sm text-gray-700">
+                        <span className="font-semibold">Bias Analysis:</span> {typeof a.biasAnalysis === "string" ? a.biasAnalysis : JSON.stringify(a.biasAnalysis)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Strengths & Weaknesses */}
+          {(strengthsList.length > 0 || weaknessesList.length > 0) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Strengths</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {strengthsList.length > 0 ? (
+                    strengthsList.map((s, i) => (
+                      <div key={i} className="text-sm text-gray-700">{s}</div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-500">No strengths listed.</div>
+                  )}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Weaknesses</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {weaknessesList.length > 0 ? (
+                    weaknessesList.map((w, i) => (
+                      <div key={i} className="text-sm text-gray-700">{w}</div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-500">No weaknesses listed.</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Bias Analysis */}
+          {analysis?.biasAnalysis && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg">Bias Analysis</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {Array.isArray(analysis.biasAnalysis) ? (
+                  (analysis.biasAnalysis as Array<{ bias?: string; details?: string; text?: string }>).map((b, i) => (
+                    <div key={i} className="text-sm text-gray-700">
+                      {b?.bias || b?.details ? (
+                        <>
+                          {b?.bias && <span className="font-semibold">{b.bias}: </span>}
+                          <span>{b?.details || b?.text || "-"}</span>
+                        </>
+                      ) : (
+                        JSON.stringify(b)
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-700">{JSON.stringify(analysis.biasAnalysis)}</div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {!sessionId && (
+            <Card>
+              <CardContent className="py-4 text-sm text-gray-600">No session selected. Pass a sessionId to load analysis.</CardContent>
+            </Card>
+          )}
         </div>
       </DialogContent>
     </Dialog>

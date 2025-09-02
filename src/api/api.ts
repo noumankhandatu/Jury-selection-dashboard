@@ -198,3 +198,47 @@ export const getSessionScoresApi = async (sessionId: string) => {
     throw error;
   }
 };
+
+// Get detailed juror analysis for a juror in a session
+export const getJurorDetailsAnalysisApi = async (sessionId: string, jurorId: string) => {
+  try {
+    const response = await BaseUrl.get(`/scores/session/${sessionId}/juror/${jurorId}/details`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching juror details analysis:", error);
+    throw error;
+  }
+};
+
+// Get sessions for a given case
+export const getSessionsByCaseApi = async (caseId: string) => {
+  try {
+    const response = await BaseUrl.get(`/sessions/case/${caseId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching sessions by case:", error);
+    throw error;
+  }
+};
+
+// Get a single session with details
+export const getSessionByIdApi = async (sessionId: string) => {
+  try {
+    const response = await BaseUrl.get(`/sessions/${sessionId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching session by id:", error);
+    throw error;
+  }
+};
+
+// Get detailed assessment for a specific response
+export const getResponseAssessmentApi = async (responseId: string) => {
+  try {
+    const response = await BaseUrl.get(`/responses/${responseId}/assessment`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching response assessment:", error);
+    throw error;
+  }
+};

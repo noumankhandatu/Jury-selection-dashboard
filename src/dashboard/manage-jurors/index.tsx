@@ -83,12 +83,7 @@ export default function ManageJurorsPage() {
     }
   };
 
-  const handleSaveJuror = (updatedJuror: Juror) => {
-    if (!selectedCase) return;
-    const updatedJurors = jurorsByCase[selectedCase.id].map((j) => (j.id === updatedJuror.id ? updatedJuror : j));
-    setJurorsByCase({ ...jurorsByCase, [selectedCase.id]: updatedJurors });
-    if (selectedJuror?.id === updatedJuror.id) setSelectedJuror(updatedJuror);
-  };
+  // Details dialog now reads from analysis API; no local editing/save
 
   const handleAddJuror = (newJuror: Juror) => {
     if (!selectedCase) return;
@@ -252,7 +247,7 @@ export default function ManageJurorsPage() {
           )}
         </div>
 
-        <JurorDetailsDialog isOpen={isJurorDetailsOpen} onClose={() => setIsJurorDetailsOpen(false)} juror={selectedJuror} onSave={handleSaveJuror} />
+        <JurorDetailsDialog isOpen={isJurorDetailsOpen} onClose={() => setIsJurorDetailsOpen(false)} juror={selectedJuror} />
         <AddJurorDialog isOpen={isAddJurorOpen} onClose={() => setIsAddJurorOpen(false)} onSave={handleAddJuror} selectedCase={selectedCase} />
       </motion.div>
     </div>

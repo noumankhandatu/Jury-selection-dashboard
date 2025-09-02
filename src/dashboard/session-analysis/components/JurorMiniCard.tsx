@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Juror } from "@/dashboard/manage-jurors/components/types";
 import { generateAvatar } from "@/dashboard/manage-jurors/components/utils";
 import { BiasGauge } from "@/components/shared/bias-gauge";
+import { Eye } from "lucide-react";
 
 interface JurorMiniCardProps {
 	juror: Juror;
@@ -15,8 +16,26 @@ interface JurorMiniCardProps {
 export function JurorMiniCard({ juror, score, isHighlighted = false, onDetails }: JurorMiniCardProps) {
 	const effectiveBiasStatus = juror.isStrikedOut ? "high" : juror.biasStatus;
 	const displayId = juror.jurorNumber || juror.id;
+
+	// Determine border color from suitability score (preferred) or bias status
+	const normalizedScore = typeof score === "number" ? (score > 1 ? Math.min(100, Math.max(0, score)) : Math.min(100, Math.max(0, score * 100))) : null;
+	let borderColorClass = "border-gray-200";
+	if (typeof normalizedScore === "number") {
+		if (normalizedScore <= 25) borderColorClass = "border-red-300";
+		else if (normalizedScore <= 75) borderColorClass = "border-yellow-300";
+		else borderColorClass = "border-green-300";
+	} else {
+		borderColorClass =
+			effectiveBiasStatus === "high"
+				? "border-red-300"
+				: effectiveBiasStatus === "moderate"
+				? "border-yellow-300"
+				: "border-green-300";
+	}
 	return (
-		<Card className={`relative h-full bg-white shadow-sm border ${isHighlighted ? "ring-2 ring-blue-500" : ""}`}>
+		<Card
+			className={`relative h-full bg-white shadow-sm border ${borderColorClass} ${isHighlighted ? "ring-2 ring-blue-500" : ""} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-opacity-80`}
+		>
 			<CardContent className="p-5">
 				<div className="flex flex-col items-center text-center">
 					<Avatar className="h-16 w-16 mb-3">
@@ -42,7 +61,13 @@ export function JurorMiniCard({ juror, score, isHighlighted = false, onDetails }
 					</div>
 
 					<div className="mt-4 w-full">
-						<Button variant="outline" size="sm" className="w-full" onClick={onDetails}>
+						<Button
+							variant="outline"
+							size="sm"
+							className="w-full border-blue-300 text-blue-700 hover:text-blue-800 hover:border-blue-400 hover:bg-blue-50"
+							onClick={onDetails}
+						>
+							<Eye className="h-4 w-4 mr-2" />
 							View Full Details
 						</Button>
 					</div>

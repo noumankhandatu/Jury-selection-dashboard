@@ -4,7 +4,6 @@ import TitleTag from "@/components/shared/tag/tag";
 import { itemVariants } from "@/utils/fn";
 import { Selectors } from "./components/Selectors";
 import { useSessionAnalysis } from "./hooks/useSessionAnalysis";
-import { SessionSummary } from "./components/SessionSummary";
 import { JurorResponses } from "./components/JurorResponses";
 
 //
@@ -45,7 +44,6 @@ const SessionAnalysisPage = () => {
         />
         {selectedCase && selectedSession && (
           <div className="space-y-6">
-            <SessionSummary session={sessionDetail} />
             <JurorResponses
               session={sessionDetail}
               onSelectResponse={setSelectedResponseId}

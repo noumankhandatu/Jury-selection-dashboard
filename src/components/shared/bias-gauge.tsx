@@ -6,9 +6,11 @@ interface BiasGaugeProps {
   size?: "sm" | "md" | "lg";
   isHighlighted?: boolean;
   showLabel?: boolean;
+  // Optional numeric score. Accepts 0-1 or 0-100 and normalizes internally.
+  scorePercent?: number;
 }
 
-export const BiasGauge: React.FC<BiasGaugeProps> = ({ biasStatus, size = "md", isHighlighted = false, showLabel = true }) => {
+export const BiasGauge: React.FC<BiasGaugeProps> = ({ biasStatus, size = "md", isHighlighted = false, showLabel = true, scorePercent }) => {
   const getBiasValue = () => {
     switch (biasStatus) {
       case "low":
@@ -55,7 +57,12 @@ export const BiasGauge: React.FC<BiasGaugeProps> = ({ biasStatus, size = "md", i
     }
   };
 
-  const value = getBiasValue();
+  // Normalize score if provided: accept 0-1 or 0-100
+  const normalizedScore = typeof scorePercent === "number"
+    ? Math.max(0, Math.min(1, scorePercent > 1 ? scorePercent / 100 : scorePercent))
+    : undefined;
+
+  const value = typeof normalizedScore === "number" ? normalizedScore : getBiasValue();
   const { width, height, fontSize, marginTop } = getSizeConfig();
 
   // Define color segments for the gauge
@@ -84,7 +91,7 @@ export const BiasGauge: React.FC<BiasGaugeProps> = ({ biasStatus, size = "md", i
       {showLabel && (
         <div className="absolute bottom-0 flex flex-col items-center" style={{ fontSize }}>
           <span className="font-bold text-gray-700">{Math.round(value * 100)}%</span>
-          <span className="text-gray-500 text-xs capitalize">{biasStatus}</span>
+          <span className="text-gray-500 text-xs capitalize">{typeof normalizedScore === "number" ? "suitability" : biasStatus}</span>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Card, CardContent } from "@/components/ui/card";
 import { ResponseDetailsDialog } from "./ResponseDetailsDialog";
-import { JurorCard } from "@/dashboard/manage-jurors/components/juror-card";
+import JurorMiniCard from "./JurorMiniCard";
 import type { Juror } from "@/dashboard/manage-jurors/components/types";
 
 export const JurorResponses = ({
@@ -88,23 +88,27 @@ export const JurorResponses = ({
       mailingAddress: j.mailingAddress ?? "",
     } as Juror;
   };
-
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
       <Card className="bg-white/80 backdrop-blur-md shadow rounded-xl">
         <CardContent className="p-4">
           {jurorItems.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {jurorItems.map((item: any) => (
-                <JurorCard
-                  key={item.id}
-                  juror={toDisplayJuror(item)}
-                  onViewDetails={() => {
-                    if (item.kind === "response") onSelectResponse(item.id);
-                  }}
-                  isHighlighted={selectedResponseId === item.id}
-                />
-              ))}
+              {jurorItems.map((item: any) => {
+                const juror = toDisplayJuror(item);
+                const score = item.assessment?.suitabilityScore ?? item.assessment?.score ?? null;
+                return (
+                  <JurorMiniCard
+                    key={item.id}
+                    juror={juror}
+                    score={typeof score === "number" ? score : null}
+                    isHighlighted={selectedResponseId === item.id}
+                    onDetails={() => {
+                      if (item.kind === "response") onSelectResponse(item.id);
+                    }}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="p-4 text-sm text-muted-foreground">No jurors found.</div>

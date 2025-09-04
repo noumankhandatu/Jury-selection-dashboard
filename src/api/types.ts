@@ -81,3 +81,29 @@ export type SessionStatus = 'PENDING' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CAN
 export interface SessionStatusResponse {
   status: SessionStatus;
 }
+
+// Dashboard Analytics Types
+export interface CaseCount {
+  count: number;
+  change: number;
+  progress: number;
+}
+
+export interface AnalyticsData {
+  month: string;
+  cases: number;
+  completed: number;
+  incomplete: number;
+}
+
+export interface DashboardAnalytics {
+  totalCases: CaseCount;
+  completedCases: CaseCount;
+  incompleteCases: CaseCount;
+  analyticsData: AnalyticsData[];
+}
+
+export interface DashboardAnalyticsResponse {
+  success: boolean;
+  data: DashboardAnalytics;
+}

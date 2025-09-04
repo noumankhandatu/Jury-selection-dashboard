@@ -2,16 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
-
-interface ChartData {
-  month: string;
-  cases: number;
-  completed: number;
-  incomplete: number;
-}
+import { AnalyticsData } from "@/api/types";
 
 interface DashboardChartProps {
-  data: ChartData[];
+  data: AnalyticsData[];
 }
 
 export default function DashboardChart({ data }: DashboardChartProps) {

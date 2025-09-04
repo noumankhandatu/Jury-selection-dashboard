@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import BaseUrl from "../utils/config/baseUrl";
-import { CaseData, CreateJurorsPayload } from "./types";
+import { CaseData, CreateJurorsPayload, DashboardAnalyticsResponse } from "./types";
 
 export const createCaseApi = async (caseData: CaseData) => {
   try {
@@ -293,6 +293,17 @@ export const updateSessionStatusApi = async (sessionId: string, status: string, 
     return response.data;
   } catch (error: any) {
     console.error("Error updating session status:", error);
+    throw error;
+  }
+};
+
+// Get dashboard analytics
+export const getDashboardAnalyticsApi = async (): Promise<DashboardAnalyticsResponse> => {
+  try {
+    const response = await BaseUrl.get("/dashboard/analytics");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching dashboard analytics:", error);
     throw error;
   }
 };

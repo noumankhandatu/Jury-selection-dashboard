@@ -17,7 +17,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { getCaseQuestionsApi } from "@/api/api";
-import { Juror } from "./JurorCard";
+import { CaseJuror } from "./JurorCard";
 
 interface Question {
   id: string;
@@ -27,7 +27,7 @@ interface Question {
 interface MultipleJurorsModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedJurors: Juror[];
+  selectedJurors: CaseJuror[];
   selectedCaseId?: string;
   onSubmit: (questionId: string, responseType: 'yes-no' | 'rating', responseValue: string) => void;
   onQuestionSelected?: (questionId: string) => void;

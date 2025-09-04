@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { SelectCase, type Case } from "@/components/shared/select-case";
 import { PDFUploader } from "./components/pdf-uploader";
 import { JurorDisplay } from "./components/juror-display";
-import { JurorDetailsDialog } from "./components/juror-details-dialog";
+import { ManageJurorDetailsModal } from "./components/manage-juror-details-modal";
 import { AddJurorDialog } from "./components/add-juror-dialog";
 import { extractAndParseJurorsFromPDF } from "./components/utils";
 import type { Juror } from "./components/types";
@@ -200,17 +200,6 @@ export default function ManageJurorsPage() {
             />
           )}
 
-          {shouldShowJurorDisplay && (
-            <JurorDisplay
-              selectedCase={selectedCase}
-              jurors={newJurors.length > 0 ? newJurors : oldJurors}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-              onViewDetails={handleViewJurorDetails}
-              onDelete={handleDeleteJuror}
-            />
-          )}
-
           {shouldShowSubmitButton && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <Card className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
@@ -245,9 +234,20 @@ export default function ManageJurorsPage() {
               </Card>
             </motion.div>
           )}
+
+          {shouldShowJurorDisplay && (
+            <JurorDisplay
+              selectedCase={selectedCase}
+              jurors={newJurors.length > 0 ? newJurors : oldJurors}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              onViewDetails={handleViewJurorDetails}
+              onDelete={handleDeleteJuror}
+            />
+          )}
         </div>
 
-        <JurorDetailsDialog isOpen={isJurorDetailsOpen} onClose={() => setIsJurorDetailsOpen(false)} juror={selectedJuror} />
+        <ManageJurorDetailsModal isOpen={isJurorDetailsOpen} onClose={() => setIsJurorDetailsOpen(false)} juror={selectedJuror} />
         <AddJurorDialog isOpen={isAddJurorOpen} onClose={() => setIsAddJurorOpen(false)} onSave={handleAddJuror} selectedCase={selectedCase} />
       </motion.div>
     </div>

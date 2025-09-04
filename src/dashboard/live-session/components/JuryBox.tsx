@@ -1,17 +1,18 @@
 import { Badge } from "@/components/ui/badge";
-import JurorCard, { Juror } from "./JurorCard";
+import JurorCard, { CaseJuror } from "./JurorCard";
 
 interface JuryBoxProps {
-  jurors: Juror[];
+  jurors: CaseJuror[];
   boxNumber: number;
-  selectedJurors: Juror[];
-  onJurorClick: (juror: Juror) => void;
+  selectedJurors: CaseJuror[];
+  onJurorClick: (juror: CaseJuror) => void;
   scoresByJurorId?: Record<string, {
     overallScore?: number;
   }>;
+  waitingJurors?: Set<string>;
 }
 
-const JuryBox = ({ jurors, boxNumber, selectedJurors, onJurorClick, scoresByJurorId }: JuryBoxProps) => {
+const JuryBox = ({ jurors, boxNumber, selectedJurors, onJurorClick, scoresByJurorId, waitingJurors }: JuryBoxProps) => {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow p-4 group">
       <div className="text-center mb-3">
@@ -27,6 +28,7 @@ const JuryBox = ({ jurors, boxNumber, selectedJurors, onJurorClick, scoresByJuro
             isSelected={selectedJurors.some(j => j.id === juror.id)}
             onClick={onJurorClick}
             overallScore={scoresByJurorId?.[juror.id]?.overallScore}
+            isWaiting={waitingJurors?.has(juror.id)}
           />
         ))}
       </div>

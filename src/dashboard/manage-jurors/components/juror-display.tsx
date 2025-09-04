@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Grid3X3, List, Scale, Users } from "lucide-react";
 import type { Juror } from "./types";
-import { JurorCard } from "./juror-card";
+import { ManageJurorCard } from "./manage-juror-card";
 import { JurorTable } from "./juror-table";
 import CardHeaderTag from "@/components/shared/card-header";
 
@@ -50,7 +50,7 @@ export function JurorDisplay({ selectedCase, jurors, viewMode, onViewModeChange,
               viewMode === "grid" ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
                   {jurors.map((juror) => (
-                    <JurorCard key={juror.id} juror={juror} onViewDetails={onViewDetails} />
+                    <ManageJurorCard key={juror.id} juror={juror} onViewDetails={onViewDetails} />
                   ))}
                 </div>
               ) : (

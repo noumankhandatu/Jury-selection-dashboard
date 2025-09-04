@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { getCaseQuestionsApi } from "@/api/api";
-import { Juror } from "./JurorCard";
+import { CaseJuror } from "./JurorCard";
 
 interface Question {
   id: string;
@@ -27,7 +27,7 @@ interface Question {
 interface SingleJurorModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  juror: Juror | null;
+  juror: CaseJuror | null;
   selectedCaseId?: string;
   onSubmit: (questionId: string, answer: string) => void;
   onQuestionSelected?: (questionId: string) => void;

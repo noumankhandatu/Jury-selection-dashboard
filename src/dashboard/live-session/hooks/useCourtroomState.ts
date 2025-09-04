@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Juror } from "../components/JurorCard";
+import { CaseJuror } from "../components/JurorCard";
 
-export const useCourtroomState = () => {
+export const useCourtroomState = (onRefreshSessionData?: () => void) => {
   // UI State
   const [benchAbove, setBenchAbove] = useState(false);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
@@ -11,13 +11,13 @@ export const useCourtroomState = () => {
   const [multipleJurorsModalOpen, setMultipleJurorsModalOpen] = useState(false);
   
   // Selection State
-  const [selectedJurors, setSelectedJurors] = useState<Juror[]>([]);
-  const [selectedSingleJuror, setSelectedSingleJuror] = useState<Juror | null>(null);
+  const [selectedJurors, setSelectedJurors] = useState<CaseJuror[]>([]);
+  const [selectedSingleJuror, setSelectedSingleJuror] = useState<CaseJuror | null>(null);
   
   // Form State - removed individual state as it's now managed within the modal
 
   // Event Handlers
-  const handleJurorClick = (juror: Juror) => {
+  const handleJurorClick = (juror: CaseJuror) => {
     if (isMultiSelectMode) {
       setSelectedJurors(prev => 
         prev.find(j => j.id === juror.id) 
@@ -36,6 +36,11 @@ export const useCourtroomState = () => {
       questionId,
       answer
     });
+    
+    // Refresh session data after submission
+    if (onRefreshSessionData) {
+      onRefreshSessionData();
+    }
   };
 
   const handleMultipleJurorsSubmit = (questionId: string, responseType: 'yes-no' | 'rating', responseValue: string) => {
@@ -45,6 +50,11 @@ export const useCourtroomState = () => {
       responseType,
       responseValue
     });
+    
+    // Refresh session data after submission
+    if (onRefreshSessionData) {
+      onRefreshSessionData();
+    }
   };
 
   const handleToggleMultiSelect = () => {

@@ -2,10 +2,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Info, Calendar, Briefcase, GraduationCap, MapPin, User, Clock } from "lucide-react";
+import { Info, Calendar, Briefcase, MapPin, User, Clock } from "lucide-react";
 import type { Juror } from "./types";
 import { generateAvatar, getAvailabilityColor } from "./utils";
-import { BiasGauge } from "@/components/shared/bias-gauge";
+
 
 interface JurorTableProps {
   jurors: Juror[];
@@ -22,14 +22,11 @@ export function JurorTable({ jurors, onViewDetails }: JurorTableProps) {
             <TableHead className="font-semibold">Details</TableHead>
             <TableHead className="font-semibold">Contact</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
-            <TableHead className="font-semibold">Risk</TableHead>
             <TableHead className="font-semibold text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {jurors.map((juror) => {
-            const effectiveBiasStatus = juror.isStrikedOut ? "high" : juror.biasStatus;
-
             return (
               <TableRow key={juror.id} className="hover:bg-blue-50/50 transition-colors">
                 <TableCell>
@@ -67,10 +64,6 @@ export function JurorTable({ jurors, onViewDetails }: JurorTableProps) {
                       <span className="truncate max-w-32">{juror.occupation}</span>
                     </div>
                     <div className="flex items-center text-sm text-gray-700">
-                      <GraduationCap className="h-3 w-3 mr-2 text-green-600" />
-                      <span className="truncate max-w-32">{juror.education}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-700">
                       <MapPin className="h-3 w-3 mr-2 text-orange-600" />
                       <span className="truncate max-w-32">{juror.location}</span>
                     </div>
@@ -98,11 +91,7 @@ export function JurorTable({ jurors, onViewDetails }: JurorTableProps) {
                   </div>
                 </TableCell>
 
-                <TableCell>
-                  <div className="flex flex-col items-center space-y-2">
-                    <BiasGauge biasStatus={effectiveBiasStatus} size="sm" />
-                  </div>
-                </TableCell>
+
 
                 <TableCell className="text-center">
                   <Button

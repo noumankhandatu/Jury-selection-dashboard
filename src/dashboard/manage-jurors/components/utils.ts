@@ -242,7 +242,7 @@ Extract information for each juror and return it as a JSON object with this exac
 IMPORTANT EXTRACTION INSTRUCTIONS:
 - Extract ALL jurors found in these pages
 - Look for every piece of information including numbers, dates, codes, signatures
-- If specific information is missing, use "Not Specified" as default
+- If specific information is missing, use null as default
 - For Yes/No fields, look for checkmarks, X marks, or written responses
 - Assess bias status as "low", "moderate", or "high" based on responses
 - Set availability as "Available" unless otherwise indicated

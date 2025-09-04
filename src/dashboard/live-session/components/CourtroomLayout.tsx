@@ -1,4 +1,4 @@
-import { Juror } from "./JurorCard";
+import { CaseJuror } from "./JurorCard";
 import JuryBox from "./JuryBox";
 import JudgesBench from "./JudgesBench";
 import CourtroomHeader from "./CourtroomHeader";
@@ -10,13 +10,14 @@ import { useEffect, useState } from "react";
 
 // Types
 interface CourtroomLayoutProps {
-  allJurors?: Juror[];
+  allJurors?: CaseJuror[];
   selectedCaseId?: string;
   sessionId?: string;
+  onRefreshSessionData?: () => void;
 }
 
 // Main CourtroomLayout Component
-const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId }: CourtroomLayoutProps) => {
+const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId, onRefreshSessionData }: CourtroomLayoutProps) => {
   const {
     // State
     benchAbove,
@@ -37,9 +38,10 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId }: Courtroo
     handleToggleMultiSelect,
     handleToggleBenchPosition,
     handleAskMultipleJurors,
-  } = useCourtroomState();
+  } = useCourtroomState(onRefreshSessionData);
 
   const [scoresByJurorId, setScoresByJurorId] = useState<Record<string, { overallScore?: number }>>({});
+  const [waitingJurors, setWaitingJurors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -64,6 +66,10 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId }: Courtroo
   const onSubmitSingle = async (questionId: string, _answer: string) => {
     handleSingleJurorSubmit(questionId, _answer);
     if (!sessionId || !selectedSingleJuror?.id) return;
+    
+    // Add juror to waiting state
+    setWaitingJurors(prev => new Set(prev).add(selectedSingleJuror.id));
+    
     try {
       const saved = await saveJurorResponseApi({
         sessionId,
@@ -87,8 +93,20 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId }: Courtroo
           return updated;
         });
       }
+      
+      // Refresh session data after successful submission
+      if (onRefreshSessionData) {
+        onRefreshSessionData();
+      }
     } catch (err) {
       console.error("Failed to save response for single juror", err);
+    } finally {
+      // Remove juror from waiting state
+      setWaitingJurors(prev => {
+        const updated = new Set(prev);
+        updated.delete(selectedSingleJuror.id);
+        return updated;
+      });
     }
   };
 
@@ -96,6 +114,15 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId }: Courtroo
     handleMultipleJurorsSubmit(questionId, responseType, responseValue);
     if (!sessionId || selectedJurors.length === 0) return;
     const mappedType = responseType === 'yes-no' ? "YES_NO" : "RATING";
+    
+    // Add all selected jurors to waiting state
+    const jurorIds = selectedJurors.map(j => j.id);
+    setWaitingJurors(prev => {
+      const updated = new Set(prev);
+      jurorIds.forEach(id => updated.add(id));
+      return updated;
+    });
+    
     try {
       const saveResults = await Promise.all(
         selectedJurors.map(j =>
@@ -123,8 +150,20 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId }: Courtroo
         });
         return updated;
       });
+      
+      // Refresh session data after successful submission
+      if (onRefreshSessionData) {
+        onRefreshSessionData();
+      }
     } catch (err) {
       console.error("Failed to save responses for multiple jurors", err);
+    } finally {
+      // Remove all selected jurors from waiting state
+      setWaitingJurors(prev => {
+        const updated = new Set(prev);
+        jurorIds.forEach(id => updated.delete(id));
+        return updated;
+      });
     }
   };
 
@@ -149,6 +188,8 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId }: Courtroo
           boxNumber={i + 1}
           selectedJurors={selectedJurors}
           onJurorClick={handleJurorClick}
+          scoresByJurorId={scoresByJurorId}
+          waitingJurors={waitingJurors}
         />
       );
     }).filter(Boolean); // Remove null entries
@@ -186,6 +227,7 @@ const CourtroomLayout = ({ allJurors = [], selectedCaseId, sessionId }: Courtroo
                   selectedJurors={selectedJurors}
                   onJurorClick={handleJurorClick}
                   scoresByJurorId={scoresByJurorId}
+                  waitingJurors={waitingJurors}
                 />
               );
             }).filter(Boolean)}

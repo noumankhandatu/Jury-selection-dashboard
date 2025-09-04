@@ -5,34 +5,48 @@ import { itemVariants } from "@/utils/fn";
 import { useLiveSession } from "./useLiveSession";
 import LiveSessionData from "./components/live-session-data";
 import CourtroomLayout from "./components/CourtroomLayout";
-import { getJurorsApi } from "@/api/api";
-import { Juror } from "./components/JurorCard";
+import { getCaseJurorsApi } from "@/api/api";
+import { CaseJuror } from "./components/JurorCard";
 import { useEffect, useState } from "react";
 
 const LiveSession = () => {
   const { cases, selectedCase, handleCaseSelect } = useLiveSession();
-  const [jurors, setJurors] = useState<Juror[]>([]);
+  const [jurors, setJurors] = useState<CaseJuror[]>([]);
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [refreshSessionData, setRefreshSessionData] = useState<number>(0);
 
-  // Fetch jurors from API
+  // Function to trigger session data refresh
+  const triggerSessionDataRefresh = () => {
+    setRefreshSessionData(prev => prev + 1);
+  };
+
+  // Fetch jurors for selected case
   useEffect(() => {
-    const fetchJurors = async () => {
+    const fetchCaseJurors = async () => {
+      if (!selectedCase?.id) {
+        setJurors([]);
+        return;
+      }
+
       try {
         setLoading(true);
-        const jurorsData = await getJurorsApi();
-        setJurors(jurorsData || []);
+        const response = await getCaseJurorsApi(selectedCase.id);
+        if (response.success && response.data?.jurors) {
+          setJurors(response.data.jurors);
+        } else {
+          setJurors([]);
+        }
       } catch (error) {
-        console.error("Error fetching jurors:", error);
+        console.error("Error fetching case jurors:", error);
         setJurors([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchJurors();
-  }, []);
-
+    fetchCaseJurors();
+  }, [selectedCase?.id]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-20 px-4 lg:p-8">
       <motion.div className="mx-auto space-y-6" initial="hidden" animate="visible" variants={itemVariants}>
@@ -50,7 +64,13 @@ const LiveSession = () => {
             />
           </div>
           <div>
-            <LiveSessionData caseSelected={selectedCase} onSessionCreated={(id: string) => setSessionId(id)} />
+            <LiveSessionData 
+              jurors={jurors} 
+              caseSelected={selectedCase} 
+              onSessionCreated={(id: string) => setSessionId(id)}
+              refreshSessionData={refreshSessionData}
+              sessionId={sessionId}
+            />
           </div>
         </div>
         {selectedCase && (
@@ -65,6 +85,7 @@ const LiveSession = () => {
                   allJurors={jurors} 
                   selectedCaseId={selectedCase?.id}
                   sessionId={sessionId || undefined}
+                  onRefreshSessionData={triggerSessionDataRefresh}
                 />
               )}
             </div>

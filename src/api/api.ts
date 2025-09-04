@@ -41,6 +41,17 @@ export const getJurorsApi = async () => {
   }
 };
 
+// Get jurors for a specific case
+export const getCaseJurorsApi = async (caseId: string) => {
+  try {
+    const response = await BaseUrl.get(`/cases/${caseId}/jurors`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching case jurors:", error);
+    throw error;
+  }
+};
+
 // Create a new question for a case
 export const createQuestionApi = async (
   caseId: string,
@@ -250,6 +261,38 @@ export const getResponseAssessmentApi = async (responseId: string) => {
     return response.data;
   } catch (error: any) {
     console.error("Error fetching response assessment:", error);
+    throw error;
+  }
+};
+
+// Get session status
+export const getSessionStatusApi = async (sessionId: string) => {
+  try {
+    const response = await BaseUrl.get(`/sessions/${sessionId}/status`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching session status:", error);
+    throw error;
+  }
+};
+
+// Update session status
+export const updateSessionStatusApi = async (sessionId: string, status: string, startTime?: string, endTime?: string) => {
+  try {
+    const payload: any = { status };
+    
+    // Add startTime and endTime if provided
+    if (startTime) {
+      payload.startTime = startTime;
+    }
+    if (endTime) {
+      payload.endTime = endTime;
+    }
+    
+    const response = await BaseUrl.put(`/sessions/${sessionId}/status`, payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating session status:", error);
     throw error;
   }
 };

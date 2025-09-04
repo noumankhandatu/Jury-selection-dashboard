@@ -49,3 +49,35 @@ export interface CreateJurorsPayload {
   submissionDate: string;
   jurors: Juror[];
 }
+
+export interface SessionCount {
+  assignments: number;
+  responses: number;
+  assessments: number;
+}
+
+export interface SessionData {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  startTime: string;
+  endTime: string;
+  caseId: string;
+  case: {
+    caseNumber: string;
+    caseName: string;
+    caseType: string;
+  };
+  _count: SessionCount;
+}
+
+export interface SessionsByCaseResponse {
+  sessions: SessionData[];
+}
+
+export type SessionStatus = 'PENDING' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+
+export interface SessionStatusResponse {
+  status: SessionStatus;
+}

@@ -1,21 +1,37 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { getCasesApi, getSessionsByCaseApi, getSessionStatisticsApi } from "@/api/api";
+import {
+  getCasesApi,
+  getSessionsByCaseApi,
+  getSessionStatisticsApi,
+  getBestJurorsApi,
+} from "@/api/api";
 import type { Case as UISelectCase } from "@/components/shared/select-case";
 import type { SessionItem } from "@/components/shared/select-session";
-import type { ApiCase, ApiSession, ApiSessionById, ApiSessionStatisticsResponse } from "../types";
+import type {
+  ApiCase,
+  ApiSession,
+  ApiSessionById,
+  ApiSessionStatisticsResponse,
+} from "../types";
 
 export const useSessionAnalysis = () => {
   const [cases, setCases] = useState<UISelectCase[]>([]);
   const [selectedCase, setSelectedCase] = useState<UISelectCase | null>(null);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
-  const [selectedSession, setSelectedSession] = useState<SessionItem | null>(null);
+  const [selectedSession, setSelectedSession] = useState<SessionItem | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [sessionDetail, setSessionDetail] = useState<ApiSessionById | null>(null);
+  const [sessionDetail, setSessionDetail] = useState<ApiSessionById | null>(
+    null
+  );
   const [selectedResponseId, setSelectedResponseId] = useState<string>("");
-  const [sessionStats, setSessionStats] = useState<ApiSessionStatisticsResponse | null>(null);
+  const [sessionStats, setSessionStats] =
+    useState<ApiSessionStatisticsResponse | null>(null);
+  const [bestJurors, setBestJurors] = useState<any[] | null>(null);
 
   useEffect(() => {
     const fetchCases = async () => {
@@ -23,15 +39,17 @@ export const useSessionAnalysis = () => {
       setError("");
       try {
         const response = await getCasesApi();
-        const transformed: UISelectCase[] = ((response || []) as ApiCase[]).map((c) => ({
-          id: String(c.id),
-          number: c.caseNumber,
-          name: c.caseName,
-          type: c.caseType,
-          status: "Active",
-          createdDate: c.createdAt,
-          questions: c.caseQuestions,
-        }));
+        const transformed: UISelectCase[] = ((response || []) as ApiCase[]).map(
+          (c) => ({
+            id: String(c.id),
+            number: c.caseNumber,
+            name: c.caseName,
+            type: c.caseType,
+            status: "Active",
+            createdDate: c.createdAt,
+            questions: c.caseQuestions,
+          })
+        );
         setCases(transformed);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load cases");
@@ -52,7 +70,9 @@ export const useSessionAnalysis = () => {
       }
       try {
         const data = await getSessionsByCaseApi(selectedCase.id);
-        const list = Array.isArray(data?.sessions) ? (data.sessions as ApiSession[]) : [];
+        const list = Array.isArray(data?.sessions)
+          ? (data.sessions as ApiSession[])
+          : [];
         const transformed: SessionItem[] = list.map((s) => ({
           id: s.id,
           name: s.name,
@@ -106,6 +126,7 @@ export const useSessionAnalysis = () => {
       } catch {
         setSessionStats(null);
         setSessionDetail(null);
+        setBestJurors(null);
       }
     };
     fetchDetail();
@@ -122,11 +143,31 @@ export const useSessionAnalysis = () => {
     setSelectedSession,
     sessionDetail,
     sessionStats,
+    bestJurors,
+    fetchBestJurors: async (minScore: number, maxScore?: number) => {
+      if (!selectedSession?.id) return;
+      try {
+        // Request a larger limit so we can filter down on client for mid/low buckets
+        const desiredLimit = typeof maxScore === "number" ? 100 : 30;
+        const res = await getBestJurorsApi(
+          selectedSession.id,
+          minScore,
+          desiredLimit
+        );
+        let list = Array.isArray(res?.bestJurors) ? res.bestJurors : [];
+        if (typeof maxScore === "number") {
+          list = list.filter(
+            (j: any) => Number(j?.overallScore ?? 0) <= maxScore
+          );
+        }
+        setBestJurors(list);
+      } catch {
+        setBestJurors([]);
+      }
+    },
     selectedResponseId,
     setSelectedResponseId,
     isLoading,
     error,
   };
 };
-
-

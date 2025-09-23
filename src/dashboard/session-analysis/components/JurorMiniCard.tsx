@@ -31,9 +31,10 @@ export function JurorMiniCard({
       : null;
   let borderColorClass = "border-gray-200";
   if (typeof normalizedScore === "number") {
-    if (normalizedScore <= 25) borderColorClass = "border-red-300";
-    else if (normalizedScore <= 75) borderColorClass = "border-yellow-300";
-    else borderColorClass = "border-green-300";
+    if (normalizedScore < 60) borderColorClass = "border-red-300"; // <60 red
+    else if (normalizedScore <= 79)
+      borderColorClass = "border-yellow-300"; // 60–79 amber
+    else borderColorClass = "border-green-300"; // ≥80 green
   } else {
     borderColorClass =
       effectiveBiasStatus === "high"

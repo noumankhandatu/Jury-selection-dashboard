@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import BaseUrl from "../utils/config/baseUrl";
-import { CaseData, CreateJurorsPayload, DashboardAnalyticsResponse } from "./types";
+import {
+  CaseData,
+  CreateJurorsPayload,
+  DashboardAnalyticsResponse,
+} from "./types";
 
 export const createCaseApi = async (caseData: CaseData) => {
   try {
@@ -64,7 +68,10 @@ export const createQuestionApi = async (
   }
 ) => {
   try {
-    const response = await BaseUrl.post(`/questions/cases/${caseId}/questions`, payload);
+    const response = await BaseUrl.post(
+      `/questions/cases/${caseId}/questions`,
+      payload
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error creating question:", error);
@@ -106,7 +113,10 @@ export const updateQuestionApi = async (
   }
 ) => {
   try {
-    const response = await BaseUrl.put(`/questions/questions/${questionId}`, payload);
+    const response = await BaseUrl.put(
+      `/questions/questions/${questionId}`,
+      payload
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error updating question:", error);
@@ -126,9 +136,15 @@ export const deleteQuestionApi = async (questionId: string) => {
 };
 
 // Reorder questions for a case
-export const reorderQuestionsApi = async (caseId: string, payload: { questionIds: string[] }) => {
+export const reorderQuestionsApi = async (
+  caseId: string,
+  payload: { questionIds: string[] }
+) => {
   try {
-    const response = await BaseUrl.put(`/questions/cases/${caseId}/questions/reorder`, payload);
+    const response = await BaseUrl.put(
+      `/questions/cases/${caseId}/questions/reorder`,
+      payload
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error reordering questions:", error);
@@ -211,9 +227,14 @@ export const getSessionScoresApi = async (sessionId: string) => {
 };
 
 // Get detailed juror analysis for a juror in a session
-export const getJurorDetailsAnalysisApi = async (sessionId: string, jurorId: string) => {
+export const getJurorDetailsAnalysisApi = async (
+  sessionId: string,
+  jurorId: string
+) => {
   try {
-    const response = await BaseUrl.get(`/scores/session/${sessionId}/juror/${jurorId}/details`);
+    const response = await BaseUrl.get(
+      `/scores/session/${sessionId}/juror/${jurorId}/details`
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error fetching juror details analysis:", error);
@@ -246,10 +267,32 @@ export const getSessionByIdApi = async (sessionId: string) => {
 // Get session statistics (overview + top jurors)
 export const getSessionStatisticsApi = async (sessionId: string) => {
   try {
-    const response = await BaseUrl.get(`/scores/session/${sessionId}/statistics`);
+    const response = await BaseUrl.get(
+      `/scores/session/${sessionId}/statistics`
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error fetching session statistics:", error);
+    throw error;
+  }
+};
+
+// Get best jurors by minimum score threshold for a session
+export const getBestJurorsApi = async (
+  sessionId: string,
+  minScore: number,
+  limit?: number
+) => {
+  try {
+    const response = await BaseUrl.get(
+      `/scores/session/${sessionId}/best-jurors`,
+      {
+        params: { minScore, ...(typeof limit === "number" ? { limit } : {}) },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching best jurors:", error);
     throw error;
   }
 };
@@ -277,10 +320,15 @@ export const getSessionStatusApi = async (sessionId: string) => {
 };
 
 // Update session status
-export const updateSessionStatusApi = async (sessionId: string, status: string, startTime?: string, endTime?: string) => {
+export const updateSessionStatusApi = async (
+  sessionId: string,
+  status: string,
+  startTime?: string,
+  endTime?: string
+) => {
   try {
     const payload: any = { status };
-    
+
     // Add startTime and endTime if provided
     if (startTime) {
       payload.startTime = startTime;
@@ -288,8 +336,11 @@ export const updateSessionStatusApi = async (sessionId: string, status: string, 
     if (endTime) {
       payload.endTime = endTime;
     }
-    
-    const response = await BaseUrl.put(`/sessions/${sessionId}/status`, payload);
+
+    const response = await BaseUrl.put(
+      `/sessions/${sessionId}/status`,
+      payload
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error updating session status:", error);
@@ -298,12 +349,13 @@ export const updateSessionStatusApi = async (sessionId: string, status: string, 
 };
 
 // Get dashboard analytics
-export const getDashboardAnalyticsApi = async (): Promise<DashboardAnalyticsResponse> => {
-  try {
-    const response = await BaseUrl.get("/dashboard/analytics");
-    return response.data;
-  } catch (error: any) {
-    console.error("Error fetching dashboard analytics:", error);
-    throw error;
-  }
-};
+export const getDashboardAnalyticsApi =
+  async (): Promise<DashboardAnalyticsResponse> => {
+    try {
+      const response = await BaseUrl.get("/dashboard/analytics");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching dashboard analytics:", error);
+      throw error;
+    }
+  };

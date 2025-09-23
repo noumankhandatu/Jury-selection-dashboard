@@ -7,7 +7,11 @@ interface OverallGaugeProps {
   showLabel?: boolean;
 }
 
-export const OverallGauge: React.FC<OverallGaugeProps> = ({ valuePercent, size = "md", showLabel = true }) => {
+export const OverallGauge: React.FC<OverallGaugeProps> = ({
+  valuePercent,
+  size = "md",
+  showLabel = true,
+}) => {
   const clamped = Math.max(0, Math.min(100, valuePercent));
 
   const getSizeConfig = () => {
@@ -24,14 +28,20 @@ export const OverallGauge: React.FC<OverallGaugeProps> = ({ valuePercent, size =
   };
 
   const { width, height, fontSize, marginTop } = getSizeConfig();
+  // Thresholds: <60 red, 60–79 amber, ≥80 green
   const colors = ["#ef4444", "#f59e0b", "#10b981"]; // red -> amber -> green
+  const arcsLength = [0.6, 0.19, 0.21];
 
   return (
-    <div className="relative inline-flex flex-col items-center justify-center" style={{ width, height: height + (showLabel ? 20 : 0) }}>
+    <div
+      className="relative inline-flex flex-col items-center justify-center"
+      style={{ width, height: height + (showLabel ? 20 : 0) }}
+    >
       <div style={{ marginTop }}>
         <GaugeChart
           id={`overall-gauge-${Math.random()}`}
           nrOfLevels={3}
+          arcsLength={arcsLength}
           colors={colors}
           arcWidth={0.3}
           percent={clamped / 100}
@@ -44,8 +54,13 @@ export const OverallGauge: React.FC<OverallGaugeProps> = ({ valuePercent, size =
       </div>
 
       {showLabel && (
-        <div className="absolute bottom-0 flex flex-col items-center" style={{ fontSize }}>
-          <span className="font-bold text-gray-700">{Math.round(clamped)}%</span>
+        <div
+          className="absolute bottom-0 flex flex-col items-center"
+          style={{ fontSize }}
+        >
+          <span className="font-bold text-gray-700">
+            {Math.round(clamped)}%
+          </span>
           <span className="text-gray-500 text-[10px]">Overall</span>
         </div>
       )}
@@ -54,5 +69,3 @@ export const OverallGauge: React.FC<OverallGaugeProps> = ({ valuePercent, size =
 };
 
 export default OverallGauge;
-
-

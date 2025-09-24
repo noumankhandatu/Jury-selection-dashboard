@@ -1,11 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Save, X } from "lucide-react";
@@ -18,7 +30,12 @@ interface AddJurorDialogProps {
   selectedCase: any | null;
 }
 
-export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJurorDialogProps) {
+export function AddJurorDialog({
+  isOpen,
+  onClose,
+  onSave,
+  selectedCase,
+}: AddJurorDialogProps) {
   const [activeTab, setActiveTab] = useState("basic");
 
   const initialJuror: Partial<Juror> = {
@@ -100,22 +117,39 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden sm:rounded-2xl border-0 shadow-2xl ">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold">Add New Juror</DialogTitle>
-            <Button variant="ghost" size="sm" onClick={handleClose}>
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center justify-between p-3 rounded-xl ">
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Add New Juror
+            </DialogTitle>
           </div>
-          <DialogDescription>Manually add a new juror to {selectedCase?.name || "the selected case"}</DialogDescription>
+          <DialogDescription>
+            Manually add a new juror to{" "}
+            {selectedCase?.name || "the selected case"}
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="personal">Personal Details</TabsTrigger>
-            <TabsTrigger value="experience">Experience</TabsTrigger>
+          <TabsList className="grid grid-cols-3 mb-4 p-1 rounded-xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10">
+            <TabsTrigger
+              value="basic"
+              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600"
+            >
+              Basic Info
+            </TabsTrigger>
+            <TabsTrigger
+              value="personal"
+              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600"
+            >
+              Personal Details
+            </TabsTrigger>
+            <TabsTrigger
+              value="experience"
+              className="rounded-lg data-[state=active]:text-white data-[state=active]:shadow data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600"
+            >
+              Experience
+            </TabsTrigger>
           </TabsList>
 
           <ScrollArea className="h-[60vh] pr-4">
@@ -139,7 +173,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="jurorNumber"
                     value={newJuror.jurorNumber || ""}
-                    onChange={(e) => handleInputChange("jurorNumber", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("jurorNumber", e.target.value)
+                    }
                     placeholder="J-1234"
                   />
                 </div>
@@ -150,14 +186,24 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                     id="age"
                     type="number"
                     value={newJuror.age || ""}
-                    onChange={(e) => handleInputChange("age", Number.parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "age",
+                        Number.parseInt(e.target.value) || 0
+                      )
+                    }
                     placeholder="35"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="gender">Gender</Label>
-                  <Select value={newJuror.gender || ""} onValueChange={(value) => handleInputChange("gender", value)}>
+                  <Select
+                    value={newJuror.gender || ""}
+                    onValueChange={(value) =>
+                      handleInputChange("gender", value)
+                    }
+                  >
                     <SelectTrigger id="gender">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
@@ -165,7 +211,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                       <SelectItem value="Male">Male</SelectItem>
                       <SelectItem value="Female">Female</SelectItem>
                       <SelectItem value="Non-binary">Non-binary</SelectItem>
-                      <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                      <SelectItem value="Prefer not to say">
+                        Prefer not to say
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -196,7 +244,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="occupation"
                     value={newJuror.occupation || ""}
-                    onChange={(e) => handleInputChange("occupation", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("occupation", e.target.value)
+                    }
                     placeholder="Software Engineer"
                   />
                 </div>
@@ -206,7 +256,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="employer"
                     value={newJuror.employer || ""}
-                    onChange={(e) => handleInputChange("employer", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("employer", e.target.value)
+                    }
                     placeholder="Acme Inc."
                   />
                 </div>
@@ -215,7 +267,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Label htmlFor="biasStatus">Risk Level</Label>
                   <Select
                     value={newJuror.biasStatus || "low"}
-                    onValueChange={(value: "low" | "moderate" | "high") => handleInputChange("biasStatus", value)}
+                    onValueChange={(value: "low" | "moderate" | "high") =>
+                      handleInputChange("biasStatus", value)
+                    }
                   >
                     <SelectTrigger id="biasStatus">
                       <SelectValue placeholder="Select risk level" />
@@ -230,7 +284,12 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
 
                 <div className="space-y-2">
                   <Label htmlFor="availability">Availability</Label>
-                  <Select value={newJuror.availability || "Available"} onValueChange={(value) => handleInputChange("availability", value)}>
+                  <Select
+                    value={newJuror.availability || "Available"}
+                    onValueChange={(value) =>
+                      handleInputChange("availability", value)
+                    }
+                  >
                     <SelectTrigger id="availability">
                       <SelectValue placeholder="Select availability" />
                     </SelectTrigger>
@@ -252,7 +311,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                     id="dateOfBirth"
                     type="date"
                     value={newJuror.dateOfBirth || ""}
-                    onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("dateOfBirth", e.target.value)
+                    }
                   />
                 </div>
 
@@ -271,7 +332,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="address"
                     value={newJuror.address || ""}
-                    onChange={(e) => handleInputChange("address", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("address", e.target.value)
+                    }
                     placeholder="123 Main St, Anytown, ST 12345"
                   />
                 </div>
@@ -281,7 +344,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="mailingAddress"
                     value={newJuror.mailingAddress || ""}
-                    onChange={(e) => handleInputChange("mailingAddress", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("mailingAddress", e.target.value)
+                    }
                     placeholder="Same as home address or different"
                   />
                 </div>
@@ -291,7 +356,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="county"
                     value={newJuror.county || ""}
-                    onChange={(e) => handleInputChange("county", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("county", e.target.value)
+                    }
                     placeholder="County of residence"
                   />
                 </div>
@@ -301,14 +368,21 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="location"
                     value={newJuror.location || ""}
-                    onChange={(e) => handleInputChange("location", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("location", e.target.value)
+                    }
                     placeholder="City, State"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="tdl">Driver's License #</Label>
-                  <Input id="tdl" value={newJuror.tdl || ""} onChange={(e) => handleInputChange("tdl", e.target.value)} placeholder="DL12345678" />
+                  <Input
+                    id="tdl"
+                    value={newJuror.tdl || ""}
+                    onChange={(e) => handleInputChange("tdl", e.target.value)}
+                    placeholder="DL12345678"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -316,14 +390,21 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="workPhone"
                     value={newJuror.workPhone || ""}
-                    onChange={(e) => handleInputChange("workPhone", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("workPhone", e.target.value)
+                    }
                     placeholder="(555) 987-6543"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="maritalStatus">Marital Status</Label>
-                  <Select value={newJuror.maritalStatus || ""} onValueChange={(value) => handleInputChange("maritalStatus", value)}>
+                  <Select
+                    value={newJuror.maritalStatus || ""}
+                    onValueChange={(value) =>
+                      handleInputChange("maritalStatus", value)
+                    }
+                  >
                     <SelectTrigger id="maritalStatus">
                       <SelectValue placeholder="Select marital status" />
                     </SelectTrigger>
@@ -342,7 +423,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="spouse"
                     value={newJuror.spouse || ""}
-                    onChange={(e) => handleInputChange("spouse", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("spouse", e.target.value)
+                    }
                     placeholder="Jane Doe"
                   />
                 </div>
@@ -356,7 +439,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="education"
                     value={newJuror.education || ""}
-                    onChange={(e) => handleInputChange("education", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("education", e.target.value)
+                    }
                     placeholder="Bachelor's Degree in Computer Science"
                   />
                 </div>
@@ -366,17 +451,23 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="experience"
                     value={newJuror.experience || ""}
-                    onChange={(e) => handleInputChange("experience", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("experience", e.target.value)
+                    }
                     placeholder="5 years in software development"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="employmentDuration">Employment Duration</Label>
+                  <Label htmlFor="employmentDuration">
+                    Employment Duration
+                  </Label>
                   <Input
                     id="employmentDuration"
                     value={newJuror.employmentDuration || ""}
-                    onChange={(e) => handleInputChange("employmentDuration", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("employmentDuration", e.target.value)
+                    }
                     placeholder="2 years"
                   />
                 </div>
@@ -386,7 +477,9 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="children"
                     value={newJuror.children || ""}
-                    onChange={(e) => handleInputChange("children", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("children", e.target.value)
+                    }
                     placeholder="2"
                   />
                 </div>
@@ -396,14 +489,21 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                   <Input
                     id="panelPosition"
                     value={newJuror.panelPosition || ""}
-                    onChange={(e) => handleInputChange("panelPosition", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("panelPosition", e.target.value)
+                    }
                     placeholder="Lead Juror"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="citizenship">Citizenship</Label>
-                  <Select value={newJuror.citizenship || "Yes"} onValueChange={(value) => handleInputChange("citizenship", value)}>
+                  <Select
+                    value={newJuror.citizenship || "Yes"}
+                    onValueChange={(value) =>
+                      handleInputChange("citizenship", value)
+                    }
+                  >
                     <SelectTrigger id="citizenship">
                       <SelectValue placeholder="Select citizenship status" />
                     </SelectTrigger>
@@ -416,7 +516,12 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
 
                 <div className="space-y-2">
                   <Label htmlFor="criminalCase">Criminal Case Experience</Label>
-                  <Select value={newJuror.criminalCase || "No"} onValueChange={(value) => handleInputChange("criminalCase", value)}>
+                  <Select
+                    value={newJuror.criminalCase || "No"}
+                    onValueChange={(value) =>
+                      handleInputChange("criminalCase", value)
+                    }
+                  >
                     <SelectTrigger id="criminalCase">
                       <SelectValue placeholder="Select experience" />
                     </SelectTrigger>
@@ -428,8 +533,15 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="accidentalInjury">Accidental Injury Experience</Label>
-                  <Select value={newJuror.accidentalInjury || "No"} onValueChange={(value) => handleInputChange("accidentalInjury", value)}>
+                  <Label htmlFor="accidentalInjury">
+                    Accidental Injury Experience
+                  </Label>
+                  <Select
+                    value={newJuror.accidentalInjury || "No"}
+                    onValueChange={(value) =>
+                      handleInputChange("accidentalInjury", value)
+                    }
+                  >
                     <SelectTrigger id="accidentalInjury">
                       <SelectValue placeholder="Select experience" />
                     </SelectTrigger>
@@ -442,7 +554,12 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
 
                 <div className="space-y-2">
                   <Label htmlFor="civilJury">Civil Jury Experience</Label>
-                  <Select value={newJuror.civilJury || "No"} onValueChange={(value) => handleInputChange("civilJury", value)}>
+                  <Select
+                    value={newJuror.civilJury || "No"}
+                    onValueChange={(value) =>
+                      handleInputChange("civilJury", value)
+                    }
+                  >
                     <SelectTrigger id="civilJury">
                       <SelectValue placeholder="Select experience" />
                     </SelectTrigger>
@@ -455,7 +572,12 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
 
                 <div className="space-y-2">
                   <Label htmlFor="criminalJury">Criminal Jury Experience</Label>
-                  <Select value={newJuror.criminalJury || "No"} onValueChange={(value) => handleInputChange("criminalJury", value)}>
+                  <Select
+                    value={newJuror.criminalJury || "No"}
+                    onValueChange={(value) =>
+                      handleInputChange("criminalJury", value)
+                    }
+                  >
                     <SelectTrigger id="criminalJury">
                       <SelectValue placeholder="Select experience" />
                     </SelectTrigger>
@@ -472,11 +594,18 @@ export function AddJurorDialog({ isOpen, onClose, onSave, selectedCase }: AddJur
 
         {/* Save and Cancel Buttons */}
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={handleClose}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            className="border-2 border-red-200 text-red-700 hover:text-red-50 hover:bg-red-500/80 hover:border-red-500"
+          >
             <X className="h-4 w-4 mr-2" />
             Cancel
           </Button>
-          <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
+          <Button
+            onClick={handleSave}
+            className="text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-md"
+          >
             <Save className="h-4 w-4 mr-2" />
             Save Juror
           </Button>

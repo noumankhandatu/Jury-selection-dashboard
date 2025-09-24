@@ -5,23 +5,24 @@ export const useCourtroomState = (onRefreshSessionData?: () => void) => {
   // UI State
   const [benchAbove, setBenchAbove] = useState(false);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-  
+
   // Modal State
   const [singleJurorModalOpen, setSingleJurorModalOpen] = useState(false);
   const [multipleJurorsModalOpen, setMultipleJurorsModalOpen] = useState(false);
-  
+
   // Selection State
   const [selectedJurors, setSelectedJurors] = useState<CaseJuror[]>([]);
-  const [selectedSingleJuror, setSelectedSingleJuror] = useState<CaseJuror | null>(null);
-  
+  const [selectedSingleJuror, setSelectedSingleJuror] =
+    useState<CaseJuror | null>(null);
+
   // Form State - removed individual state as it's now managed within the modal
 
   // Event Handlers
   const handleJurorClick = (juror: CaseJuror) => {
     if (isMultiSelectMode) {
-      setSelectedJurors(prev => 
-        prev.find(j => j.id === juror.id) 
-          ? prev.filter(j => j.id !== juror.id)
+      setSelectedJurors((prev) =>
+        prev.find((j) => j.id === juror.id)
+          ? prev.filter((j) => j.id !== juror.id)
           : [...prev, juror]
       );
     } else {
@@ -34,23 +35,27 @@ export const useCourtroomState = (onRefreshSessionData?: () => void) => {
     console.log("Single Juror Answer:", {
       juror: selectedSingleJuror,
       questionId,
-      answer
+      answer,
     });
-    
+
     // Refresh session data after submission
     if (onRefreshSessionData) {
       onRefreshSessionData();
     }
   };
 
-  const handleMultipleJurorsSubmit = (questionId: string, responseType: 'yes-no' | 'rating', responseValue: string) => {
+  const handleMultipleJurorsSubmit = (
+    questionId: string,
+    responseType: "yes-no" | "rating",
+    responseValue: string
+  ) => {
     console.log("Multiple Jurors Answer:", {
       jurors: selectedJurors,
       questionId,
       responseType,
-      responseValue
+      responseValue,
     });
-    
+
     // Refresh session data after submission
     if (onRefreshSessionData) {
       onRefreshSessionData();
@@ -65,7 +70,7 @@ export const useCourtroomState = (onRefreshSessionData?: () => void) => {
   };
 
   const handleToggleBenchPosition = () => {
-    setBenchAbove(prev => !prev);
+    setBenchAbove((prev) => !prev);
   };
 
   const handleAskMultipleJurors = () => {
@@ -80,11 +85,11 @@ export const useCourtroomState = (onRefreshSessionData?: () => void) => {
     selectedSingleJuror,
     singleJurorModalOpen,
     multipleJurorsModalOpen,
-    
+
     // Setters
     setSingleJurorModalOpen,
     setMultipleJurorsModalOpen,
-    
+
     // Handlers
     handleJurorClick,
     handleSingleJurorSubmit,

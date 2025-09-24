@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
-import { FileText } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  FileText,
+  Hash,
+  BadgeCheck,
+  Tag,
+  AlignLeft,
+  Users,
+  ListOrdered,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
@@ -32,7 +46,11 @@ interface ViewCaseDialogProps {
   selectedCase: Case | null;
 }
 
-export default function ViewCaseDialog({ isOpen, onOpenChange, selectedCase }: ViewCaseDialogProps) {
+export default function ViewCaseDialog({
+  isOpen,
+  onOpenChange,
+  selectedCase,
+}: ViewCaseDialogProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
 
@@ -65,18 +83,39 @@ export default function ViewCaseDialog({ isOpen, onOpenChange, selectedCase }: V
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <FileText className="h-5 w-5 text-blue-600" />
-            <span>Case Details</span>
+            <span className="text-lg font-semibold text-gray-900">
+              Case Details
+            </span>
           </DialogTitle>
           <DialogDescription>View complete case information</DialogDescription>
         </DialogHeader>
-        <motion.div className="space-y-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+        <motion.div
+          className="space-y-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+        >
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium text-gray-700">Case Number</Label>
+              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Hash className="h-4 w-4 text-indigo-600" />
+                <span>Case Number</span>
+              </Label>
               <p className="text-lg font-semibold">{selectedCase.number}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-700">Status</Label>
+              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <BadgeCheck
+                  className={`h-4 w-4 ${
+                    selectedCase.status === "Active"
+                      ? "text-green-600"
+                      : selectedCase.status === "Pending"
+                      ? "text-yellow-600"
+                      : "text-gray-600"
+                  }`}
+                />
+                <span>Status</span>
+              </Label>
               <div className="mt-1">
                 <Badge
                   variant="outline"
@@ -95,22 +134,34 @@ export default function ViewCaseDialog({ isOpen, onOpenChange, selectedCase }: V
           </div>
 
           <div>
-            <Label className="text-sm font-medium text-gray-700">Case Name</Label>
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Tag className="h-4 w-4 text-pink-600" />
+              <span>Case Name</span>
+            </Label>
             <p className="text-lg">{selectedCase.name}</p>
           </div>
 
           <div>
-            <Label className="text-sm font-medium text-gray-700">Description</Label>
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <AlignLeft className="h-4 w-4 text-amber-600" />
+              <span>Description</span>
+            </Label>
             <p className="text-gray-600">{selectedCase.description}</p>
           </div>
 
           <div>
-            <Label className="text-sm font-medium text-gray-700">Juror Traits</Label>
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Users className="h-4 w-4 text-teal-600" />
+              <span>Juror Traits</span>
+            </Label>
             <p className="text-gray-600">{selectedCase.jurorTraits}</p>
           </div>
 
           <div>
-            <Label className="text-sm font-medium text-gray-700">Questions</Label>
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <ListOrdered className="h-4 w-4 text-violet-600" />
+              <span>Questions</span>
+            </Label>
             {loadingQuestions ? (
               <div className="mt-2 text-gray-500">Loading questions...</div>
             ) : questions.length > 0 ? (

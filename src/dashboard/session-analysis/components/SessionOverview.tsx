@@ -101,11 +101,13 @@ export function SessionOverview({
   session,
   bestJurors,
   onBucketClick,
+  selectedBucket,
 }: {
   sessionStats: any | null;
   session?: any | null;
   bestJurors?: any[] | null;
   onBucketClick?: (bucket: "low" | "mid" | "high") => void;
+  selectedBucket?: "low" | "mid" | "high" | null;
 }) {
   const [activeResponse, setActiveResponse] = useState<any | null>(null);
   const effectiveSessionId = session?.id || sessionStats?.session?.id;
@@ -190,7 +192,11 @@ export function SessionOverview({
           <div className="grid grid-cols-3 gap-4 mt-5">
             {/* Low first - Ideal for Strike */}
             <div
-              className="cursor-pointer rounded-lg border p-5 bg-white shadow-lg hover:shadow-xl text-center"
+              className={`cursor-pointer rounded-lg border p-5 text-center shadow-lg hover:shadow-xl ${
+                selectedBucket === "low"
+                  ? "bg-red-50 border-red-200 ring-2 ring-red-300"
+                  : "bg-white"
+              }`}
               onClick={() => onBucketClick?.("low")}
             >
               <div className="flex items-center justify-center gap-2 text-gray-700 font-medium">
@@ -206,7 +212,11 @@ export function SessionOverview({
 
             {/* Neutral second */}
             <div
-              className="cursor-pointer rounded-lg border p-5 bg-white shadow-lg hover:shadow-xl text-center"
+              className={`cursor-pointer rounded-lg border p-5 text-center shadow-lg hover:shadow-xl ${
+                selectedBucket === "mid"
+                  ? "bg-amber-50 border-amber-200 ring-2 ring-amber-300"
+                  : "bg-white"
+              }`}
               onClick={() => onBucketClick?.("mid")}
             >
               <div className="flex items-center justify-center gap-2 text-gray-700 font-medium">
@@ -222,7 +232,11 @@ export function SessionOverview({
 
             {/* Recommended third */}
             <div
-              className="cursor-pointer rounded-lg border p-5 bg-white shadow-lg hover:shadow-xl text-center"
+              className={`cursor-pointer rounded-lg border p-5 text-center shadow-lg hover:shadow-xl ${
+                selectedBucket === "high"
+                  ? "bg-green-50 border-green-200 ring-2 ring-green-300"
+                  : "bg-white"
+              }`}
               onClick={() => onBucketClick?.("high")}
             >
               <div className="flex items-center justify-center gap-2 text-gray-700 font-medium">

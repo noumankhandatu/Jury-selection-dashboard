@@ -15,11 +15,24 @@ const LiveSession = () => {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [refreshSessionData, setRefreshSessionData] = useState<number>(0);
+  const [sessionStarted, setSessionStarted] = useState(false);
 
   // Function to trigger session data refresh
   const triggerSessionDataRefresh = () => {
-    setRefreshSessionData(prev => prev + 1);
+    setRefreshSessionData((prev) => prev + 1);
   };
+
+  // Handle session creation
+  const handleSessionCreated = (id: string) => {
+    setSessionId(id);
+    setSessionStarted(true);
+  };
+
+  // Reset session state when case changes
+  useEffect(() => {
+    setSessionStarted(false);
+    setSessionId(null);
+  }, [selectedCase?.id]);
 
   // Fetch jurors for selected case
   useEffect(() => {
@@ -49,7 +62,12 @@ const LiveSession = () => {
   }, [selectedCase?.id]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-20 px-4 lg:p-8">
-      <motion.div className="mx-auto space-y-6" initial="hidden" animate="visible" variants={itemVariants}>
+      <motion.div
+        className="mx-auto space-y-6"
+        initial="hidden"
+        animate="visible"
+        variants={itemVariants}
+      >
         <TitleTag title="Live Session" />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -64,26 +82,29 @@ const LiveSession = () => {
             />
           </div>
           <div>
-            <LiveSessionData 
-              jurors={jurors} 
-              caseSelected={selectedCase} 
-              onSessionCreated={(id: string) => setSessionId(id)}
-              refreshSessionData={refreshSessionData}
-              sessionId={sessionId}
-            />
+            {selectedCase && (
+              <LiveSessionData
+                jurors={jurors}
+                caseSelected={selectedCase}
+                onSessionCreated={handleSessionCreated}
+                refreshSessionData={refreshSessionData}
+                sessionId={sessionId}
+              />
+            )}
           </div>
         </div>
-        {selectedCase && (
-          <div className="grid grid-cols-1  gap-6">
+        {selectedCase && sessionStarted && (
+          <div className="grid grid-cols-1 gap-6">
             <div className="">
               {loading ? (
                 <div className="flex items-center justify-center p-8">
                   <div className="text-lg text-gray-600">Loading jurors...</div>
                 </div>
               ) : (
-                <CourtroomLayout 
-                  allJurors={jurors} 
+                <CourtroomLayout
+                  allJurors={jurors}
                   selectedCaseId={selectedCase?.id}
+                  selectedCase={selectedCase}
                   sessionId={sessionId || undefined}
                   onRefreshSessionData={triggerSessionDataRefresh}
                 />

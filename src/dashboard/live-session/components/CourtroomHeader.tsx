@@ -32,7 +32,7 @@ const CourtroomHeader = ({
       </div>
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
+          variant="default"
           onClick={() => setIsAddQuestionModalOpen(true)}
           className="text-sm"
           disabled={!selectedCaseId}
@@ -40,12 +40,12 @@ const CourtroomHeader = ({
           Add Question
         </Button>
         <Button
-          variant="outline"
+          variant="default"
           onClick={onAskMultipleJurors}
-          className="text-sm"
+          className="text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 border-0"
           disabled={!selectedCaseId}
         >
-          Ask multiple Juror
+          Select Multiple jurors
         </Button>
         <button
           type="button"

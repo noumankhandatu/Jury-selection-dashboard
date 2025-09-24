@@ -194,7 +194,7 @@ const MultipleJurorsModal = ({
       <DialogContent className="sm:max-w-[1100px]">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
-            Ask multiple Juror
+            Select Multiple jurors
           </DialogTitle>
         </DialogHeader>
 
@@ -354,9 +354,6 @@ const MultipleJurorsModal = ({
                   ];
                   return (
                     <div key={boxIdx} className="border rounded-lg bg-white/70">
-                      <div className="px-3 py-2 border-b bg-muted/40 text-xs font-semibold rounded-t-lg w-fit ml-3 mt-2">
-                        {`Box ${boxIdx + 1}`}
-                      </div>
                       <div className="p-3">
                         <div className="grid grid-cols-3 gap-3">
                           {columns.map((col, colIdx) => (

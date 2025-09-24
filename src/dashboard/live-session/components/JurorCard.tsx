@@ -60,12 +60,23 @@ interface JurorCardProps {
   onClick: (juror: CaseJuror) => void;
   overallScore?: number;
   isWaiting?: boolean;
+  showAvatar?: boolean;
 }
 
-const JurorCard = ({ juror, isSelected, onClick, overallScore, isWaiting }: JurorCardProps) => {
+const JurorCard = ({
+  juror,
+  isSelected,
+  onClick,
+  overallScore,
+  isWaiting,
+  showAvatar = true,
+}: JurorCardProps) => {
   const getCardStyles = () => {
-    const baseStyles = "flex flex-col items-center justify-center space-y-1 p-2 bg-white rounded-md shadow-sm border transition cursor-pointer";
-    const selectedStyles = isSelected ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 hover:shadow-md';
+    const baseStyles =
+      "flex flex-col items-center justify-center space-y-1 p-2 bg-white rounded-md shadow-sm border transition cursor-pointer";
+    const selectedStyles = isSelected
+      ? "border-blue-500 bg-blue-50 shadow-md"
+      : "border-gray-200 hover:shadow-md";
     return `${baseStyles} ${selectedStyles}`;
   };
 
@@ -75,29 +86,33 @@ const JurorCard = ({ juror, isSelected, onClick, overallScore, isWaiting }: Juro
       onClick={() => onClick(juror)}
       className={getCardStyles()}
     >
-      <div className="relative">
-        <Avatar className="h-12 w-12 border-2 border-white shadow rounded-full">
-          <AvatarImage src={generateAvatar(juror.name)} alt={juror.name} className="rounded-full" />
-          <AvatarFallback className="bg-gray-200 text-gray-700 text-xs font-semibold rounded-full">
-            {juror.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
-          </AvatarFallback>
-        </Avatar>
-        
-        {/* Pulsing red notification circle - only show when waiting */}
-        {isWaiting && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-lg">
-            <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
-          </div>
-        )}
-      </div>
+      {showAvatar && (
+        <div className="relative">
+          <Avatar className="h-12 w-12 border-2 border-white shadow rounded-full">
+            <AvatarImage
+              src={generateAvatar(juror.name)}
+              alt={juror.name}
+              className="rounded-full"
+            />
+            <AvatarFallback className="bg-gray-200 text-gray-700 text-xs font-semibold rounded-full">
+              {juror.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")}
+            </AvatarFallback>
+          </Avatar>
+          {isWaiting && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-lg">
+              <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
+            </div>
+          )}
+        </div>
+      )}
       <span className="text-xs font-medium text-gray-700 text-center">
         #{juror.jurorNumber}
       </span>
 
-      {typeof overallScore === 'number' && (
+      {typeof overallScore === "number" && (
         <div className="mt-1">
           <OverallGauge valuePercent={overallScore} size="sm" />
         </div>

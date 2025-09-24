@@ -384,22 +384,7 @@ const LiveSessionData = ({
                           Active
                         </span>
                       </SelectItem>
-                      <SelectItem value="PAUSED">
-                        <span className="flex items-center gap-2">
-                          {/* Paused icon */}
-                          <svg
-                            className="h-4 w-4 text-blue-400"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            viewBox="0 0 24 24"
-                          >
-                            <rect x="6" y="4" width="4" height="16" rx="1" />
-                            <rect x="14" y="4" width="4" height="16" rx="1" />
-                          </svg>
-                          Paused
-                        </span>
-                      </SelectItem>
+
                       <SelectItem value="COMPLETED">
                         <span className="flex items-center gap-2">
                           {/* Completed icon */}
@@ -417,36 +402,6 @@ const LiveSessionData = ({
                             />
                           </svg>
                           Completed
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="CANCELLED">
-                        <span className="flex items-center gap-2">
-                          {/* Cancelled icon */}
-                          <svg
-                            className="h-4 w-4 text-red-500"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            viewBox="0 0 24 24"
-                          >
-                            <line
-                              x1="18"
-                              y1="6"
-                              x2="6"
-                              y2="18"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <line
-                              x1="6"
-                              y1="6"
-                              x2="18"
-                              y2="18"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                          </svg>
-                          Cancelled
                         </span>
                       </SelectItem>
                     </SelectContent>

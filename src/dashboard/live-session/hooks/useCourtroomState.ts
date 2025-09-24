@@ -4,14 +4,12 @@ import { CaseJuror } from "../components/JurorCard";
 export const useCourtroomState = (onRefreshSessionData?: () => void) => {
   // UI State
   const [benchAbove, setBenchAbove] = useState(false);
-  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // Modal State
   const [singleJurorModalOpen, setSingleJurorModalOpen] = useState(false);
   const [multipleJurorsModalOpen, setMultipleJurorsModalOpen] = useState(false);
 
   // Selection State
-  const [selectedJurors, setSelectedJurors] = useState<CaseJuror[]>([]);
   const [selectedSingleJuror, setSelectedSingleJuror] =
     useState<CaseJuror | null>(null);
 
@@ -19,16 +17,8 @@ export const useCourtroomState = (onRefreshSessionData?: () => void) => {
 
   // Event Handlers
   const handleJurorClick = (juror: CaseJuror) => {
-    if (isMultiSelectMode) {
-      setSelectedJurors((prev) =>
-        prev.find((j) => j.id === juror.id)
-          ? prev.filter((j) => j.id !== juror.id)
-          : [...prev, juror]
-      );
-    } else {
-      setSelectedSingleJuror(juror);
-      setSingleJurorModalOpen(true);
-    }
+    setSelectedSingleJuror(juror);
+    setSingleJurorModalOpen(true);
   };
 
   const handleSingleJurorSubmit = (questionId: string, answer: string) => {
@@ -44,31 +34,6 @@ export const useCourtroomState = (onRefreshSessionData?: () => void) => {
     }
   };
 
-  const handleMultipleJurorsSubmit = (
-    questionId: string,
-    responseType: "yes-no" | "rating",
-    responseValue: string
-  ) => {
-    console.log("Multiple Jurors Answer:", {
-      jurors: selectedJurors,
-      questionId,
-      responseType,
-      responseValue,
-    });
-
-    // Refresh session data after submission
-    if (onRefreshSessionData) {
-      onRefreshSessionData();
-    }
-  };
-
-  const handleToggleMultiSelect = () => {
-    setIsMultiSelectMode(!isMultiSelectMode);
-    if (isMultiSelectMode) {
-      setSelectedJurors([]);
-    }
-  };
-
   const handleToggleBenchPosition = () => {
     setBenchAbove((prev) => !prev);
   };
@@ -80,8 +45,6 @@ export const useCourtroomState = (onRefreshSessionData?: () => void) => {
   return {
     // State
     benchAbove,
-    isMultiSelectMode,
-    selectedJurors,
     selectedSingleJuror,
     singleJurorModalOpen,
     multipleJurorsModalOpen,
@@ -93,8 +56,6 @@ export const useCourtroomState = (onRefreshSessionData?: () => void) => {
     // Handlers
     handleJurorClick,
     handleSingleJurorSubmit,
-    handleMultipleJurorsSubmit,
-    handleToggleMultiSelect,
     handleToggleBenchPosition,
     handleAskMultipleJurors,
   };

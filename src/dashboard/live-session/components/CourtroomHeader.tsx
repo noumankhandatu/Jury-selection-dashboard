@@ -4,22 +4,16 @@ import { useState } from "react";
 import AddQuestionModal from "./AddQuestionModal";
 
 interface CourtroomHeaderProps {
-  isMultiSelectMode: boolean;
-  selectedJurorsCount: number;
   selectedCaseId?: string;
   selectedCase?: any;
-  onToggleMultiSelect: () => void;
   onAskMultipleJurors: () => void;
   onToggleBenchPosition: () => void;
   onQuestionsAdded?: () => void;
 }
 
 const CourtroomHeader = ({
-  isMultiSelectMode,
-  selectedJurorsCount,
   selectedCaseId,
   selectedCase,
-  onToggleMultiSelect,
   onAskMultipleJurors,
   onToggleBenchPosition,
   onQuestionsAdded,
@@ -46,17 +40,13 @@ const CourtroomHeader = ({
           Add Question
         </Button>
         <Button
-          variant={isMultiSelectMode ? "default" : "outline"}
-          onClick={onToggleMultiSelect}
+          variant="outline"
+          onClick={onAskMultipleJurors}
           className="text-sm"
+          disabled={!selectedCaseId}
         >
-          {isMultiSelectMode ? "Exit Multi-Select" : "Select Multiple Jurors"}
+          Ask multiple Juror
         </Button>
-        {isMultiSelectMode && selectedJurorsCount > 0 && (
-          <Button onClick={onAskMultipleJurors} className="text-sm">
-            Ask ({selectedJurorsCount})
-          </Button>
-        )}
         <button
           type="button"
           onClick={onToggleBenchPosition}

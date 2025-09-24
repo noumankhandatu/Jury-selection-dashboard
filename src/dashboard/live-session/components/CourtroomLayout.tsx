@@ -33,8 +33,6 @@ const CourtroomLayout = ({
   const {
     // State
     benchAbove,
-    isMultiSelectMode,
-    selectedJurors,
     selectedSingleJuror,
     singleJurorModalOpen,
     multipleJurorsModalOpen,
@@ -46,8 +44,6 @@ const CourtroomLayout = ({
     // Handlers
     handleJurorClick,
     handleSingleJurorSubmit,
-    handleMultipleJurorsSubmit,
-    handleToggleMultiSelect,
     handleToggleBenchPosition,
     handleAskMultipleJurors,
   } = useCourtroomState(onRefreshSessionData);
@@ -57,24 +53,25 @@ const CourtroomLayout = ({
   >({});
   const [waitingJurors, setWaitingJurors] = useState<Set<string>>(new Set());
 
+  const refreshScoresNow = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await getSessionScoresApi(sessionId);
+      const arr = res?.scores || [];
+      const mapped: Record<string, any> = {};
+      arr.forEach((s: any) => {
+        if (s?.jurorId) {
+          mapped[s.jurorId] = { overallScore: s.overallScore };
+        }
+      });
+      setScoresByJurorId(mapped);
+    } catch (e) {
+      console.error("Failed to fetch session scores", e);
+    }
+  };
+
   useEffect(() => {
-    const fetchScores = async () => {
-      if (!sessionId) return;
-      try {
-        const res = await getSessionScoresApi(sessionId);
-        const arr = res?.scores || [];
-        const mapped: Record<string, any> = {};
-        arr.forEach((s: any) => {
-          if (s?.jurorId) {
-            mapped[s.jurorId] = { overallScore: s.overallScore };
-          }
-        });
-        setScoresByJurorId(mapped);
-      } catch (e) {
-        console.error("Failed to fetch session scores", e);
-      }
-    };
-    fetchScores();
+    refreshScoresNow();
   }, [sessionId]);
 
   const onSubmitSingle = async (questionId: string, _answer: string) => {
@@ -129,58 +126,10 @@ const CourtroomLayout = ({
     responseType: "yes-no" | "rating",
     responseValue: string
   ) => {
-    handleMultipleJurorsSubmit(questionId, responseType, responseValue);
-    if (!sessionId || selectedJurors.length === 0) return;
+    // Legacy path no longer used; kept for compatibility if invoked
+    if (!sessionId) return;
     const mappedType = responseType === "yes-no" ? "YES_NO" : "RATING";
-
-    // Add all selected jurors to waiting state
-    const jurorIds = selectedJurors.map((j) => j.id);
-    setWaitingJurors((prev) => {
-      const updated = new Set(prev);
-      jurorIds.forEach((id) => updated.add(id));
-      return updated;
-    });
-
-    try {
-      const saveResults = await Promise.all(
-        selectedJurors.map((j) =>
-          saveJurorResponseApi({
-            sessionId,
-            questionId,
-            jurorId: j.id,
-            response: responseValue,
-            responseType: mappedType,
-          })
-        )
-      );
-      const responses = saveResults.map((r) => r?.response).filter(Boolean);
-      await Promise.all(responses.map((r: any) => assessResponseApi(r.id)));
-      const scores = await getSessionScoresApi(sessionId);
-      const arr = scores?.scores || [];
-      setScoresByJurorId((prev) => {
-        const updated = { ...prev } as Record<string, any>;
-        arr.forEach((s: any) => {
-          if (s?.jurorId) {
-            updated[s.jurorId] = { overallScore: s.overallScore };
-          }
-        });
-        return updated;
-      });
-
-      // Refresh session data after successful submission
-      if (onRefreshSessionData) {
-        onRefreshSessionData();
-      }
-    } catch (err) {
-      console.error("Failed to save responses for multiple jurors", err);
-    } finally {
-      // Remove all selected jurors from waiting state
-      setWaitingJurors((prev) => {
-        const updated = new Set(prev);
-        jurorIds.forEach((id) => updated.delete(id));
-        return updated;
-      });
-    }
+    // No-op in new flow; responses are handled per-juror inside modal
   };
 
   // Helper function to get dynamic jury boxes
@@ -214,11 +163,8 @@ const CourtroomLayout = ({
   return (
     <div className="space-y-6 bg-gradient-to-b from-slate-50 to-slate-100 p-6 rounded-lg h-screen overflow-auto">
       <CourtroomHeader
-        isMultiSelectMode={isMultiSelectMode}
-        selectedJurorsCount={selectedJurors.length}
         selectedCaseId={selectedCaseId}
         selectedCase={selectedCase}
-        onToggleMultiSelect={handleToggleMultiSelect}
         onAskMultipleJurors={handleAskMultipleJurors}
         onToggleBenchPosition={handleToggleBenchPosition}
         onQuestionsAdded={onRefreshSessionData}
@@ -242,7 +188,7 @@ const CourtroomLayout = ({
                   key={`box-${i + 1}`}
                   jurors={boxJurors}
                   boxNumber={i + 1}
-                  selectedJurors={selectedJurors}
+                  selectedJurors={[]}
                   onJurorClick={handleJurorClick}
                   scoresByJurorId={scoresByJurorId}
                   waitingJurors={waitingJurors}
@@ -284,27 +230,23 @@ const CourtroomLayout = ({
       <MultipleJurorsModal
         isOpen={multipleJurorsModalOpen}
         onOpenChange={setMultipleJurorsModalOpen}
-        selectedJurors={selectedJurors}
+        allJurors={allJurors}
         selectedCaseId={selectedCaseId}
-        onSubmit={onSubmitMultiple}
-        onQuestionSelected={async (questionId: string) => {
-          if (!sessionId || selectedJurors.length === 0) return;
-          try {
-            await assignQuestionsToJurorsApi({
-              sessionId,
-              assignments: [
-                {
-                  questionId,
-                  jurorIds: selectedJurors.map((j) => j.id),
-                },
-              ],
-            });
-          } catch (err) {
-            console.error(
-              "Failed to assign question on selection (multiple)",
-              err
-            );
-          }
+        sessionId={sessionId}
+        onRequestScoresRefresh={refreshScoresNow}
+        onAssessmentStart={(ids: string[]) => {
+          setWaitingJurors((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => next.add(id));
+            return next;
+          });
+        }}
+        onAssessmentEnd={(ids: string[]) => {
+          setWaitingJurors((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => next.delete(id));
+            return next;
+          });
         }}
       />
     </div>

@@ -18,13 +18,19 @@ interface AIQuestionGeneratorProps {
   onAddQuestions: (questions: string[]) => void;
 }
 
-export default function AIQuestionGenerator({ caseData, onAddQuestions }: AIQuestionGeneratorProps) {
+export default function AIQuestionGenerator({
+  caseData,
+  onAddQuestions,
+}: AIQuestionGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
-  const [selectedQuestions, setSelectedQuestions] = useState<Set<number>>(new Set());
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<number>>(
+    new Set()
+  );
 
   // Only show the button if both description and juror traits are filled
-  const shouldShowGenerator = caseData.description.trim() && caseData.jurorTraits.trim();
+  const shouldShowGenerator =
+    caseData.description.trim() && caseData.jurorTraits.trim();
 
   const generateQuestions = async () => {
     setIsGenerating(true);
@@ -58,26 +64,31 @@ Return your response as a JSON object with this exact format:
 {"questions": ["question 1", "question 2", "question 3", "question 4", "question 5", "question 6", "question 7", "question 8", "question 9", "question 10"]}
 
 Each question should be a complete, standalone question ready to be asked during jury selection.
+Do not add numbers or bullet points. Return plain text questions only.
+
 `;
 
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: [
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-          max_tokens: 2000,
-          temperature: 0.7,
-        }),
-      });
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4",
+            messages: [
+              {
+                role: "user",
+                content: prompt,
+              },
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -100,15 +111,24 @@ Each question should be a complete, standalone question ready to be asked during
       }
 
       setSuggestedQuestions(parsedQuestions);
-      toast.success(`Generated ${parsedQuestions.length} AI-suggested questions!`);
+      toast.success(
+        `Generated ${parsedQuestions.length} AI-suggested questions!`
+      );
     } catch (error) {
       console.error("Error generating questions:", error);
 
       if (error instanceof Error) {
         if (error.message.includes("API key")) {
-          toast.error("OpenAI API key is not configured. Please add NEXT_PUBLIC_OPENAI_API_KEY to your environment variables.");
-        } else if (error.message.includes("quota") || error.message.includes("billing")) {
-          toast.error("OpenAI API quota exceeded. Please check your OpenAI account.");
+          toast.error(
+            "OpenAI API key is not configured. Please add NEXT_PUBLIC_OPENAI_API_KEY to your environment variables."
+          );
+        } else if (
+          error.message.includes("quota") ||
+          error.message.includes("billing")
+        ) {
+          toast.error(
+            "OpenAI API quota exceeded. Please check your OpenAI account."
+          );
         } else if (error.message.includes("401")) {
           toast.error("Invalid OpenAI API key. Please check your API key.");
         } else {
@@ -129,7 +149,11 @@ Each question should be a complete, standalone question ready to be asked during
       if (jsonMatch) {
         const parsedData = JSON.parse(jsonMatch[0]);
         if (parsedData && Array.isArray(parsedData.questions)) {
-          return parsedData.questions.filter((q: any) => q && typeof q === "string" && q.trim().length > 0).map((q: string) => q.trim());
+          return parsedData.questions
+            .filter(
+              (q: any) => q && typeof q === "string" && q.trim().length > 0
+            )
+            .map((q: string) => q.trim());
         }
       }
     } catch (parseError) {
@@ -154,7 +178,10 @@ Each question should be a complete, standalone question ready to be asked during
         .trim();
 
       // Check if it looks like a question
-      if (cleanedLine.length > 10 && (cleanedLine.includes("?") || cleanedLine.toLowerCase().includes("you"))) {
+      if (
+        cleanedLine.length > 10 &&
+        (cleanedLine.includes("?") || cleanedLine.toLowerCase().includes("you"))
+      ) {
         questions.push(cleanedLine);
       }
     }
@@ -176,12 +203,16 @@ Each question should be a complete, standalone question ready to be asked during
     if (selectedQuestions.size === suggestedQuestions.length) {
       setSelectedQuestions(new Set());
     } else {
-      setSelectedQuestions(new Set(suggestedQuestions.map((_, index) => index)));
+      setSelectedQuestions(
+        new Set(suggestedQuestions.map((_, index) => index))
+      );
     }
   };
 
   const addSelectedQuestions = () => {
-    const questionsToAdd = Array.from(selectedQuestions).map((index) => suggestedQuestions[index]);
+    const questionsToAdd = Array.from(selectedQuestions).map(
+      (index) => suggestedQuestions[index]
+    );
     if (questionsToAdd.length > 0) {
       onAddQuestions(questionsToAdd);
       toast.success(`Added ${questionsToAdd.length} questions to your case!`);
@@ -222,16 +253,25 @@ Each question should be a complete, standalone question ready to be asked during
                 </>
               )}
             </Button>
-            <p className="text-sm text-purple-600 mt-2">AI will generate relevant voir dire questions based on your case details</p>
+            <p className="text-sm text-purple-600 mt-2">
+              AI will generate relevant voir dire questions based on your case
+              details
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                <Badge
+                  variant="secondary"
+                  className="bg-purple-100 text-purple-700"
+                >
                   {suggestedQuestions.length} questions generated
                 </Badge>
-                <Badge variant="outline" className="border-purple-200 text-purple-600">
+                <Badge
+                  variant="outline"
+                  className="border-purple-200 text-purple-600"
+                >
                   {selectedQuestions.size} selected
                 </Badge>
               </div>
@@ -276,9 +316,15 @@ Each question should be a complete, standalone question ready to be asked during
                   }`}
                   onClick={() => toggleQuestionSelection(index)}
                 >
-                  <Checkbox checked={selectedQuestions.has(index)} onChange={() => toggleQuestionSelection(index)} className="mt-1" />
+                  <Checkbox
+                    checked={selectedQuestions.has(index)}
+                    onChange={() => toggleQuestionSelection(index)}
+                    className="mt-1"
+                  />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 leading-relaxed">{question}</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {question}
+                    </p>
                   </div>
                 </div>
               ))}

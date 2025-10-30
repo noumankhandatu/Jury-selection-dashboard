@@ -76,7 +76,12 @@ export interface SessionsByCaseResponse {
   sessions: SessionData[];
 }
 
-export type SessionStatus = 'PENDING' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+export type SessionStatus =
+  | "PENDING"
+  | "ACTIVE"
+  | "PAUSED"
+  | "COMPLETED"
+  | "CANCELLED";
 
 export interface SessionStatusResponse {
   status: SessionStatus;

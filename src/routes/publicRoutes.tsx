@@ -4,6 +4,7 @@ import SignUpPage from "@/pages/signup";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ResetPasswordPage from "@/pages/reset-password";
 import NotFoundPage from "@/pages/not-found";
+import AcceptInvitationPage from "@/pages/accept-invitation";
 
 const PublicRoutes = () => {
   return (
@@ -15,6 +16,7 @@ const PublicRoutes = () => {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>

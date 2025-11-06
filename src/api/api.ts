@@ -359,3 +359,222 @@ export const getDashboardAnalyticsApi =
       throw error;
     }
   };
+
+// ==================== ORGANIZATION APIs ====================
+
+// Create organization
+export const createOrganizationApi = async (payload: {
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+}) => {
+  try {
+    const response = await BaseUrl.post("/organizations", payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error creating organization:", error);
+    throw error;
+  }
+};
+
+// Get user's organizations
+export const getUserOrganizationsApi = async () => {
+  try {
+    const response = await BaseUrl.get("/organizations");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching organizations:", error);
+    throw error;
+  }
+};
+
+// Get organization details
+export const getOrganizationApi = async (organizationId: string) => {
+  try {
+    const response = await BaseUrl.get(`/organizations/${organizationId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching organization:", error);
+    throw error;
+  }
+};
+
+// Update organization
+export const updateOrganizationApi = async (
+  organizationId: string,
+  payload: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    logoUrl?: string;
+    timezone?: string;
+  }
+) => {
+  try {
+    const response = await BaseUrl.put(
+      `/organizations/${organizationId}`,
+      payload
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating organization:", error);
+    throw error;
+  }
+};
+
+// ==================== SUBSCRIPTION APIs ====================
+
+// Create Stripe checkout session
+export const createCheckoutSessionApi = async (payload: {
+  plan: "STANDARD" | "BUSINESS";
+  organizationId: string;
+}) => {
+  try {
+    const response = await BaseUrl.post(
+      "/subscriptions/create-checkout",
+      payload
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error creating checkout session:", error);
+    throw error;
+  }
+};
+
+// Verify and activate subscription after Stripe checkout
+export const verifySubscriptionApi = async (sessionId: string) => {
+  try {
+    const response = await BaseUrl.get("/subscriptions/verify", {
+      params: { sessionId },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error verifying subscription:", error);
+    throw error;
+  }
+};
+
+// Get subscription details
+export const getSubscriptionApi = async (organizationId: string) => {
+  try {
+    const response = await BaseUrl.get(`/subscriptions/${organizationId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching subscription:", error);
+    throw error;
+  }
+};
+
+// Update subscription plan
+export const updateSubscriptionPlanApi = async (
+  organizationId: string,
+  plan: "STANDARD" | "BUSINESS"
+) => {
+  try {
+    const response = await BaseUrl.put(
+      `/subscriptions/${organizationId}/plan`,
+      { plan }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating subscription:", error);
+    throw error;
+  }
+};
+
+// Get billing portal URL
+export const getBillingPortalApi = async (organizationId: string) => {
+  try {
+    const response = await BaseUrl.post(
+      `/subscriptions/${organizationId}/portal`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error getting billing portal:", error);
+    throw error;
+  }
+};
+
+// ==================== TEAM MANAGEMENT APIs ====================
+
+// Invite team member
+export const inviteTeamMemberApi = async (
+  organizationId: string,
+  payload: {
+    email: string;
+    role: "ADMIN" | "MEMBER";
+  }
+) => {
+  try {
+    const response = await BaseUrl.post(
+      `/organizations/${organizationId}/invite`,
+      payload
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error inviting team member:", error);
+    throw error;
+  }
+};
+
+// Accept invitation
+export const acceptInvitationApi = async (token: string) => {
+  try {
+    const response = await BaseUrl.post("/organizations/invitations/accept", {
+      token,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error accepting invitation:", error);
+    throw error;
+  }
+};
+
+// Get organization members
+export const getOrganizationMembersApi = async (organizationId: string) => {
+  try {
+    const response = await BaseUrl.get(
+      `/organizations/${organizationId}/members`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching members:", error);
+    throw error;
+  }
+};
+
+// Remove team member
+export const removeTeamMemberApi = async (
+  organizationId: string,
+  memberId: string
+) => {
+  try {
+    const response = await BaseUrl.delete(
+      `/organizations/${organizationId}/members/${memberId}`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error removing member:", error);
+    throw error;
+  }
+};
+
+// Update member role
+export const updateMemberRoleApi = async (
+  organizationId: string,
+  memberId: string,
+  role: "ADMIN" | "MEMBER"
+) => {
+  try {
+    const response = await BaseUrl.put(
+      `/organizations/${organizationId}/members/${memberId}/role`,
+      { role }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating member role:", error);
+    throw error;
+  }
+};

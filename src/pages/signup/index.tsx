@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import BaseUrl from "@/utils/config/baseUrl";
 import { motion } from "framer-motion";
@@ -9,6 +9,8 @@ import { Eye, EyeOff, Scale, Mail, Lock, User, Phone } from "lucide-react";
 
 export default function SignUpPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("inviteToken");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -41,11 +43,28 @@ export default function SignUpPage() {
     setIsSubmitting(true);
     try {
       const payload = { email, password, firstName, lastName, phoneNumber };
-      await BaseUrl.post(`${import.meta.env.VITE_BASEURL}/auth/signup`, payload);
+      const response = await BaseUrl.post(`${import.meta.env.VITE_BASEURL}/auth/signup`, payload);
+      
+      // Store token and user data
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("userId", response.data.user.id);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+      
       toast.success("Account created successfully!");
-      setTimeout(() => {
-        navigate("/signin");
-      }, 1500);
+      
+      // If there's an invitation token, redirect to accept invitation
+      if (inviteToken) {
+        setTimeout(() => {
+          navigate(`/accept-invitation?token=${inviteToken}`);
+        }, 1000);
+      } else {
+        // Normal signup flow - go to signin
+        setTimeout(() => {
+          navigate("/signin");
+        }, 1500);
+      }
     } catch (err: any) {
       console.error(err);
       const errorMsg = err?.response?.data?.message || "Signup failed. Please try again.";

@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 // import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, PlusCircle, Search, Radio, UserCog, Scale, FileSearch } from "lucide-react";
+import { LayoutDashboard, Users, PlusCircle, Search, Radio, UserCog, Scale, FileSearch, UsersRound, CreditCard, Building2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 // import { Separator } from "../ui/separator";
 import { FaCircleArrowLeft } from "react-icons/fa6";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
 import { containerVariants, itemVariants } from "@/utils/fn";
+import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
   onClose: () => void;
@@ -14,7 +15,13 @@ interface SidebarProps {
 
 export function Sidebar({ onClose }: SidebarProps) {
   const location = useLocation();
-  const routes = [
+  
+  // Get user role and organization info from localStorage
+  const userRole = localStorage.getItem("userRole") || "MEMBER";
+  const organizationName = localStorage.getItem("organizationName") || "Organization";
+
+  // Base routes available to all users
+  const baseRoutes = [
     {
       label: "Dashboard",
       icon: LayoutDashboard,
@@ -50,13 +57,6 @@ export function Sidebar({ onClose }: SidebarProps) {
       active: location.pathname === "/dashboard/live-session",
       color: "white",
     },
-    // {
-    //   label: "Juror Analysis",
-    //   icon: BarChart3,
-    //   href: "/dashboard/juror-analysis",
-    //   active: location.pathname === "/dashboard/juror-analysis",
-    //   color: "white",
-    // },
     {
       label: "Session Analysis",
       icon: FileSearch,
@@ -71,6 +71,33 @@ export function Sidebar({ onClose }: SidebarProps) {
       color: "white",
     },
   ];
+
+  // Team management routes (OWNER & ADMIN only)
+  const teamRoutes = (userRole === "OWNER" || userRole === "ADMIN") ? [
+    {
+      label: "Team Management",
+      icon: UsersRound,
+      href: "/dashboard/team-management",
+      active: location.pathname === "/dashboard/team-management",
+      color: "white",
+      badge: "Team",
+    },
+  ] : [];
+
+  // Billing & settings routes (OWNER only)
+  const ownerRoutes = (userRole === "OWNER") ? [
+    {
+      label: "Billing",
+      icon: CreditCard,
+      href: "/dashboard/billing",
+      active: location.pathname === "/dashboard/billing",
+      color: "white",
+      badge: "Owner",
+    },
+  ] : [];
+
+  // Combine all routes
+  const routes = [...baseRoutes, ...teamRoutes, ...ownerRoutes];
 
   return (
     <motion.div
@@ -91,11 +118,18 @@ export function Sidebar({ onClose }: SidebarProps) {
       </motion.button>
 
       {/* Logo and Title */}
-      <motion.div className="p-6 flex items-center space-x-3" variants={itemVariants}>
-        <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm shadow-lg">
-          <Scale className="h-6 w-6 text-white" />
+      <motion.div className="p-6 space-y-3" variants={itemVariants}>
+        <div className="flex items-center space-x-3">
+          <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm shadow-lg">
+            <Scale className="h-6 w-6 text-white" />
+          </div>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Jury Duty</h1>
         </div>
-        <h1 className="text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Case </h1>
+        {/* Organization Name */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg">
+          <Building2 className="h-4 w-4 text-white/70" />
+          <span className="text-sm text-white/90 font-medium truncate">{organizationName}</span>
+        </div>
       </motion.div>
 
       {/* Navigation Items */}
@@ -115,7 +149,12 @@ export function Sidebar({ onClose }: SidebarProps) {
                 <div className={`p-1.5 rounded-lg bg-gradient-to-r ${route.color}`}>
                   <route.icon className="h-4 w-4 text-white" />
                 </div>
-                {route.label}
+                <span className="flex-1">{route.label}</span>
+                {route.badge && (
+                  <Badge className="bg-white/20 text-white border-0 text-xs px-2 py-0">
+                    {route.badge}
+                  </Badge>
+                )}
               </Link>
             </motion.div>
           ))}

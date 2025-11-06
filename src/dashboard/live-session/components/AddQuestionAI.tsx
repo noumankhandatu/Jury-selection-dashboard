@@ -14,7 +14,9 @@ const AddQuestionAI = () => {
   };
 
   const handleSubmit = () => {
-    const trimmedQuestions = createQuestion.map((q) => q.trim()).filter(Boolean);
+    const trimmedQuestions = createQuestion
+      .map((q) => q.trim())
+      .filter(Boolean);
     console.log("Submitted Questions:", trimmedQuestions);
     // Add API logic here if needed
   };
@@ -34,7 +36,10 @@ const AddQuestionAI = () => {
 
       {showManager && (
         <>
-          <QuestionsManager questions={createQuestion} onQuestionsChange={setCreateQuestion} />
+          <QuestionsManager
+            questions={createQuestion}
+            onQuestionsChange={setCreateQuestion}
+          />
 
           {createQuestion.length > 1 && (
             <div className="flex justify-end mt-4">

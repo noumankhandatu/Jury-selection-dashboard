@@ -11,14 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   User,
   Mail,
   Lock,
@@ -28,25 +20,11 @@ import {
   Edit,
   LogOut,
   Shield,
-  Users,
-  Plus,
-  Trash2,
-  CheckCircle,
-  XCircle,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { handleLogout } from "@/utils/config/baseUrl";
 import TitleTag from "@/components/shared/tag/tag";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 interface UserData {
   id: string;
   email: string;
@@ -61,32 +39,15 @@ interface PasswordData {
   confirm: string;
 }
 
-// interface Notification {
-//   id: number;
-//   message: string;
-//   type: "success" | "error";
-// }
-
 interface EditingState {
   personal: boolean;
   email: boolean;
 }
 
-type TeamRole = "Admin" | "Editor" | "Viewer";
-type TeamStatus = "Active" | "Invited" | "Deactivated";
-
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: TeamRole;
-  status: TeamStatus;
-}
-
 export default function AccountPage() {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "team">(
+  const [activeTab, setActiveTab] = useState<"profile" | "security">(
     "profile"
   );
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -120,36 +81,6 @@ export default function AccountPage() {
     new: "",
     confirm: "",
   });
-
-  // Team state (mocked locally; replace with API calls when available)
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: "1",
-      name: "Alex Johnson",
-      email: "alex@example.com",
-      role: "Admin",
-      status: "Active",
-    },
-    {
-      id: "2",
-      name: "Taylor Reed",
-      email: "taylor@example.com",
-      role: "Editor",
-      status: "Active",
-    },
-    {
-      id: "3",
-      name: "Sam Park",
-      email: "sam@example.com",
-      role: "Viewer",
-      status: "Invited",
-    },
-  ]);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<TeamRole>("Viewer");
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
-
-  // const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const generateAvatar = (name: string): string => {
     const seed = name.toLowerCase().replace(/\s+/g, "");
@@ -249,43 +180,6 @@ export default function AccountPage() {
     }
   };
 
-  const inviteMember = (): void => {
-    if (!inviteEmail) return;
-    const nameFromEmail = inviteEmail.split("@")[0];
-    const member: TeamMember = {
-      id: String(Date.now()),
-      name: nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1),
-      email: inviteEmail,
-      role: inviteRole,
-      status: "Invited",
-    };
-    setTeamMembers((prev) => [member, ...prev]);
-    setInviteEmail("");
-    setInviteRole("Viewer");
-  };
-
-  const changeMemberRole = (id: string, role: TeamRole): void => {
-    setTeamMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, role } : m))
-    );
-  };
-
-  const deactivateMember = (id: string): void => {
-    setTeamMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, status: "Deactivated" } : m))
-    );
-  };
-
-  const reactivateMember = (id: string): void => {
-    setTeamMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, status: "Active" } : m))
-    );
-  };
-
-  const removeMember = (id: string): void => {
-    setTeamMembers((prev) => prev.filter((m) => m.id !== id));
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-16 px-4 lg:px-8">
       <TitleTag title="Account" />
@@ -337,9 +231,6 @@ export default function AccountPage() {
             className="data-[state=active]:bg-blue-50"
           >
             <User className="h-4 w-4 mr-2" /> Profile
-          </TabsTrigger>
-          <TabsTrigger value="team" className="data-[state=active]:bg-blue-50">
-            <Users className="h-4 w-4 mr-2" /> Team
           </TabsTrigger>
           <TabsTrigger
             value="security"
@@ -526,160 +417,6 @@ export default function AccountPage() {
               </div>
             </Card>
           </div>
-        </TabsContent>
-
-        {/* Team Tab */}
-        <TabsContent value="team" className="mt-6">
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <CardTitle>Invite a team member</CardTitle>
-                  <CardDescription>
-                    Collaborate by inviting teammates.
-                  </CardDescription>
-                </div>
-                <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="icon" aria-label="Invite member">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Invite a team member</DialogTitle>
-                      <DialogDescription>
-                        Send an invitation email to add a new member.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-3">
-                      <div>
-                        <Label
-                          htmlFor="inviteEmail"
-                          className="text-sm font-medium"
-                        >
-                          Email Address
-                        </Label>
-                        <Input
-                          id="inviteEmail"
-                          placeholder="name@example.com"
-                          type="email"
-                          value={inviteEmail}
-                          onChange={(e) => setInviteEmail(e.target.value)}
-                        />
-                      </div>
-                      <Button
-                        onClick={() => {
-                          inviteMember();
-                          if (inviteEmail) setIsInviteOpen(false);
-                        }}
-                        disabled={!inviteEmail}
-                        className="w-full"
-                      >
-                        Send Invite
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Team members</CardTitle>
-              <CardDescription>
-                Manage roles and access to your workspace.
-              </CardDescription>
-            </CardHeader>
-            <div className="grid grid-cols-12 gap-0 px-6 py-3 text-xs font-medium text-gray-500 border-b bg-gray-50">
-              <div className="col-span-4">Member</div>
-              <div className="col-span-3">Email</div>
-              <div className="col-span-2">Status</div>
-              <div className="col-span-2">Role</div>
-              <div className="col-span-1 text-right">Actions</div>
-            </div>
-            <div className="divide-y">
-              {teamMembers.map((m) => (
-                <div
-                  key={m.id}
-                  className="grid grid-cols-12 items-center px-6 py-4"
-                >
-                  <div className="col-span-4 flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={generateAvatar(m.name)} alt={m.name} />
-                      <AvatarFallback>{m.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="font-medium">{m.name}</div>
-                  </div>
-                  <div className="col-span-3 text-gray-600">{m.email}</div>
-                  <div className="col-span-2">
-                    {m.status === "Active" && (
-                      <Badge className="bg-green-100 text-green-700 border border-green-200">
-                        <CheckCircle className="h-3 w-3 mr-1" /> Active
-                      </Badge>
-                    )}
-                    {m.status === "Invited" && (
-                      <Badge className="bg-blue-100 text-blue-700 border border-blue-200">
-                        <Mail className="h-3 w-3 mr-1" /> Invited
-                      </Badge>
-                    )}
-                    {m.status === "Deactivated" && (
-                      <Badge className="bg-gray-100 text-gray-700 border border-gray-200">
-                        <XCircle className="h-3 w-3 mr-1" /> Deactivated
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="col-span-2">
-                    <Select
-                      value={m.role}
-                      onValueChange={(v: TeamRole) => changeMemberRole(m.id, v)}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="Editor">Editor</SelectItem>
-                        <SelectItem value="Viewer">Viewer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-1 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {m.status !== "Deactivated" ? (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          title="Deactivate"
-                          onClick={() => deactivateMember(m.id)}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          title="Reactivate"
-                          onClick={() => reactivateMember(m.id)}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        title="Remove"
-                        onClick={() => removeMember(m.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
         </TabsContent>
 
         {/* Security Tab */}

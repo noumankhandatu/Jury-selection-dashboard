@@ -20,10 +20,13 @@ import {
   Edit,
   LogOut,
   Shield,
+  KeyRound,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { handleLogout } from "@/utils/config/baseUrl";
+import { requestPasswordChangeOTPApi, verifyPasswordOTPApi, changePasswordApi } from "@/api/api";
+import { toast } from "sonner";
 import TitleTag from "@/components/shared/tag/tag";
 interface UserData {
   id: string;
@@ -38,6 +41,8 @@ interface PasswordData {
   new: string;
   confirm: string;
 }
+
+type PasswordChangeStep = "initial" | "otp-sent" | "otp-verified";
 
 interface EditingState {
   personal: boolean;
@@ -58,6 +63,9 @@ export default function AccountPage() {
     personal: false,
     email: false,
   });
+  const [passwordChangeStep, setPasswordChangeStep] = useState<PasswordChangeStep>("initial");
+  const [otp, setOtp] = useState("");
+  const [otpVerified, setOtpVerified] = useState(false);
 
   const [userData, setUserData] = useState<UserData>({
     id: "",
@@ -134,28 +142,92 @@ export default function AccountPage() {
     }
   };
 
-  const handlePasswordUpdate = async (): Promise<void> => {
-    if (passwordData.new !== passwordData.confirm) {
-      // showNotification("New passwords don't match", "error");
-      return;
+  const handleRequestOTP = async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await requestPasswordChangeOTPApi();
+      toast.success("OTP sent to your email!");
+      setPasswordChangeStep("otp-sent");
+    } catch (error: any) {
+      console.error("Error requesting OTP:", error);
+      toast.error(error.response?.data?.error || "Failed to send OTP");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    if (passwordData.new.length < 8) {
-      // showNotification("Password must be at least 8 characters long", "error");
+  const handleVerifyOTP = async (): Promise<void> => {
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP");
       return;
     }
 
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // showNotification("Password updated successfully!");
-      setPasswordData({ current: "", new: "", confirm: "" });
-    } catch (error: unknown) {
-      console.error("Error updating password:", error);
-      // showNotification("Failed to update password", "error");
+      await verifyPasswordOTPApi(otp);
+      toast.success("OTP verified successfully!");
+      setPasswordChangeStep("otp-verified");
+      setOtpVerified(true);
+    } catch (error: any) {
+      console.error("Error verifying OTP:", error);
+      toast.error(error.response?.data?.error || "Invalid or expired OTP");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePasswordUpdate = async (): Promise<void> => {
+    if (!otpVerified) {
+      toast.error("Please verify OTP first");
+      return;
+    }
+
+    if (passwordData.new !== passwordData.confirm) {
+      toast.error("New passwords don't match");
+      return;
+    }
+
+    if (passwordData.new.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await changePasswordApi({
+        otp,
+        newPassword: passwordData.new,
+        currentPassword: passwordData.current || undefined,
+      });
+      
+      toast.success("Password changed successfully! Please login with your new password.");
+      
+      // Clear form
+      setPasswordData({ current: "", new: "", confirm: "" });
+      setOtp("");
+      setOtpVerified(false);
+      setPasswordChangeStep("initial");
+      
+      // Auto-logout after password change
+      if (response.requiresLogout) {
+        setTimeout(() => {
+          handleLogout();
+          navigate("/signin");
+        }, 2000); // Wait 2 seconds to show the success message
+      }
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      toast.error(error.response?.data?.error || "Failed to change password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPasswordFlow = (): void => {
+    setPasswordChangeStep("initial");
+    setOtp("");
+    setOtpVerified(false);
+    setPasswordData({ current: "", new: "", confirm: "" });
   };
 
   const handleInputChange = (field: keyof UserData, value: string): void => {
@@ -425,130 +497,249 @@ export default function AccountPage() {
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
               <CardDescription>
-                Ensure your account remains secure.
+                Secure password change with OTP verification
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label
-                  htmlFor="currentPassword"
-                  className="text-sm font-medium"
-                >
-                  Current Password
-                </Label>
-                <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="currentPassword"
-                    type={showCurrentPassword ? "text" : "password"}
-                    value={passwordData.current}
-                    onChange={(e) =>
-                      handlePasswordChange("current", e.target.value)
-                    }
-                    className="pl-10 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showCurrentPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="newPassword" className="text-sm font-medium">
-                  New Password
-                </Label>
-                <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="newPassword"
-                    type={showNewPassword ? "text" : "password"}
-                    value={passwordData.new}
-                    onChange={(e) =>
-                      handlePasswordChange("new", e.target.value)
-                    }
-                    className="pl-10 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="confirmPassword"
-                  className="text-sm font-medium"
-                >
-                  Confirm New Password
-                </Label>
-                <div className="relative mt-1">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={passwordData.confirm}
-                    onChange={(e) =>
-                      handlePasswordChange("confirm", e.target.value)
-                    }
-                    className="pl-10 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="flex items-start">
-                  <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium mb-2">Password Requirements</p>
-                    <ul className="text-xs space-y-1">
-                      <li>• At least 8 characters long</li>
-                      <li>• Include uppercase and lowercase letters</li>
-                      <li>• Include at least one number</li>
-                      <li>• Include at least one special character</li>
-                    </ul>
+              {/* Step 1: Request OTP */}
+              {passwordChangeStep === "initial" && (
+                <>
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="flex items-start">
+                      <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium mb-2">Password Change Process</p>
+                        <ol className="text-xs space-y-1 list-decimal list-inside">
+                          <li>Click "Send OTP" to receive a verification code via email</li>
+                          <li>Enter the 6-digit OTP code you receive</li>
+                          <li>Set your new password</li>
+                        </ol>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              <Button
-                onClick={handlePasswordUpdate}
-                disabled={
-                  isLoading ||
-                  !passwordData.current ||
-                  !passwordData.new ||
-                  !passwordData.confirm
-                }
-                className="w-full"
-              >
-                {isLoading ? "Updating Password..." : "Update Password"}
-              </Button>
+                  <Button
+                    onClick={handleRequestOTP}
+                    disabled={isLoading}
+                    className="w-full"
+                  >
+                    {isLoading ? (
+                      "Sending OTP..."
+                    ) : (
+                      <>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send OTP to Email
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+
+              {/* Step 2: Verify OTP */}
+              {passwordChangeStep === "otp-sent" && !otpVerified && (
+                <>
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                    <div className="flex items-start">
+                      <Mail className="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
+                      <div className="text-sm text-green-800">
+                        <p className="font-medium mb-1">OTP Sent!</p>
+                        <p className="text-xs">
+                          Check your email ({userData.email}) for the 6-digit verification code.
+                          The code will expire in 10 minutes.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="otp" className="text-sm font-medium">
+                      Enter 6-Digit OTP
+                    </Label>
+                    <div className="relative mt-1">
+                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="otp"
+                        type="text"
+                        placeholder="000000"
+                        maxLength={6}
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                        className="pl-10 text-center text-2xl tracking-widest"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleVerifyOTP}
+                      disabled={isLoading || otp.length !== 6}
+                      className="flex-1"
+                    >
+                      {isLoading ? "Verifying..." : "Verify OTP"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleResetPasswordFlow}
+                      disabled={isLoading}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    onClick={handleRequestOTP}
+                    disabled={isLoading}
+                    className="w-full text-sm"
+                  >
+                    Didn't receive OTP? Resend
+                  </Button>
+                </>
+              )}
+
+              {/* Step 3: Change Password */}
+              {passwordChangeStep === "otp-verified" && otpVerified && (
+                <>
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                    <div className="flex items-start">
+                      <Shield className="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
+                      <div className="text-sm text-green-800">
+                        <p className="font-medium">✓ OTP Verified Successfully!</p>
+                        <p className="text-xs mt-1">You can now set your new password.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="currentPassword"
+                      className="text-sm font-medium"
+                    >
+                      Current Password (Optional)
+                    </Label>
+                    <div className="relative mt-1">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="currentPassword"
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={passwordData.current}
+                        onChange={(e) =>
+                          handlePasswordChange("current", e.target.value)
+                        }
+                        className="pl-10 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="newPassword" className="text-sm font-medium">
+                      New Password
+                    </Label>
+                    <div className="relative mt-1">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="newPassword"
+                        type={showNewPassword ? "text" : "password"}
+                        value={passwordData.new}
+                        onChange={(e) =>
+                          handlePasswordChange("new", e.target.value)
+                        }
+                        className="pl-10 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showNewPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="confirmPassword"
+                      className="text-sm font-medium"
+                    >
+                      Confirm New Password
+                    </Label>
+                    <div className="relative mt-1">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={passwordData.confirm}
+                        onChange={(e) =>
+                          handlePasswordChange("confirm", e.target.value)
+                        }
+                        className="pl-10 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="flex items-start">
+                      <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium mb-2">Password Requirements</p>
+                        <ul className="text-xs space-y-1">
+                          <li>• At least 8 characters long</li>
+                          <li>• Include uppercase and lowercase letters</li>
+                          <li>• Include at least one number</li>
+                          <li>• Include at least one special character</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handlePasswordUpdate}
+                      disabled={
+                        isLoading ||
+                        !passwordData.new ||
+                        !passwordData.confirm
+                      }
+                      className="flex-1"
+                    >
+                      {isLoading ? "Changing Password..." : "Change Password"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleResetPasswordFlow}
+                      disabled={isLoading}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

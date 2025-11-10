@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Users, Mail, UserPlus, Trash2, Shield, User, Loader2, Crown } from "lucide-react";
-import { getOrganizationMembersApi, inviteTeamMemberApi, removeTeamMemberApi } from "@/api/api";
+import { Users, Mail, UserPlus, Trash2, Shield, User, Loader2, Crown, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { getOrganizationMembersApi, inviteTeamMemberApi, removeTeamMemberApi, getAllInvitationsApi } from "@/api/api";
 import TitleTag from "@/components/shared/tag/tag";
 
 interface Member {
@@ -26,13 +27,38 @@ interface Member {
   };
 }
 
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
+  expiresAt: string;
+  acceptedAt: string | null;
+  createdAt: string;
+  inviter: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
 export default function TeamManagementPage() {
   const [members, setMembers] = useState<Member[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [invitationCounts, setInvitationCounts] = useState({
+    total: 0,
+    pending: 0,
+    accepted: 0,
+    expired: 0,
+    revoked: 0
+  });
   const [loading, setLoading] = useState(true);
   const [inviting, setInviting] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
+  const [activeTab, setActiveTab] = useState("members");
 
   const organizationId = localStorage.getItem("organizationId");
   const userRole = localStorage.getItem("userRole");
@@ -41,6 +67,7 @@ export default function TeamManagementPage() {
   useEffect(() => {
     if (organizationId) {
       fetchMembers();
+      fetchInvitations();
     }
   }, [organizationId]);
 
@@ -54,6 +81,23 @@ export default function TeamManagementPage() {
       toast.error("Failed to load team members");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInvitations = async () => {
+    try {
+      const response = await getAllInvitationsApi(organizationId!);
+      setInvitations(response.invitations || []);
+      setInvitationCounts(response.counts || {
+        total: 0,
+        pending: 0,
+        accepted: 0,
+        expired: 0,
+        revoked: 0
+      });
+    } catch (error) {
+      console.error("Error fetching invitations:", error);
+      toast.error("Failed to load invitations");
     }
   };
 
@@ -76,6 +120,7 @@ export default function TeamManagementPage() {
       toast.success("Invitation sent successfully!");
       setInviteEmail("");
       setInviteRole("MEMBER");
+      fetchInvitations(); // Refresh invitations list
     } catch (error: any) {
       console.error("Error inviting member:", error);
       const errorMsg = error.response?.data?.error || error.response?.data?.message || "Failed to send invitation";
@@ -125,6 +170,40 @@ export default function TeamManagementPage() {
     );
   };
 
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, { className: string; icon: JSX.Element; text: string }> = {
+      PENDING: {
+        className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+        icon: <Clock className="w-3 h-3" />,
+        text: "Pending"
+      },
+      ACCEPTED: {
+        className: "bg-green-100 text-green-700 border-green-200",
+        icon: <CheckCircle2 className="w-3 h-3" />,
+        text: "Accepted"
+      },
+      EXPIRED: {
+        className: "bg-gray-100 text-gray-700 border-gray-200",
+        icon: <AlertCircle className="w-3 h-3" />,
+        text: "Expired"
+      },
+      REVOKED: {
+        className: "bg-red-100 text-red-700 border-red-200",
+        icon: <XCircle className="w-3 h-3" />,
+        text: "Revoked"
+      }
+    };
+
+    const badge = variants[status];
+
+    return (
+      <Badge className={`${badge.className} flex items-center gap-1 border`}>
+        {badge.icon}
+        <span>{badge.text}</span>
+      </Badge>
+    );
+  };
+
   const canInvite = userRole === "OWNER" || userRole === "ADMIN";
   const canRemove = userRole === "OWNER" || userRole === "ADMIN";
 
@@ -143,8 +222,23 @@ export default function TeamManagementPage() {
       <div className="max-w-6xl mx-auto space-y-6">
         <TitleTag title="Team Management" />
 
-        {/* Current Members */}
-        <Card className="border-none shadow-lg">
+        {/* Tabs for Members and Invitations */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="members">
+              <Users className="w-4 h-4 mr-2" />
+              Members ({members.length})
+            </TabsTrigger>
+            <TabsTrigger value="invitations">
+              <Mail className="w-4 h-4 mr-2" />
+              Invitations ({invitationCounts.total})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Members Tab */}
+          <TabsContent value="members" className="space-y-6 mt-6">
+            {/* Current Members */}
+            <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
@@ -272,6 +366,112 @@ export default function TeamManagementPage() {
             </CardContent>
           </Card>
         )}
+          </TabsContent>
+
+          {/* Invitations Tab */}
+          <TabsContent value="invitations" className="space-y-6 mt-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="border-none shadow">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <Clock className="w-8 h-8 mx-auto mb-2 text-yellow-600" />
+                    <div className="text-2xl font-bold text-yellow-700">{invitationCounts.pending}</div>
+                    <div className="text-sm text-gray-600">Pending</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                    <div className="text-2xl font-bold text-green-700">{invitationCounts.accepted}</div>
+                    <div className="text-sm text-gray-600">Accepted</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <AlertCircle className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                    <div className="text-2xl font-bold text-gray-700">{invitationCounts.expired}</div>
+                    <div className="text-sm text-gray-600">Expired</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <XCircle className="w-8 h-8 mx-auto mb-2 text-red-600" />
+                    <div className="text-2xl font-bold text-red-700">{invitationCounts.revoked}</div>
+                    <div className="text-sm text-gray-600">Revoked</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* All Invitations */}
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                  All Invitations ({invitations.length})
+                </CardTitle>
+                <CardDescription>
+                  Track all team invitations and their current status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {invitations.map((invitation) => (
+                    <div
+                      key={invitation.id}
+                      className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                          {invitation.email[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-gray-900">
+                              {invitation.email}
+                            </h3>
+                            {getRoleBadge(invitation.role)}
+                            {getStatusBadge(invitation.status)}
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Invited by {invitation.inviter.firstName} {invitation.inviter.lastName}
+                          </p>
+                          <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                            <span>Sent {new Date(invitation.createdAt).toLocaleDateString()}</span>
+                            {invitation.status === "ACCEPTED" && invitation.acceptedAt && (
+                              <span className="text-green-600 font-medium">
+                                ✓ Joined {new Date(invitation.acceptedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                            {invitation.status === "PENDING" && (
+                              <span className="text-yellow-600">
+                                ⏰ Expires {new Date(invitation.expiresAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {invitations.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No invitations yet</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Remove Confirmation Dialog */}
         <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>

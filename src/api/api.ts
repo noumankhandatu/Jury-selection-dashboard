@@ -578,3 +578,55 @@ export const updateMemberRoleApi = async (
     throw error;
   }
 };
+
+// Get all invitations (pending, accepted, expired, revoked)
+export const getAllInvitationsApi = async (organizationId: string) => {
+  try {
+    const response = await BaseUrl.get(
+      `/organizations/${organizationId}/invitations/all`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching all invitations:", error);
+    throw error;
+  }
+};
+
+// ==================== PASSWORD CHANGE WITH OTP APIs ====================
+
+// Request password change OTP
+export const requestPasswordChangeOTPApi = async () => {
+  try {
+    const response = await BaseUrl.post("/auth/request-password-otp");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error requesting password OTP:", error);
+    throw error;
+  }
+};
+
+// Verify password change OTP
+export const verifyPasswordOTPApi = async (otp: string) => {
+  try {
+    const response = await BaseUrl.post("/auth/verify-password-otp", { otp });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error verifying password OTP:", error);
+    throw error;
+  }
+};
+
+// Change password with verified OTP
+export const changePasswordApi = async (payload: {
+  otp: string;
+  newPassword: string;
+  currentPassword?: string;
+}) => {
+  try {
+    const response = await BaseUrl.post("/auth/change-password", payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error changing password:", error);
+    throw error;
+  }
+};

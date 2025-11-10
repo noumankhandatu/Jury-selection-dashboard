@@ -25,7 +25,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { handleLogout } from "@/utils/config/baseUrl";
-import { requestPasswordChangeOTPApi, verifyPasswordOTPApi, changePasswordApi } from "@/api/api";
+import {
+  requestPasswordChangeOTPApi,
+  verifyPasswordOTPApi,
+  changePasswordApi,
+} from "@/api/api";
 import { toast } from "sonner";
 import TitleTag from "@/components/shared/tag/tag";
 interface UserData {
@@ -52,9 +56,7 @@ interface EditingState {
 export default function AccountPage() {
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "security">(
-    "profile"
-  );
+  const [activeTab, setActiveTab] = useState<"profile" | "security">("profile");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -63,7 +65,8 @@ export default function AccountPage() {
     personal: false,
     email: false,
   });
-  const [passwordChangeStep, setPasswordChangeStep] = useState<PasswordChangeStep>("initial");
+  const [passwordChangeStep, setPasswordChangeStep] =
+    useState<PasswordChangeStep>("initial");
   const [otp, setOtp] = useState("");
   const [otpVerified, setOtpVerified] = useState(false);
 
@@ -199,15 +202,17 @@ export default function AccountPage() {
         newPassword: passwordData.new,
         currentPassword: passwordData.current || undefined,
       });
-      
-      toast.success("Password changed successfully! Please login with your new password.");
-      
+
+      toast.success(
+        "Password changed successfully! Please login with your new password."
+      );
+
       // Clear form
       setPasswordData({ current: "", new: "", confirm: "" });
       setOtp("");
       setOtpVerified(false);
       setPasswordChangeStep("initial");
-      
+
       // Auto-logout after password change
       if (response.requiresLogout) {
         setTimeout(() => {
@@ -508,9 +513,14 @@ export default function AccountPage() {
                     <div className="flex items-start">
                       <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
                       <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-2">Password Change Process</p>
+                        <p className="font-medium mb-2">
+                          Password Change Process
+                        </p>
                         <ol className="text-xs space-y-1 list-decimal list-inside">
-                          <li>Click "Send OTP" to receive a verification code via email</li>
+                          <li>
+                            Click "Send OTP" to receive a verification code via
+                            email
+                          </li>
                           <li>Enter the 6-digit OTP code you receive</li>
                           <li>Set your new password</li>
                         </ol>
@@ -544,8 +554,8 @@ export default function AccountPage() {
                       <div className="text-sm text-green-800">
                         <p className="font-medium mb-1">OTP Sent!</p>
                         <p className="text-xs">
-                          Check your email ({userData.email}) for the 6-digit verification code.
-                          The code will expire in 10 minutes.
+                          Check your email ({userData.email}) for the 6-digit
+                          verification code. The code will expire in 10 minutes.
                         </p>
                       </div>
                     </div>
@@ -563,7 +573,9 @@ export default function AccountPage() {
                         placeholder="000000"
                         maxLength={6}
                         value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                        onChange={(e) =>
+                          setOtp(e.target.value.replace(/\D/g, ""))
+                        }
                         className="pl-10 text-center text-2xl tracking-widest"
                       />
                     </div>
@@ -604,8 +616,12 @@ export default function AccountPage() {
                     <div className="flex items-start">
                       <Shield className="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
                       <div className="text-sm text-green-800">
-                        <p className="font-medium">✓ OTP Verified Successfully!</p>
-                        <p className="text-xs mt-1">You can now set your new password.</p>
+                        <p className="font-medium">
+                          ✓ OTP Verified Successfully!
+                        </p>
+                        <p className="text-xs mt-1">
+                          You can now set your new password.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -630,7 +646,9 @@ export default function AccountPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        onClick={() =>
+                          setShowCurrentPassword(!showCurrentPassword)
+                        }
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showCurrentPassword ? (
@@ -643,7 +661,10 @@ export default function AccountPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="newPassword" className="text-sm font-medium">
+                    <Label
+                      htmlFor="newPassword"
+                      className="text-sm font-medium"
+                    >
                       New Password
                     </Label>
                     <div className="relative mt-1">
@@ -691,7 +712,9 @@ export default function AccountPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showConfirmPassword ? (
@@ -707,7 +730,9 @@ export default function AccountPage() {
                     <div className="flex items-start">
                       <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
                       <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-2">Password Requirements</p>
+                        <p className="font-medium mb-2">
+                          Password Requirements
+                        </p>
                         <ul className="text-xs space-y-1">
                           <li>• At least 8 characters long</li>
                           <li>• Include uppercase and lowercase letters</li>
@@ -722,9 +747,7 @@ export default function AccountPage() {
                     <Button
                       onClick={handlePasswordUpdate}
                       disabled={
-                        isLoading ||
-                        !passwordData.new ||
-                        !passwordData.confirm
+                        isLoading || !passwordData.new || !passwordData.confirm
                       }
                       className="flex-1"
                     >

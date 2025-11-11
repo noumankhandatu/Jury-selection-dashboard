@@ -17,116 +17,150 @@ import SubscriptionCanceledPage from "@/pages/subscription/canceled";
 import TeamManagementPage from "@/dashboard/team-management";
 import BillingPage from "@/dashboard/billing";
 import AcceptInvitationPage from "@/pages/accept-invitation";
+// Route Guards
+import OrganizationGuard from "@/components/guards/OrganizationGuard";
 
 const PrivateRoutes = () => {
   return (
     <Router>
       <Routes>
-        {/* Dashboard Routes */}
+        {/* Dashboard Routes - Protected by OrganizationGuard */}
         {["/", "/dashboard"].map((path) => (
           <Route
             key={path}
             path={path}
             element={
-              <Layout>
-                <Dashboard />
-              </Layout>
+              <OrganizationGuard>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </OrganizationGuard>
             }
           />
         ))}
-        
+
         {/* Invitation Route (accessible to authenticated users) */}
         <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
-        
-        {/* Case Management Routes */}
+
+        {/* Case Management Routes - Protected by OrganizationGuard */}
         <Route
           path="/dashboard/create-case"
           element={
-            <Layout>
-              <CreateCasePage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <CreateCasePage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
         <Route
           path="/dashboard/search-case"
           element={
-            <Layout>
-              <SearchCasePage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <SearchCasePage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
-        
-        {/* Juror Routes */}
+
+        {/* Juror Routes - Protected by OrganizationGuard */}
         <Route
           path="/dashboard/manage-jurors"
           element={
-            <Layout>
-              <ManageJurorsPage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <ManageJurorsPage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
         <Route
           path="/dashboard/juror-analysis"
           element={
-            <Layout>
-              <JurorAnalysisPage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <JurorAnalysisPage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
-        
-        {/* Session Routes */}
+
+        {/* Session Routes - Protected by OrganizationGuard */}
         <Route
           path="/dashboard/live-session"
           element={
-            <Layout>
-              <LiveSessionPage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <LiveSessionPage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
         <Route
           path="/dashboard/session-analysis"
           element={
-            <Layout>
-              <SessionAnalysisPage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <SessionAnalysisPage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
-        
-        {/* Account Routes */}
+
+        {/* Account Routes - Protected by OrganizationGuard */}
         <Route
           path="/dashboard/account"
           element={
-            <Layout>
-              <AccountPage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <AccountPage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
 
         {/* SaaS Organization Routes */}
-        <Route path="/create-organization" element={<CreateOrganizationPage />} />
-        
+        <Route
+          path="/create-organization"
+          element={<CreateOrganizationPage />}
+        />
+
         {/* SaaS Subscription Routes */}
-        <Route path="/subscription/select" element={<SubscriptionSelectPage />} />
-        <Route path="/subscription/success" element={<SubscriptionSuccessPage />} />
-        <Route path="/subscription/canceled" element={<SubscriptionCanceledPage />} />
-        
-        {/* SaaS Team Routes (OWNER & ADMIN only) */}
+        <Route
+          path="/subscription/select"
+          element={<SubscriptionSelectPage />}
+        />
+        <Route
+          path="/subscription/success"
+          element={<SubscriptionSuccessPage />}
+        />
+        <Route
+          path="/subscription/canceled"
+          element={<SubscriptionCanceledPage />}
+        />
+
+        {/* SaaS Team Routes - Protected by OrganizationGuard (OWNER & ADMIN only) */}
         <Route
           path="/dashboard/team-management"
           element={
-            <Layout>
-              <TeamManagementPage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <TeamManagementPage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
-        
-        {/* SaaS Billing Routes (OWNER only) */}
+
+        {/* SaaS Billing Routes - Protected by OrganizationGuard (OWNER only) */}
         <Route
           path="/dashboard/billing"
           element={
-            <Layout>
-              <BillingPage />
-            </Layout>
+            <OrganizationGuard>
+              <Layout>
+                <BillingPage />
+              </Layout>
+            </OrganizationGuard>
           }
         />
 

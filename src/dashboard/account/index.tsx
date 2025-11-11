@@ -21,6 +21,10 @@ import {
   LogOut,
   Shield,
   KeyRound,
+  Camera,
+  Upload,
+  X,
+  Trash2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +33,11 @@ import {
   requestPasswordChangeOTPApi,
   verifyPasswordOTPApi,
   changePasswordApi,
+  uploadAvatarApi,
+  uploadCoverPhotoApi,
+  deleteAvatarApi,
+  deleteCoverPhotoApi,
+  getProfileImagesApi,
 } from "@/api/api";
 import { toast } from "sonner";
 import TitleTag from "@/components/shared/tag/tag";
@@ -38,6 +47,8 @@ interface UserData {
   firstName: string;
   lastName: string;
   phoneNumber: string;
+  avatar?: string | null;
+  coverPhoto?: string | null;
 }
 
 interface PasswordData {
@@ -69,6 +80,8 @@ export default function AccountPage() {
     useState<PasswordChangeStep>("initial");
   const [otp, setOtp] = useState("");
   const [otpVerified, setOtpVerified] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const [userData, setUserData] = useState<UserData>({
     id: "",
@@ -76,6 +89,8 @@ export default function AccountPage() {
     firstName: "",
     lastName: "",
     phoneNumber: "",
+    avatar: null,
+    coverPhoto: null,
   });
 
   useEffect(() => {
@@ -84,7 +99,23 @@ export default function AccountPage() {
       const parsedUser = JSON.parse(storedUser) as UserData;
       setUserData(parsedUser);
     }
+
+    // Fetch profile images
+    fetchProfileImages();
   }, []);
+
+  const fetchProfileImages = async () => {
+    try {
+      const data = await getProfileImagesApi();
+      setUserData((prev) => ({
+        ...prev,
+        avatar: data.avatar,
+        coverPhoto: data.coverPhoto,
+      }));
+    } catch (error) {
+      console.error("Error fetching profile images:", error);
+    }
+  };
 
   const [editData, setEditData] = useState<UserData>({ ...userData });
   const [passwordData, setPasswordData] = useState<PasswordData>({
@@ -96,6 +127,117 @@ export default function AccountPage() {
   const generateAvatar = (name: string): string => {
     const seed = name.toLowerCase().replace(/\s+/g, "");
     return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+  };
+
+  // Image upload handlers
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const data = await uploadAvatarApi(file);
+      setUserData((prev) => ({
+        ...prev,
+        avatar: data.avatar,
+      }));
+
+      // Update localStorage
+      if (data.userForStorage) {
+        localStorage.setItem("user", JSON.stringify(data.userForStorage));
+      }
+
+      toast.success("Profile picture updated successfully!");
+    } catch (error: any) {
+      console.error("Error uploading avatar:", error);
+      toast.error(
+        error.response?.data?.error || "Failed to upload profile picture"
+      );
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleCoverPhotoUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setUploadingCover(true);
+    try {
+      const data = await uploadCoverPhotoApi(file);
+      setUserData((prev) => ({
+        ...prev,
+        coverPhoto: data.coverPhoto,
+      }));
+      toast.success("Cover photo updated successfully!");
+    } catch (error: any) {
+      console.error("Error uploading cover photo:", error);
+      toast.error(
+        error.response?.data?.error || "Failed to upload cover photo"
+      );
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    try {
+      await deleteAvatarApi();
+      setUserData((prev) => ({
+        ...prev,
+        avatar: null,
+      }));
+      toast.success("Profile picture removed successfully!");
+    } catch (error: any) {
+      console.error("Error deleting avatar:", error);
+      toast.error(
+        error.response?.data?.error || "Failed to remove profile picture"
+      );
+    }
+  };
+
+  const handleDeleteCoverPhoto = async () => {
+    try {
+      await deleteCoverPhotoApi();
+      setUserData((prev) => ({
+        ...prev,
+        coverPhoto: null,
+      }));
+      toast.success("Cover photo removed successfully!");
+    } catch (error: any) {
+      console.error("Error deleting cover photo:", error);
+      toast.error(
+        error.response?.data?.error || "Failed to remove cover photo"
+      );
+    }
   };
 
   // const showNotification = (message: string, type: "success" | "error" = "success"): void => {
@@ -264,21 +406,123 @@ export default function AccountPage() {
 
       {/* Header */}
       <Card className="mb-6 border-0 shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-24 w-full" />
+        {/* Cover Photo */}
+        <div className="relative h-48 w-full group">
+          {userData.coverPhoto ? (
+            <img
+              src={userData.coverPhoto}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-full w-full" />
+          )}
+
+          {/* Cover Photo Actions */}
+          <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverPhotoUpload}
+              className="hidden"
+              id="cover-upload"
+              disabled={uploadingCover}
+            />
+            <label htmlFor="cover-upload">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="cursor-pointer"
+                disabled={uploadingCover}
+                asChild
+              >
+                <span>
+                  {uploadingCover ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                      Uploading...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Camera className="w-4 h-4" />
+                      Change Cover
+                    </span>
+                  )}
+                </span>
+              </Button>
+            </label>
+
+            {userData.coverPhoto && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDeleteCoverPhoto}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
         <CardContent className="pt-0">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10">
-            <Avatar className="h-20 w-20 ring-4 ring-white">
-              <AvatarImage
-                src={generateAvatar(
-                  `${userData.firstName} ${userData.lastName}`
-                )}
-                alt={`${userData.firstName} ${userData.lastName}`}
-              />
-              <AvatarFallback className="bg-blue-600 text-white text-xl">
-                {userData.firstName?.[0]}
-                {userData.lastName?.[0]}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-16">
+            {/* Avatar with Upload */}
+            <div className="relative group">
+              <Avatar className="h-32 w-32 ring-4 ring-white shadow-xl ">
+                <AvatarImage
+                  src={
+                    userData.avatar ||
+                    generateAvatar(`${userData.firstName} ${userData.lastName}`)
+                  }
+                  className="object-cover"
+                  alt={`${userData.firstName} ${userData.lastName}`}
+                />
+                <AvatarFallback className="bg-blue-600 text-white text-2xl">
+                  {userData.firstName?.[0]}
+                  {userData.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+
+              {/* Avatar Upload Button */}
+              <div className="absolute bottom-0 right-0">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  id="avatar-upload"
+                  disabled={uploadingAvatar}
+                />
+                <label htmlFor="avatar-upload">
+                  <Button
+                    size="sm"
+                    className="rounded-full w-10 h-10 p-0 shadow-lg cursor-pointer"
+                    disabled={uploadingAvatar}
+                    asChild
+                  >
+                    <span>
+                      {uploadingAvatar ? (
+                        <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                      ) : (
+                        <Camera className="w-4 h-4" />
+                      )}
+                    </span>
+                  </Button>
+                </label>
+              </div>
+
+              {/* Delete Avatar Button */}
+              {userData.avatar && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="absolute top-0 right-0 rounded-full w-8 h-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={handleDeleteAvatar}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
             <div className="flex-1">
               <div className="text-2xl font-semibold">
                 {userData.firstName} {userData.lastName}

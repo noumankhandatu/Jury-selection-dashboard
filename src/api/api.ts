@@ -796,3 +796,86 @@ export const extractQuestionsFromPDFApi = async (
     throw error;
   }
 };
+
+// ============================================
+// Image Upload Endpoints (Cloudinary)
+// ============================================
+
+/**
+ * Upload profile picture (avatar)
+ */
+export const uploadAvatarApi = async (file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    const response = await BaseUrl.post("/upload/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error uploading avatar:", error);
+    throw error;
+  }
+};
+
+/**
+ * Upload cover photo
+ */
+export const uploadCoverPhotoApi = async (file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append("cover", file);
+
+    const response = await BaseUrl.post("/upload/cover", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error uploading cover photo:", error);
+    throw error;
+  }
+};
+
+/**
+ * Delete profile picture
+ */
+export const deleteAvatarApi = async () => {
+  try {
+    const response = await BaseUrl.delete("/upload/avatar");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error deleting avatar:", error);
+    throw error;
+  }
+};
+
+/**
+ * Delete cover photo
+ */
+export const deleteCoverPhotoApi = async () => {
+  try {
+    const response = await BaseUrl.delete("/upload/cover");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error deleting cover photo:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get profile images
+ */
+export const getProfileImagesApi = async () => {
+  try {
+    const response = await BaseUrl.get("/upload/profile-images");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching profile images:", error);
+    throw error;
+  }
+};

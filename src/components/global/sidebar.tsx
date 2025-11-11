@@ -1,13 +1,27 @@
 import { cn } from "@/lib/utils";
-// import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, PlusCircle, Search, Radio, UserCog, Scale, FileSearch, UsersRound, CreditCard, Building2 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-// import { Separator } from "../ui/separator";
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
+  Users,
+  PlusCircle,
+  Search,
+  Radio,
+  UserCog,
+  Scale,
+  FileSearch,
+  UsersRound,
+  CreditCard,
+  Building2,
+  LogOut,
+} from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Separator } from "../ui/separator";
 import { FaCircleArrowLeft } from "react-icons/fa6";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
 import { containerVariants, itemVariants } from "@/utils/fn";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface SidebarProps {
   onClose: () => void;
@@ -15,10 +29,24 @@ interface SidebarProps {
 
 export function Sidebar({ onClose }: SidebarProps) {
   const location = useLocation();
-  
+  const navigate = useNavigate();
+
   // Get user role and organization info from localStorage
   const userRole = localStorage.getItem("userRole") || "MEMBER";
-  const organizationName = localStorage.getItem("organizationName") || "Organization";
+  const organizationName =
+    localStorage.getItem("organizationName") || "Organization";
+
+  // Logout function
+  const handleLogout = () => {
+    // Clear all localStorage data
+    localStorage.clear();
+    navigate("/");
+    window.location.reload();
+    // Show success message
+    toast.success("Logged out successfully");
+
+    // Redirect to login page
+  };
 
   // Base routes available to all users
   const baseRoutes = [
@@ -73,28 +101,34 @@ export function Sidebar({ onClose }: SidebarProps) {
   ];
 
   // Team management routes (OWNER & ADMIN only)
-  const teamRoutes = (userRole === "OWNER" || userRole === "ADMIN") ? [
-    {
-      label: "Team Management",
-      icon: UsersRound,
-      href: "/dashboard/team-management",
-      active: location.pathname === "/dashboard/team-management",
-      color: "white",
-      badge: "Team",
-    },
-  ] : [];
+  const teamRoutes =
+    userRole === "OWNER" || userRole === "ADMIN"
+      ? [
+          {
+            label: "Team Management",
+            icon: UsersRound,
+            href: "/dashboard/team-management",
+            active: location.pathname === "/dashboard/team-management",
+            color: "white",
+            badge: "Team",
+          },
+        ]
+      : [];
 
   // Billing & settings routes (OWNER only)
-  const ownerRoutes = (userRole === "OWNER") ? [
-    {
-      label: "Billing",
-      icon: CreditCard,
-      href: "/dashboard/billing",
-      active: location.pathname === "/dashboard/billing",
-      color: "white",
-      badge: "Owner",
-    },
-  ] : [];
+  const ownerRoutes =
+    userRole === "OWNER"
+      ? [
+          {
+            label: "Billing",
+            icon: CreditCard,
+            href: "/dashboard/billing",
+            active: location.pathname === "/dashboard/billing",
+            color: "white",
+            badge: "Owner",
+          },
+        ]
+      : [];
 
   // Combine all routes
   const routes = [...baseRoutes, ...teamRoutes, ...ownerRoutes];
@@ -123,12 +157,16 @@ export function Sidebar({ onClose }: SidebarProps) {
           <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm shadow-lg">
             <Scale className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Jury Duty</h1>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+            Jury Duty
+          </h1>
         </div>
         {/* Organization Name */}
         <div className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg">
           <Building2 className="h-4 w-4 text-white/70" />
-          <span className="text-sm text-white/90 font-medium truncate">{organizationName}</span>
+          <span className="text-sm text-white/90 font-medium truncate">
+            {organizationName}
+          </span>
         </div>
       </motion.div>
 
@@ -136,7 +174,12 @@ export function Sidebar({ onClose }: SidebarProps) {
       <ScrollArea className="flex-1 px-3">
         <motion.div className="space-y-1 py-2" variants={containerVariants}>
           {routes.map((route) => (
-            <motion.div key={route.href} variants={itemVariants} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <motion.div
+              key={route.href}
+              variants={itemVariants}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Link
                 to={route.href}
                 className={cn(
@@ -146,7 +189,9 @@ export function Sidebar({ onClose }: SidebarProps) {
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 )}
               >
-                <div className={`p-1.5 rounded-lg bg-gradient-to-r ${route.color}`}>
+                <div
+                  className={`p-1.5 rounded-lg bg-gradient-to-r ${route.color}`}
+                >
                   <route.icon className="h-4 w-4 text-white" />
                 </div>
                 <span className="flex-1">{route.label}</span>
@@ -162,21 +207,23 @@ export function Sidebar({ onClose }: SidebarProps) {
       </ScrollArea>
 
       {/* Logout Section */}
-      {/* <motion.div className="p-4 mt-auto" variants={itemVariants}>
-        <Separator className="bg-white/10 mb-4" />
+      <motion.div
+        className="p-4 mt-auto border-t border-white/10"
+        variants={itemVariants}
+      >
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
-            onClick={logoutUser}
-            className="w-full justify-start text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm border-none transition-all duration-200"
+            onClick={handleLogout}
+            className="w-full justify-start text-white bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm border-none transition-all duration-200 shadow-lg"
             variant="outline"
           >
-            <div className="p-1.5 rounded-lg bg-gradient-to-r  mr-2">
+            <div className="p-1.5 rounded-lg bg-gradient-to-r from-red-500 to-red-600 mr-2">
               <LogOut className="h-4 w-4 text-white" />
             </div>
-            Logout
+            <span className="font-medium">Logout</span>
           </Button>
         </motion.div>
-      </motion.div> */}
+      </motion.div>
     </motion.div>
   );
 }

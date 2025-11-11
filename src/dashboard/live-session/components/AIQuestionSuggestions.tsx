@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Loader2, CheckSquare, Square, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { createQuestionApi } from "@/api/api";
+import { createQuestionApi, suggestAIQuestionsApi } from "@/api/api";
 
 interface AIQuestionSuggestionsProps {
   caseData: {
@@ -37,100 +37,30 @@ export default function AIQuestionSuggestions({
     setSelectedQuestions(new Set());
 
     try {
-      // Check if OpenAI API key is available
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error("OpenAI API key is not configured");
-      }
+      // Call backend API with token tracking
+      const data = await suggestAIQuestionsApi(caseData);
 
-      const prompt = `
-You are an expert jury consultant helping to create voir dire questions for jury selection. Based on the case information provided, generate exactly 5 relevant and effective jury selection questions.
+      const questions = data.questions || [];
 
-Case Information:
-- Case Type: ${caseData.caseType || "Not specified"}
-- Case Name: ${caseData.caseName}
-- Case Description: ${caseData.description}
-- Ideal Juror Traits: ${caseData.jurorTraits}
-
-Generate 5 specific voir dire questions that would help identify jurors who match the ideal traits or reveal potential biases relevant to this case. The questions should be:
-1. Clear and direct
-2. Legally appropriate for voir dire
-3. Designed to elicit honest responses
-4. Relevant to the case type and circumstances
-5. Helpful in identifying bias or suitability
-
-Return your response as a JSON object with this exact format:
-{"questions": ["question 1", "question 2", "question 3", "question 4", "question 5"]}
-
-Each question should be a complete, standalone question ready to be asked during jury selection.
-`;
-
-      const response = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-4",
-            messages: [
-              {
-                role: "user",
-                content: prompt,
-              },
-            ],
-            max_tokens: 1500,
-            temperature: 0.7,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API error:", errorData);
-        throw new Error(`OpenAI API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
-
-      if (!content) {
-        throw new Error("No content received from OpenAI");
-      }
-
-      // Parse the JSON response
-      const parsedQuestions = parseQuestionsFromResponse(content);
-
-      if (parsedQuestions.length === 0) {
+      if (questions.length === 0) {
         throw new Error("No valid questions were generated");
       }
 
-      setSuggestedQuestions(parsedQuestions);
+      setSuggestedQuestions(questions);
       toast.success(
-        `Generated ${parsedQuestions.length} AI-suggested questions!`
+        `Generated ${questions.length} AI-suggested questions!`
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating questions:", error);
 
-      if (error instanceof Error) {
-        if (error.message.includes("API key")) {
-          toast.error(
-            "OpenAI API key is not configured. Please add VITE_OPENAI_API_KEY to your environment variables."
-          );
-        } else if (
-          error.message.includes("quota") ||
-          error.message.includes("billing")
-        ) {
-          toast.error(
-            "OpenAI API quota exceeded. Please check your OpenAI account."
-          );
-        } else if (error.message.includes("401")) {
-          toast.error("Invalid OpenAI API key. Please check your API key.");
-        } else {
-          toast.error(`Failed to generate questions: ${error.message}`);
-        }
+      if (error.response?.status === 429) {
+        toast.error(
+          "Insufficient AI tokens. Please upgrade your plan or wait for your tokens to reset."
+        );
+      } else if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else if (error instanceof Error) {
+        toast.error(`Failed to generate questions: ${error.message}`);
       } else {
         toast.error("An unexpected error occurred while generating questions.");
       }

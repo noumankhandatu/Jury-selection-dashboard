@@ -630,3 +630,169 @@ export const changePasswordApi = async (payload: {
     throw error;
   }
 };
+
+// ==========================================
+// AI TOKEN MANAGEMENT APIs
+// ==========================================
+
+/**
+ * Get current AI token usage for organization
+ */
+export const getTokenUsageApi = async () => {
+  try {
+    const response = await BaseUrl.get("/tokens/usage");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching token usage:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get detailed AI usage history
+ */
+export const getTokenHistoryApi = async (params?: {
+  limit?: number;
+  offset?: number;
+  feature?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  try {
+    const response = await BaseUrl.get("/tokens/history", { params });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching token history:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get usage statistics by feature
+ */
+export const getTokenStatisticsApi = async () => {
+  try {
+    const response = await BaseUrl.get("/tokens/statistics");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching token statistics:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get estimated requests remaining
+ */
+export const getEstimatedRequestsApi = async () => {
+  try {
+    const response = await BaseUrl.get("/tokens/estimates");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching estimated requests:", error);
+    throw error;
+  }
+};
+
+/**
+ * Validate if organization has enough tokens for a feature
+ * Call this BEFORE making AI API calls from frontend
+ */
+export const validateAITokensApi = async (
+  feature: string,
+  estimatedCost?: number
+) => {
+  try {
+    const response = await BaseUrl.post("/tokens/validate", {
+      feature,
+      estimatedCost,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error validating AI tokens:", error);
+    throw error;
+  }
+};
+
+// ============================================
+// AI Proxy Endpoints (with token tracking)
+// ============================================
+
+/**
+ * Generate AI questions for case creation (10 questions)
+ * Automatically tracks token usage
+ */
+export const generateAIQuestionsApi = async (caseData: {
+  caseName: string;
+  caseType: string;
+  description: string;
+  jurorTraits: string;
+}) => {
+  try {
+    const response = await BaseUrl.post("/ai/generate-questions", { caseData });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error generating AI questions:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate AI question suggestions for live session (5 questions)
+ * Automatically tracks token usage
+ */
+export const suggestAIQuestionsApi = async (caseData: {
+  caseName: string;
+  caseType: string;
+  description: string;
+  jurorTraits: string;
+}) => {
+  try {
+    const response = await BaseUrl.post("/ai/suggest-questions", { caseData });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error suggesting AI questions:", error);
+    throw error;
+  }
+};
+
+/**
+ * Extract jurors from PDF text batch
+ * Automatically tracks token usage
+ */
+export const extractJurorsFromPDFApi = async (
+  batchText: string,
+  startPage: number,
+  endPage: number
+) => {
+  try {
+    const response = await BaseUrl.post("/ai/extract-jurors", {
+      batchText,
+      startPage,
+      endPage,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error extracting jurors:", error);
+    throw error;
+  }
+};
+
+/**
+ * Extract questions from PDF page image
+ * Automatically tracks token usage
+ */
+export const extractQuestionsFromPDFApi = async (
+  imageBase64: string,
+  pageNumber: number
+) => {
+  try {
+    const response = await BaseUrl.post("/ai/extract-questions", {
+      imageBase64,
+      pageNumber,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error extracting questions:", error);
+    throw error;
+  }
+};

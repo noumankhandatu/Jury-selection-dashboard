@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Brain, FileUp, Loader2, Plus, Trash2, FileText, X, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AddQuestionDialog } from "./add-question-dialog";
+import { extractQuestionsFromPDFApi } from "@/api/api";
 
 interface QuestionsManagerProps {
   questions: string[];
@@ -87,54 +88,22 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
         `;
 
         try {
-          // Call OpenAI API for each page
-          const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-              model: "gpt-4o",
-              messages: [
-                {
-                  role: "user",
-                  content: [
-                    {
-                      type: "text",
-                      text: prompt,
-                    },
-                    {
-                      type: "image_url",
-                      image_url: {
-                        url: `data:image/png;base64,${imageBase64}`,
-                        detail: "high",
-                      },
-                    },
-                  ],
-                },
-              ],
-              max_tokens: 3000,
-              temperature: 0.1,
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`Error processing page ${i + 1}:`, errorData);
-            continue; // Skip this page and continue with others
+          // Call backend API with token tracking
+          const data = await extractQuestionsFromPDFApi(imageBase64, i + 1);
+          
+          if (data.questions && Array.isArray(data.questions)) {
+            allExtractedQuestions = [...allExtractedQuestions, ...data.questions];
           }
-
-          const data = await response.json();
-          const extractedText = data.choices?.[0]?.message?.content;
-
-          if (extractedText) {
-            const pageQuestions = extractQuestionsFromText(extractedText);
-            allExtractedQuestions = [...allExtractedQuestions, ...pageQuestions];
-          }
-        } catch (pageError) {
+        } catch (pageError: any) {
           console.error(`Error processing page ${i + 1}:`, pageError);
-          // Continue with other pages
+          
+          if (pageError.response?.status === 429) {
+            toast.error(
+              "Insufficient AI tokens. Please upgrade your plan or wait for your tokens to reset."
+            );
+            break; // Stop processing if out of tokens
+          }
+          // Continue with other pages on other errors
         }
       }
 
@@ -154,12 +123,8 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
       console.error("Error processing PDF:", error);
 
       if (error instanceof Error) {
-        if (error.message.includes("API key")) {
-          toast.error("OpenAI API key is not configured. Please add NEXT_PUBLIC_OPENAI_API_KEY to your environment variables.");
-        } else if (error.message.includes("quota") || error.message.includes("billing")) {
-          toast.error("OpenAI API quota exceeded. Please check your OpenAI account.");
-        } else if (error.message.includes("401")) {
-          toast.error("Invalid OpenAI API key. Please check your API key.");
+        if (error.message.includes("Insufficient AI tokens")) {
+          toast.error(error.message);
         } else {
           toast.error(`Failed to extract questions: ${error.message}`);
         }

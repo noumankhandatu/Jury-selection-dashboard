@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Juror } from "./types";
+import { extractJurorsFromPDFApi } from "@/api/api";
 
 export const generateAvatar = (name: string) => {
   if (!name) {
@@ -53,14 +54,19 @@ const safeNumber = (value: any, defaultValue = 0): number => {
 };
 
 // Extract and parse juror data from PDF using page-by-page processing
-export const extractAndParseJurorsFromPDF = async (file: File, caseId: string): Promise<Juror[]> => {
+export const extractAndParseJurorsFromPDF = async (
+  file: File,
+  caseId: string
+): Promise<Juror[]> => {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
   const allExtractedJurors: any[] = [];
 
   try {
     // Check if API key exists
     if (!apiKey) {
-      throw new Error("OpenAI API key not found. Please check your environment variables.");
+      throw new Error(
+        "OpenAI API key not found. Please check your environment variables."
+      );
     }
 
     // Create a script element to load PDF.js from CDN
@@ -74,18 +80,21 @@ export const extractAndParseJurorsFromPDF = async (file: File, caseId: string): 
 
         // Load PDF.js from CDN
         const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+        script.src =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
         script.onload = () => {
           const pdfjsLib = (window as any).pdfjsLib;
           if (pdfjsLib) {
             // Set the worker source to match the library version
-            pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+              "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
             resolve(pdfjsLib);
           } else {
             reject(new Error("Failed to load PDF.js library"));
           }
         };
-        script.onerror = () => reject(new Error("Failed to load PDF.js script"));
+        script.onerror = () =>
+          reject(new Error("Failed to load PDF.js script"));
         document.head.appendChild(script);
       });
     };
@@ -112,21 +121,34 @@ export const extractAndParseJurorsFromPDF = async (file: File, caseId: string): 
         try {
           const page = await pdf.getPage(pageNum);
           const textContent = await page.getTextContent();
-          const pageText = textContent.items.map((item: any) => item.str).join(" ");
+          const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(" ");
 
           batchText += `\n\n--- PAGE ${pageNum} ---\n${pageText}`;
         } catch (pageError) {
-          console.warn(`⚠️ Failed to extract text from page ${pageNum}:`, pageError);
+          console.warn(
+            `⚠️ Failed to extract text from page ${pageNum}:`,
+            pageError
+          );
         }
       }
 
       if (batchText.trim()) {
         // Process this batch with OpenAI
         try {
-          const batchJurors = await processBatchWithOpenAI(batchText, apiKey, startPage, endPage);
+          const batchJurors = await processBatchWithOpenAI(
+            batchText,
+            apiKey,
+            startPage,
+            endPage
+          );
           allExtractedJurors.push(...batchJurors);
         } catch (batchError) {
-          console.error(`❌ Failed to process batch ${batchIndex + 1}:`, batchError);
+          console.error(
+            `❌ Failed to process batch ${batchIndex + 1}:`,
+            batchError
+          );
           // Continue with next batch instead of failing completely
         }
       }
@@ -138,167 +160,101 @@ export const extractAndParseJurorsFromPDF = async (file: File, caseId: string): 
     }
 
     if (allExtractedJurors.length === 0) {
-      throw new Error("No jurors were extracted from any pages of the PDF. Please check if the PDF contains readable juror information.");
+      throw new Error(
+        "No jurors were extracted from any pages of the PDF. Please check if the PDF contains readable juror information."
+      );
     }
 
     // Process and format jurors
-    const processedJurors: Juror[] = allExtractedJurors.map((juror: any, index: number) => {
-      return {
-        id: `ai-${Date.now()}-${index}`,
-        caseId: caseId,
-        isStrikedOut: false,
-        jurorNumber: safeString(juror.jurorNumber, `J-${String(index + 1).padStart(3, "0")}`),
-        name: safeString(juror.name, "Unknown Juror"),
-        age: safeNumber(juror.age, 0),
-        dateOfBirth: safeString(juror.dateOfBirth),
-        gender: safeString(juror.gender),
-        race: safeString(juror.race),
-        address: safeString(juror.address),
-        mailingAddress: safeString(juror.mailingAddress, safeString(juror.address)),
-        phone: safeString(juror.phone),
-        email: safeString(juror.email),
-        county: safeString(juror.county),
-        location: safeString(juror.location, safeString(juror.county)),
-        occupation: safeString(juror.occupation),
-        employer: safeString(juror.employer),
-        employmentDuration: safeString(juror.employmentDuration),
-        workPhone: safeString(juror.workPhone),
-        education: safeString(juror.education),
-        maritalStatus: safeString(juror.maritalStatus),
-        spouse: safeString(juror.spouse),
-        children: safeString(juror.children, "0"),
-        citizenship: safeString(juror.citizenship, "Yes"),
-        tdl: safeString(juror.tdl),
-        criminalCase: safeString(juror.criminalCase, "No"),
-        accidentalInjury: safeString(juror.accidentalInjury, "No"),
-        civilJury: safeString(juror.civilJury, "No"),
-        criminalJury: safeString(juror.criminalJury, "No"),
-        panelPosition: safeString(juror.panelPosition),
-        experience: safeString(juror.experience, "No prior jury experience"),
-        biasStatus: ["low", "moderate", "high"].includes(juror.biasStatus) ? juror.biasStatus : "moderate",
-        availability: ["Available", "Limited", "Unavailable"].includes(juror.availability) ? juror.availability : "Available",
-      };
-    });
+    const processedJurors: Juror[] = allExtractedJurors.map(
+      (juror: any, index: number) => {
+        return {
+          id: `ai-${Date.now()}-${index}`,
+          caseId: caseId,
+          isStrikedOut: false,
+          jurorNumber: safeString(
+            juror.jurorNumber,
+            `J-${String(index + 1).padStart(3, "0")}`
+          ),
+          name: safeString(juror.name, "Unknown Juror"),
+          age: safeNumber(juror.age, 0),
+          dateOfBirth: safeString(juror.dateOfBirth),
+          gender: safeString(juror.gender),
+          race: safeString(juror.race),
+          address: safeString(juror.address),
+          mailingAddress: safeString(
+            juror.mailingAddress,
+            safeString(juror.address)
+          ),
+          phone: safeString(juror.phone),
+          email: safeString(juror.email),
+          county: safeString(juror.county),
+          location: safeString(juror.location, safeString(juror.county)),
+          occupation: safeString(juror.occupation),
+          employer: safeString(juror.employer),
+          employmentDuration: safeString(juror.employmentDuration),
+          workPhone: safeString(juror.workPhone),
+          education: safeString(juror.education),
+          maritalStatus: safeString(juror.maritalStatus),
+          spouse: safeString(juror.spouse),
+          children: safeString(juror.children, "0"),
+          citizenship: safeString(juror.citizenship, "Yes"),
+          tdl: safeString(juror.tdl),
+          criminalCase: safeString(juror.criminalCase, "No"),
+          accidentalInjury: safeString(juror.accidentalInjury, "No"),
+          civilJury: safeString(juror.civilJury, "No"),
+          criminalJury: safeString(juror.criminalJury, "No"),
+          panelPosition: safeString(juror.panelPosition),
+          experience: safeString(juror.experience, "No prior jury experience"),
+          biasStatus: ["low", "moderate", "high"].includes(juror.biasStatus)
+            ? juror.biasStatus
+            : "moderate",
+          availability: ["Available", "Limited", "Unavailable"].includes(
+            juror.availability
+          )
+            ? juror.availability
+            : "Available",
+        };
+      }
+    );
 
     return processedJurors;
   } catch (error) {
     console.error("Error in PDF processing:", error);
-    throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to process PDF: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 };
 
-// Helper function to process a batch of pages with OpenAI
-const processBatchWithOpenAI = async (batchText: string, apiKey: string, startPage: number, endPage: number): Promise<any[]> => {
-  const requestPayload = {
-    model: "gpt-4o-mini", // Using mini model for better rate limits and cost
-    messages: [
-      {
-        role: "user",
-        content: `Please analyze this text from pages ${startPage}-${endPage} of a juror questionnaire PDF and extract information about any jurors mentioned. Look for ALL available information including form fields, signatures, codes, and any other data.
-
-TEXT TO ANALYZE:
-${batchText}
-
-Extract information for each juror and return it as a JSON object with this exact structure:
-{
-  "jurors": [
-    {
-      "name": "Full Name",
-      "signature": "Signature if different from name",
-      "jurorNumber": "Juror # or ID number",
-      "age": 30,
-      "dateOfBirth": "MM/DD/YYYY or birth date",
-      "ageRange": "Age range if specified",
-      "occupation": "Job Title",
-      "education": "Education Level",
-      "address": "Full Address",
-      "mailingAddress": "Mailing address if different",
-      "phone": "Phone Number",
-      "workPhone": "Work phone number",
-      "email": "Email Address",
-      "gender": "Gender",
-      "race": "Race/Ethnicity",
-      "maritalStatus": "Marital Status",
-      "spouse": "Spouse Name and details",
-      "children": "Number of Children or details",
-      "county": "County Name",
-      "employer": "Employer Name and details",
-      "employmentDuration": "How long employed",
-      "tdl": "TDL# or Driver's License number",
-      "panelPosition": "Panel Position number",
-      "panelCodes": "Panel Codes (comma separated)",
-      "criminalCase": "Yes/No or details",
-      "civilJury": "Yes/No or details", 
-      "criminalJury": "Yes/No or details",
-      "accidentalInjury": "Yes/No or details",
-      "citizenship": "Citizenship status",
-      "experience": "Brief description of jury experience",
-      "biasStatus": "low",
-      "availability": "Available"
-    }
-  ]
-}
-
-IMPORTANT EXTRACTION INSTRUCTIONS:
-- Extract ALL jurors found in these pages
-- Look for every piece of information including numbers, dates, codes, signatures
-- If specific information is missing, use null as default
-- For Yes/No fields, look for checkmarks, X marks, or written responses
-- Assess bias status as "low", "moderate", or "high" based on responses
-- Set availability as "Available" unless otherwise indicated
-- Return ONLY the JSON object, no additional text or explanations
-- If no jurors are found in these pages, return {"jurors": []}`,
-      },
-    ],
-    max_tokens: 4000,
-    temperature: 0.1,
-  };
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(requestPayload),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("OpenAI processing error:", errorText);
-    throw new Error(`Failed to process batch with OpenAI: ${response.status} ${response.statusText}`);
-  }
-
-  const responseData = await response.json();
-  const extractedText = responseData.choices?.[0]?.message?.content;
-
-  if (!extractedText) {
-    console.warn("No content in OpenAI response for this batch");
-    return [];
-  }
-
-  // Parse JSON response
+// Helper function to process a batch of pages with backend API (with token tracking)
+const processBatchWithOpenAI = async (
+  batchText: string,
+  apiKey: string,
+  startPage: number,
+  endPage: number
+): Promise<any[]> => {
   try {
-    let jsonText = extractedText.trim();
+    // Call backend API with token tracking
+    const data = await extractJurorsFromPDFApi(batchText, startPage, endPage);
+    return data.jurors || [];
+  } catch (error: any) {
+    console.error("Error processing batch:", error);
 
-    // Remove markdown code blocks if present
-    if (jsonText.startsWith("```json")) {
-      jsonText = jsonText.replace(/```json\n?/, "").replace(/\n?```$/, "");
-    } else if (jsonText.startsWith("```")) {
-      jsonText = jsonText.replace(/```\n?/, "").replace(/\n?```$/, "");
-    }
-
-    // Try to find JSON object
-    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const extractedData = JSON.parse(jsonMatch[0]);
-      return extractedData.jurors || [];
+    if (error.response?.status === 429) {
+      throw new Error(
+        "Insufficient AI tokens. Please upgrade your plan or wait for your tokens to reset."
+      );
+    } else if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
     } else {
-      console.warn("No JSON object found in response for this batch");
-      return [];
+      throw new Error(
+        `Failed to process batch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
-  } catch (parseError) {
-    console.error("JSON parsing failed for batch:", parseError);
-    return []; // Return empty array instead of throwing error
   }
 };

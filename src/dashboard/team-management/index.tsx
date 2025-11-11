@@ -237,8 +237,8 @@ export default function TeamManagementPage() {
 
           {/* Members Tab */}
           <TabsContent value="members" className="space-y-6 mt-6">
-            {/* Current Members */}
-            <Card className="border-none shadow-lg">
+        {/* Current Members */}
+        <Card className="border-none shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />

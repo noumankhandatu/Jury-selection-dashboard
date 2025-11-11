@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { getSubscriptionApi, getBillingPortalApi, updateSubscriptionPlanApi } from "@/api/api";
-import { CreditCard, Calendar, Users, TrendingUp, ExternalLink, Loader2, CheckCircle } from "lucide-react";
+import { getSubscriptionApi, getBillingPortalApi, getTokenUsageApi } from "@/api/api";
+import { CreditCard, Calendar, Users, TrendingUp, ExternalLink, Loader2, CheckCircle, Sparkles, AlertCircle, BarChart3 } from "lucide-react";
 import TitleTag from "@/components/shared/tag/tag";
 
 interface Subscription {
@@ -25,6 +26,8 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [tokenUsage, setTokenUsage] = useState<any>(null);
+  const [tokenLoading, setTokenLoading] = useState(true);
 
   const organizationId = localStorage.getItem("organizationId");
   const organizationName = localStorage.getItem("organizationName");
@@ -32,6 +35,7 @@ export default function BillingPage() {
   useEffect(() => {
     if (organizationId) {
       fetchSubscription();
+      fetchTokenUsage();
     }
   }, [organizationId]);
 
@@ -45,6 +49,22 @@ export default function BillingPage() {
       toast.error("Failed to load subscription details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTokenUsage = async () => {
+    try {
+      setTokenLoading(true);
+      const data = await getTokenUsageApi();
+      setTokenUsage(data);
+    } catch (error: any) {
+      console.error("Error fetching token usage:", error);
+      // Don't show error toast if it's just a 404 (no subscription)
+      if (error.response?.status !== 404 && error.response?.status !== 403) {
+        toast.error("Failed to load token usage");
+      }
+    } finally {
+      setTokenLoading(false);
     }
   };
 
@@ -84,12 +104,12 @@ export default function BillingPage() {
       STANDARD: {
         name: "Standard Plan",
         price: 29,
-        features: ["1 team member", "Unlimited cases", "AI assessments", "Email notifications"],
+        features: ["1 team member", "10,000 AI tokens/month", "Unlimited cases", "AI assessments", "Email notifications"],
       },
       BUSINESS: {
         name: "Business Plan",
         price: 79,
-        features: ["Up to 3 team members", "Unlimited cases", "AI assessments", "Team collaboration", "Priority support"],
+        features: ["Up to 3 team members", "50,000 AI tokens/month", "Unlimited cases", "AI assessments", "Team collaboration", "Priority support"],
       },
     };
 
@@ -247,6 +267,236 @@ export default function BillingPage() {
           </CardContent>
         </Card>
 
+        {/* AI Token Usage */}
+        {!tokenLoading && tokenUsage && (
+          <Card className="border-none shadow-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    AI Token Usage
+                  </CardTitle>
+                  <CardDescription>Track your AI feature consumption</CardDescription>
+                </div>
+                {(() => {
+                  const percentage = parseFloat(tokenUsage.tokens.usagePercentage);
+                  const isLow = percentage > 80;
+                  const isCritical = percentage > 95;
+                  
+                  if (isCritical) {
+                    return (
+                      <Badge className="bg-red-100 text-red-700 border-0 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Critical
+                      </Badge>
+                    );
+                  }
+                  if (isLow) {
+                    return (
+                      <Badge className="bg-yellow-100 text-yellow-700 border-0 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Low
+                      </Badge>
+                    );
+                  }
+                  return (
+                    <Badge className="bg-green-100 text-green-700 border-0">
+                      Healthy
+                    </Badge>
+                  );
+                })()}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Token Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Total Tokens */}
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Tokens</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {tokenUsage.formatted.total}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {tokenUsage.tokens.total.toLocaleString()} allocated
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tokens Used */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Tokens Used</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {tokenUsage.formatted.used}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {tokenUsage.tokens.usagePercentage}% consumed
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tokens Remaining */}
+                <div className={`border rounded-lg p-4 ${
+                  parseFloat(tokenUsage.tokens.usagePercentage) > 95 
+                    ? 'bg-red-50 border-red-200' 
+                    : parseFloat(tokenUsage.tokens.usagePercentage) > 80 
+                    ? 'bg-yellow-50 border-yellow-200' 
+                    : 'bg-green-50 border-green-200'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      parseFloat(tokenUsage.tokens.usagePercentage) > 95 
+                        ? 'bg-red-100' 
+                        : parseFloat(tokenUsage.tokens.usagePercentage) > 80 
+                        ? 'bg-yellow-100' 
+                        : 'bg-green-100'
+                    }`}>
+                      <TrendingUp className={`w-5 h-5 ${
+                        parseFloat(tokenUsage.tokens.usagePercentage) > 95 
+                          ? 'text-red-600' 
+                          : parseFloat(tokenUsage.tokens.usagePercentage) > 80 
+                          ? 'text-yellow-600' 
+                          : 'text-green-600'
+                      }`} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Remaining</p>
+                      <p className={`text-2xl font-bold ${
+                        parseFloat(tokenUsage.tokens.usagePercentage) > 95 
+                          ? 'text-red-600' 
+                          : parseFloat(tokenUsage.tokens.usagePercentage) > 80 
+                          ? 'text-yellow-600' 
+                          : 'text-green-600'
+                      }`}>
+                        {tokenUsage.formatted.remaining}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {tokenUsage.tokens.remaining.toLocaleString()} left
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-gray-700">Token Usage</span>
+                  <span className="text-gray-600">
+                    {tokenUsage.tokens.usagePercentage}% used
+                  </span>
+                </div>
+                <Progress 
+                  value={parseFloat(tokenUsage.tokens.usagePercentage)} 
+                  className="h-3"
+                  indicatorClassName={
+                    parseFloat(tokenUsage.tokens.usagePercentage) > 95 
+                      ? 'bg-red-500' 
+                      : parseFloat(tokenUsage.tokens.usagePercentage) > 80 
+                      ? 'bg-yellow-500' 
+                      : 'bg-green-500'
+                  }
+                />
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>0 tokens</span>
+                  <span>{tokenUsage.tokens.total.toLocaleString()} tokens</span>
+                </div>
+              </div>
+
+              {/* Warning Messages */}
+              {parseFloat(tokenUsage.tokens.usagePercentage) > 95 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-900 mb-1">
+                        Almost Out of AI Tokens!
+                      </p>
+                      <p className="text-xs text-red-700">
+                        You've used {tokenUsage.tokens.usagePercentage}% of your AI tokens. 
+                        {subscription?.plan === "STANDARD" 
+                          ? " Upgrade to Business plan for 5x more tokens (50,000/month)." 
+                          : " Your tokens will reset on " + new Date(tokenUsage.tokens.resetDate).toLocaleDateString() + "."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {parseFloat(tokenUsage.tokens.usagePercentage) > 80 && parseFloat(tokenUsage.tokens.usagePercentage) <= 95 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-yellow-900 mb-1">
+                        Running Low on AI Tokens
+                      </p>
+                      <p className="text-xs text-yellow-700">
+                        You've used {tokenUsage.tokens.usagePercentage}% of your AI tokens. 
+                        {subscription?.plan === "STANDARD" 
+                          ? " Consider upgrading to Business plan for more tokens." 
+                          : " Monitor your usage to avoid running out."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">AI Requests</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {tokenUsage.statistics.totalRequests}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {tokenUsage.statistics.successRate}% success
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">Resets On</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {new Date(tokenUsage.tokens.resetDate).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {Math.ceil((new Date(tokenUsage.tokens.resetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days left
+                  </p>
+                </div>
+
+                {tokenUsage.statistics.mostUsedFeature && (
+                  <>
+                    <div className="text-center md:col-span-2">
+                      <p className="text-sm text-gray-600">Most Used Feature</p>
+                      <p className="text-lg font-bold text-purple-600">
+                        {tokenUsage.statistics.mostUsedFeature.featureName}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {tokenUsage.statistics.mostUsedFeature.count} times
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Upgrade Option */}
         {subscription.plan === "STANDARD" && (
           <Card className="border-2 border-blue-200 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -267,6 +517,7 @@ export default function BillingPage() {
                   </p>
                   <ul className="text-sm text-gray-700 space-y-1">
                     <li>• Up to 3 team members</li>
+                    <li>• 50,000 AI tokens/month (5x more!)</li>
                     <li>• Team collaboration features</li>
                     <li>• Activity logs & audit trails</li>
                     <li>• Priority support</li>

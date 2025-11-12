@@ -91,6 +91,10 @@ export const BestJurorsGrid = ({
                   key={mapped.id}
                   juror={mapped.juror}
                   score={typeof mapped.score === "number" ? mapped.score : null}
+                  onDetails={() => {
+                    // TODO: Navigate to juror details or open modal
+                    console.log("View details for juror:", mapped.juror.id);
+                  }}
                 />
               );
             })}

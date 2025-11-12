@@ -52,6 +52,7 @@ const CourtroomLayout = ({
     Record<string, { overallScore?: number }>
   >({});
   const [waitingJurors, setWaitingJurors] = useState<Set<string>>(new Set());
+  const [selectedJurors, setSelectedJurors] = useState<CaseJuror[]>([]);
 
   const refreshScoresNow = async () => {
     if (!sessionId) return;

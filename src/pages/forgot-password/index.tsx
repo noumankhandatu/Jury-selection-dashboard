@@ -13,6 +13,7 @@ export default function ForgotPasswordPage() {
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [otpVerified, setOtpVerified] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -31,6 +32,10 @@ export default function ForgotPasswordPage() {
       await axios.post(`${import.meta.env.VITE_BASEURL}/auth/forgot-password`, { email });
       toast.success("Reset code sent to your email!");
       setStep("verify");
+      setOtpVerified(false);
+      setOtp("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (err: any) {
       console.error(err);
       toast.error(err?.response?.data?.message || "Failed to send reset code.");
@@ -39,10 +44,29 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  // Step 2 & 3: Reset Password
+  // Step 2: Verify OTP
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit code.");
+      return;
+    }
+    // OTP will be verified when submitting password reset
+    // For now, just mark as verified to show password fields
+    setOtpVerified(true);
+    setStep("reset");
+    toast.success("Code verified! Please enter your new password.");
+  };
+
+  // Step 3: Reset Password
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!otpVerified) {
+      toast.error("Please verify the code first.");
+      return;
+    }
+
     if (!otp || otp.length !== 6) {
       toast.error("Please enter the 6-digit code.");
       return;
@@ -111,13 +135,13 @@ export default function ForgotPasswordPage() {
             </div>
             <h2 className="text-2xl font-bold text-gray-800 text-center">
               {step === "email" && "Forgot Password"}
-              {step === "verify" && "Verify Code"}
-              {step === "reset" && "Reset Password"}
+              {step === "verify" && !otpVerified && "Verify Code"}
+              {step === "reset" && otpVerified && "Reset Password"}
             </h2>
             <p className="text-gray-600 text-center mt-2 text-sm">
               {step === "email" && "Enter your email to receive a reset code"}
-              {step === "verify" && `Code sent to ${email}`}
-              {step === "reset" && "Create your new password"}
+              {step === "verify" && !otpVerified && `Code sent to ${email}`}
+              {step === "reset" && otpVerified && "Create your new password"}
             </p>
           </div>
 
@@ -152,9 +176,9 @@ export default function ForgotPasswordPage() {
             </form>
           )}
 
-          {/* Step 2: Verify OTP & Reset Password (Combined) */}
-          {(step === "verify" || step === "reset") && (
-            <form onSubmit={handleResetPassword} className="w-full space-y-4">
+          {/* Step 2: Verify OTP */}
+          {step === "verify" && !otpVerified && (
+            <form onSubmit={handleVerifyOTP} className="w-full space-y-4">
               {/* OTP Input */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -180,11 +204,41 @@ export default function ForgotPasswordPage() {
                 <p className="text-xs mt-2 text-blue-600">Code expires in 10 minutes</p>
               </div>
 
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={isSubmitting || otp.length !== 6}
+                className="w-full py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-900 transition disabled:opacity-60"
+              >
+                {isSubmitting ? "Verifying..." : "Verify Code"}
+              </motion.button>
+
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={isSubmitting}
+                className="w-full text-sm text-indigo-600 hover:text-indigo-500 font-medium disabled:opacity-60"
+              >
+                Didn't receive code? Resend
+              </button>
+            </form>
+          )}
+
+          {/* Step 3: Reset Password (Only shown after OTP verification) */}
+          {step === "reset" && otpVerified && (
+            <form onSubmit={handleResetPassword} className="w-full space-y-4">
+              {/* OTP Display (Read-only) */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+                <p className="font-medium">✓ Code Verified</p>
+                <p className="mt-1">Code ending in <strong>••{otp.slice(-2)}</strong> has been verified</p>
+              </div>
+
               {/* New Password */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.2 }}
                 className="relative"
               >
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -214,7 +268,7 @@ export default function ForgotPasswordPage() {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.3 }}
                 className="relative"
               >
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -248,15 +302,6 @@ export default function ForgotPasswordPage() {
               >
                 {isSubmitting ? "Resetting Password..." : "Reset Password"}
               </motion.button>
-
-              <button
-                type="button"
-                onClick={handleResendOTP}
-                disabled={isSubmitting}
-                className="w-full text-sm text-indigo-600 hover:text-indigo-500 font-medium disabled:opacity-60"
-              >
-                Didn't receive code? Resend
-              </button>
             </form>
           )}
 

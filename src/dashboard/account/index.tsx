@@ -22,7 +22,6 @@ import {
   Shield,
   KeyRound,
   Camera,
-  Upload,
   X,
   Trash2,
 } from "lucide-react";
@@ -52,7 +51,6 @@ interface UserData {
 }
 
 interface PasswordData {
-  current: string;
   new: string;
   confirm: string;
 }
@@ -68,7 +66,6 @@ export default function AccountPage() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<"profile" | "security">("profile");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,7 +116,6 @@ export default function AccountPage() {
 
   const [editData, setEditData] = useState<UserData>({ ...userData });
   const [passwordData, setPasswordData] = useState<PasswordData>({
-    current: "",
     new: "",
     confirm: "",
   });
@@ -342,7 +338,6 @@ export default function AccountPage() {
       const response = await changePasswordApi({
         otp,
         newPassword: passwordData.new,
-        currentPassword: passwordData.current || undefined,
       });
 
       toast.success(
@@ -350,7 +345,7 @@ export default function AccountPage() {
       );
 
       // Clear form
-      setPasswordData({ current: "", new: "", confirm: "" });
+      setPasswordData({ new: "", confirm: "" });
       setOtp("");
       setOtpVerified(false);
       setPasswordChangeStep("initial");
@@ -358,8 +353,11 @@ export default function AccountPage() {
       // Auto-logout after password change
       if (response.requiresLogout) {
         setTimeout(() => {
-          handleLogout();
-          navigate("/signin");
+          navigate("/");
+
+          localStorage.clear();
+          window.location.reload();
+          toast.success("Logged out successfully");
         }, 2000); // Wait 2 seconds to show the success message
       }
     } catch (error: any) {
@@ -374,7 +372,7 @@ export default function AccountPage() {
     setPasswordChangeStep("initial");
     setOtp("");
     setOtpVerified(false);
-    setPasswordData({ current: "", new: "", confirm: "" });
+    setPasswordData({ new: "", confirm: "" });
   };
 
   const handleInputChange = (field: keyof UserData, value: string): void => {
@@ -469,19 +467,19 @@ export default function AccountPage() {
             {/* Avatar with Upload */}
             <div className="relative group">
               <Avatar className="h-32 w-32 ring-4 ring-white shadow-xl ">
-                <AvatarImage
+              <AvatarImage
                   src={
                     userData.avatar ||
                     generateAvatar(`${userData.firstName} ${userData.lastName}`)
                   }
                   className="object-cover"
-                  alt={`${userData.firstName} ${userData.lastName}`}
-                />
+                alt={`${userData.firstName} ${userData.lastName}`}
+              />
                 <AvatarFallback className="bg-blue-600 text-white text-2xl">
-                  {userData.firstName?.[0]}
-                  {userData.lastName?.[0]}
-                </AvatarFallback>
-              </Avatar>
+                {userData.firstName?.[0]}
+                {userData.lastName?.[0]}
+              </AvatarFallback>
+            </Avatar>
 
               {/* Avatar Upload Button */}
               <div className="absolute bottom-0 right-0">
@@ -805,23 +803,23 @@ export default function AccountPage() {
                     </div>
                   </div>
 
-                  <div>
+              <div>
                     <Label htmlFor="otp" className="text-sm font-medium">
                       Enter 6-Digit OTP
-                    </Label>
-                    <div className="relative mt-1">
+                </Label>
+                <div className="relative mt-1">
                       <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
+                  <Input
                         id="otp"
                         type="text"
                         placeholder="000000"
                         maxLength={6}
                         value={otp}
-                        onChange={(e) =>
+                    onChange={(e) =>
                           setOtp(e.target.value.replace(/\D/g, ""))
-                        }
+                    }
                         className="pl-10 text-center text-2xl tracking-widest"
-                      />
+                  />
                     </div>
                   </div>
 
@@ -867,134 +865,100 @@ export default function AccountPage() {
                           You can now set your new password.
                         </p>
                       </div>
-                    </div>
-                  </div>
+                </div>
+              </div>
 
-                  <div>
-                    <Label
-                      htmlFor="currentPassword"
-                      className="text-sm font-medium"
-                    >
-                      Current Password (Optional)
-                    </Label>
-                    <div className="relative mt-1">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="currentPassword"
-                        type={showCurrentPassword ? "text" : "password"}
-                        value={passwordData.current}
-                        onChange={(e) =>
-                          handlePasswordChange("current", e.target.value)
-                        }
-                        className="pl-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowCurrentPassword(!showCurrentPassword)
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showCurrentPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
+              <div>
                     <Label
                       htmlFor="newPassword"
                       className="text-sm font-medium"
                     >
-                      New Password
-                    </Label>
-                    <div className="relative mt-1">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="newPassword"
-                        type={showNewPassword ? "text" : "password"}
-                        value={passwordData.new}
-                        onChange={(e) =>
-                          handlePasswordChange("new", e.target.value)
-                        }
-                        className="pl-10 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showNewPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                  New Password
+                </Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    value={passwordData.new}
+                    onChange={(e) =>
+                      handlePasswordChange("new", e.target.value)
+                    }
+                    className="pl-10 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
 
-                  <div>
-                    <Label
-                      htmlFor="confirmPassword"
-                      className="text-sm font-medium"
-                    >
-                      Confirm New Password
-                    </Label>
-                    <div className="relative mt-1">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={passwordData.confirm}
-                        onChange={(e) =>
-                          handlePasswordChange("confirm", e.target.value)
-                        }
-                        className="pl-10 pr-10"
-                      />
-                      <button
-                        type="button"
+              <div>
+                <Label
+                  htmlFor="confirmPassword"
+                  className="text-sm font-medium"
+                >
+                  Confirm New Password
+                </Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={passwordData.confirm}
+                    onChange={(e) =>
+                      handlePasswordChange("confirm", e.target.value)
+                    }
+                    className="pl-10 pr-10"
+                  />
+                  <button
+                    type="button"
                         onClick={() =>
                           setShowConfirmPassword(!showConfirmPassword)
                         }
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
 
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex items-start">
-                      <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-                      <div className="text-sm text-blue-800">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="flex items-start">
+                  <Shield className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                  <div className="text-sm text-blue-800">
                         <p className="font-medium mb-2">
                           Password Requirements
                         </p>
-                        <ul className="text-xs space-y-1">
-                          <li>• At least 8 characters long</li>
-                          <li>• Include uppercase and lowercase letters</li>
-                          <li>• Include at least one number</li>
-                          <li>• Include at least one special character</li>
-                        </ul>
-                      </div>
-                    </div>
+                    <ul className="text-xs space-y-1">
+                      <li>• At least 8 characters long</li>
+                      <li>• Include uppercase and lowercase letters</li>
+                      <li>• Include at least one number</li>
+                      <li>• Include at least one special character</li>
+                    </ul>
                   </div>
+                </div>
+              </div>
 
                   <div className="flex gap-2">
-                    <Button
-                      onClick={handlePasswordUpdate}
-                      disabled={
+              <Button
+                onClick={handlePasswordUpdate}
+                disabled={
                         isLoading || !passwordData.new || !passwordData.confirm
-                      }
+                }
                       className="flex-1"
-                    >
+              >
                       {isLoading ? "Changing Password..." : "Change Password"}
                     </Button>
                     <Button
@@ -1003,7 +967,7 @@ export default function AccountPage() {
                       disabled={isLoading}
                     >
                       Cancel
-                    </Button>
+              </Button>
                   </div>
                 </>
               )}

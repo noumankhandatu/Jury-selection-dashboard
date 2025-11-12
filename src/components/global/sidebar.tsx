@@ -15,7 +15,6 @@ import {
   LogOut,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Separator } from "../ui/separator";
 import { FaCircleArrowLeft } from "react-icons/fa6";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
@@ -49,7 +48,14 @@ export function Sidebar({ onClose }: SidebarProps) {
   };
 
   // Base routes available to all users
-  const baseRoutes = [
+  const baseRoutes: Array<{
+    label: string;
+    icon: any;
+    href: string;
+    active: boolean;
+    color: string;
+    badge?: string;
+  }> = [
     {
       label: "Dashboard",
       icon: LayoutDashboard,
@@ -90,6 +96,7 @@ export function Sidebar({ onClose }: SidebarProps) {
       icon: FileSearch,
       href: "/dashboard/session-analysis",
       active: location.pathname === "/dashboard/session-analysis",
+      color: "white",
     },
     {
       label: "Account",
@@ -101,7 +108,14 @@ export function Sidebar({ onClose }: SidebarProps) {
   ];
 
   // Team management routes (OWNER & ADMIN only)
-  const teamRoutes =
+  const teamRoutes: Array<{
+    label: string;
+    icon: any;
+    href: string;
+    active: boolean;
+    color: string;
+    badge?: string;
+  }> =
     userRole === "OWNER" || userRole === "ADMIN"
       ? [
           {
@@ -116,7 +130,14 @@ export function Sidebar({ onClose }: SidebarProps) {
       : [];
 
   // Billing & settings routes (OWNER only)
-  const ownerRoutes =
+  const ownerRoutes: Array<{
+    label: string;
+    icon: any;
+    href: string;
+    active: boolean;
+    color: string;
+    badge?: string;
+  }> =
     userRole === "OWNER"
       ? [
           {

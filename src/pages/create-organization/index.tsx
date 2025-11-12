@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -15,6 +21,24 @@ export default function CreateOrganizationPage() {
     phone: "",
     address: "",
   });
+
+  // Auto-fill email and phone from logged-in user
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.email) {
+          setFormData((prev) => ({ ...prev, email: user.email }));
+        }
+        if (user.phoneNumber) {
+          setFormData((prev) => ({ ...prev, phone: user.phoneNumber }));
+        }
+      }
+    } catch (error) {
+      console.error("Error reading user data from localStorage:", error);
+    }
+  }, []);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -51,9 +75,12 @@ export default function CreateOrganizationPage() {
       setTimeout(() => {
         window.location.href = "/subscription/select";
       }, 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating organization:", error);
-      toast.error(error.response?.data?.error || "Failed to create organization");
+      const errorMessage =
+        (error as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to create organization";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -78,7 +105,10 @@ export default function CreateOrganizationPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Organization Name - Required */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-base font-medium flex items-center gap-2">
+              <Label
+                htmlFor="name"
+                className="text-base font-medium flex items-center gap-2"
+              >
                 <Building2 className="w-4 h-4 text-blue-600" />
                 Organization Name <span className="text-red-500">*</span>
               </Label>
@@ -99,7 +129,10 @@ export default function CreateOrganizationPage() {
 
             {/* Email - Optional */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-base font-medium flex items-center gap-2">
+              <Label
+                htmlFor="email"
+                className="text-base font-medium flex items-center gap-2"
+              >
                 <Mail className="w-4 h-4 text-blue-600" />
                 Organization Email
               </Label>
@@ -112,11 +145,19 @@ export default function CreateOrganizationPage() {
                 className="h-12 text-base"
                 disabled={loading}
               />
+              {formData.email && (
+                <p className="text-xs text-gray-500 italic">
+                  Pre-filled from your account. You can edit if needed.
+                </p>
+              )}
             </div>
 
             {/* Phone - Optional */}
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-base font-medium flex items-center gap-2">
+              <Label
+                htmlFor="phone"
+                className="text-base font-medium flex items-center gap-2"
+              >
                 <Phone className="w-4 h-4 text-blue-600" />
                 Phone Number
               </Label>
@@ -129,11 +170,19 @@ export default function CreateOrganizationPage() {
                 className="h-12 text-base"
                 disabled={loading}
               />
+              {formData.phone && (
+                <p className="text-xs text-gray-500 italic">
+                  Pre-filled from your account. You can edit if needed.
+                </p>
+              )}
             </div>
 
             {/* Address - Optional */}
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-base font-medium flex items-center gap-2">
+              <Label
+                htmlFor="address"
+                className="text-base font-medium flex items-center gap-2"
+              >
                 <MapPin className="w-4 h-4 text-blue-600" />
                 Address
               </Label>
@@ -168,7 +217,8 @@ export default function CreateOrganizationPage() {
             </Button>
 
             <p className="text-center text-sm text-gray-500 mt-4">
-              After creating your organization, you'll choose a subscription plan
+              After creating your organization, you'll choose a subscription
+              plan
             </p>
           </form>
         </CardContent>
@@ -176,4 +226,3 @@ export default function CreateOrganizationPage() {
     </div>
   );
 }
-

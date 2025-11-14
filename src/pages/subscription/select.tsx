@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -18,6 +19,10 @@ import {
   Users,
   Briefcase,
   Sparkles,
+  Zap,
+  Shield,
+  Star,
+  ArrowRight,
 } from "lucide-react";
 
 type Plan = "STANDARD" | "BUSINESS";
@@ -122,129 +127,189 @@ export default function SubscriptionSelectPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
-            Choose Your Plan
-          </Badge>
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Start Your 14-Day Free Trial
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+          >
+            <Badge className="mb-6 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 hover:bg-blue-100 border border-blue-200 px-4 py-1.5 text-sm font-semibold">
+              <Sparkles className="w-3 h-3 mr-1.5 inline" />
+              Choose Your Plan
+            </Badge>
+          </motion.div>
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Select Your Subscription Plan
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            No credit card required • Cancel anytime • Full access to all
-            features
+          <p className="text-xl text-gray-600 mb-6 max-w-3xl mx-auto">
+            Choose the perfect plan for your needs. Start with a 14-day free
+            trial and explore all features risk-free.
           </p>
-        </div>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 max-w-2xl mx-auto mb-6">
+            <div className="flex items-center justify-center gap-2 text-green-700 font-semibold">
+              <Shield className="w-5 h-5" />
+              <span>You won't be charged until after your free trial ends</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-6 text-lg text-gray-600 max-w-3xl mx-auto">
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              <span>Cancel anytime</span>
+            </div>
+            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-purple-500" />
+              <span>Full access to all features</span>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan) => {
+          {plans.map((plan, index) => {
             const Icon = plan.icon;
             const isSelected = selectedPlan === plan.id;
 
             return (
-              <Card
+              <motion.div
                 key={plan.id}
-                className={`relative border-2 transition-all duration-300 hover:shadow-2xl ${
-                  plan.popular
-                    ? "border-blue-600 shadow-xl scale-105"
-                    : "border-gray-200 hover:border-blue-400"
-                } ${isSelected ? "ring-4 ring-blue-300" : ""}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-1 text-sm font-semibold shadow-lg">
-                      <Sparkles className="w-3 h-3 mr-1 inline" />
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
-
-                <CardHeader className="text-center pb-8 pt-10">
-                  <div
-                    className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                <Card
+                  className={`relative border-none shadow-2xl transition-all duration-300 overflow-hidden ${
+                    plan.popular
+                      ? "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 scale-105"
+                      : "bg-white/90 backdrop-blur-sm"
+                  } ${
+                    isSelected ? "ring-4 ring-blue-300 ring-opacity-50" : ""
+                  }`}
+                >
+                  <CardHeader
+                    className={`text-center pb-6 pt-12 ${
                       plan.popular
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600"
-                        : "bg-gray-200"
+                        ? "bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-b border-blue-100"
+                        : ""
                     }`}
                   >
-                    <Icon
-                      className={`w-8 h-8 ${
-                        plan.popular ? "text-white" : "text-gray-600"
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{
+                        delay: 0.4 + index * 0.1,
+                        type: "spring",
+                        stiffness: 200,
+                      }}
+                      className={`relative mx-auto w-20 h-20 mb-6 ${
+                        plan.popular ? "" : ""
                       }`}
-                    />
-                  </div>
-                  <CardTitle className="text-2xl font-bold">
-                    {plan.name}
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    {plan.description}
-                  </CardDescription>
-                  <div className="mt-6">
-                    <span className="text-5xl font-bold text-gray-900">
-                      ${plan.price}
-                    </span>
-                    <span className="text-gray-500 text-lg">/month</span>
-                  </div>
-                </CardHeader>
+                    >
+                      <div
+                        className={`absolute inset-0 rounded-full ${
+                          plan.popular
+                            ? "bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 shadow-xl"
+                            : "bg-gradient-to-br from-gray-300 to-gray-400"
+                        }`}
+                      ></div>
+                      <div
+                        className={`absolute inset-0 rounded-full flex items-center justify-center ${
+                          plan.popular
+                            ? "bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600"
+                            : "bg-gradient-to-br from-gray-400 to-gray-500"
+                        }`}
+                      >
+                        <Icon className="w-10 h-10 text-white" />
+                      </div>
+                      {plan.popular && (
+                        <div className="absolute -top-1 -right-1">
+                          <Sparkles className="w-6 h-6 text-yellow-400 animate-pulse" />
+                        </div>
+                      )}
+                    </motion.div>
+                    <CardTitle className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      {plan.name}
+                    </CardTitle>
+                    <CardDescription className="text-lg mt-2 text-gray-600">
+                      {plan.description}
+                    </CardDescription>
+                    <div className="mt-8">
+                      <span className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        ${plan.price}
+                      </span>
+                      <span className="text-gray-500 text-xl ml-2">/month</span>
+                    </div>
+                  </CardHeader>
 
-                <CardContent className="space-y-6">
-                  {/* Features List */}
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <CardContent className="p-8 space-y-8">
+                    {/* Features List */}
+                    <ul className="space-y-4">
+                      {plan.features.map((feature, featureIndex) => (
+                        <motion.li
+                          key={featureIndex}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{
+                            delay: 0.5 + index * 0.1 + featureIndex * 0.05,
+                          }}
+                          className="flex items-start gap-3 group"
+                        >
+                          <div className="mt-0.5 flex-shrink-0">
+                            <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                              <Check className="w-4 h-4 text-white font-bold" />
+                            </div>
+                          </div>
+                          <span className="text-gray-700 text-base leading-relaxed group-hover:text-gray-900 transition-colors">
+                            {feature}
+                          </span>
+                        </motion.li>
+                      ))}
+                    </ul>
 
-                  {/* CTA Button */}
-                  <Button
-                    onClick={() => handleSelectPlan(plan.id)}
-                    disabled={loading}
-                    className={`w-full h-12 text-base font-semibold transition-all duration-300 ${
-                      plan.popular
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-                        : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
-                    }`}
-                  >
-                    {loading && isSelected ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="w-5 h-5 mr-2" />
-                        Start Free Trial
-                      </>
-                    )}
-                  </Button>
+                    {/* CTA Button */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.7 + index * 0.1 }}
+                    >
+                      <Button
+                        onClick={() => handleSelectPlan(plan.id)}
+                        disabled={loading}
+                        className={`group w-full h-14 text-base font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-xl hover:shadow-2xl ${
+                          plan.popular
+                            ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white"
+                            : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-700"
+                        }`}
+                      >
+                        {loading && isSelected ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-5 h-5 mr-2" />
+                            Start Free Trial
+                            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
 
-                  <p className="text-center text-sm text-gray-500">
-                    Secure payment powered by Stripe
-                  </p>
-                </CardContent>
-              </Card>
+                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500 pt-2">
+                      <Shield className="w-4 h-4 text-gray-400" />
+                      <span>Secure payment powered by Stripe</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             );
           })}
-        </div>
-
-        {/* Additional Info */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-4">
-            Have questions?{" "}
-            <a
-              href="mailto:support@jurydutysaas.com"
-              className="text-blue-600 hover:underline"
-            >
-              Contact us
-            </a>
-          </p>
-          <p className="text-sm text-gray-500">
-            All plans include our 14-day free trial. No credit card required to
-            start.
-          </p>
         </div>
       </div>
     </div>

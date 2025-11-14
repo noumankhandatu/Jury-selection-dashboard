@@ -497,6 +497,19 @@ export const getBillingPortalApi = async (organizationId: string) => {
   }
 };
 
+// Reactivate cancelled subscription
+export const reactivateSubscriptionApi = async (organizationId: string) => {
+  try {
+    const response = await BaseUrl.post(
+      `/subscriptions/${organizationId}/reactivate`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error reactivating subscription:", error);
+    throw error;
+  }
+};
+
 // ==================== TEAM MANAGEMENT APIs ====================
 
 // Invite team member
@@ -520,6 +533,16 @@ export const inviteTeamMemberApi = async (
 };
 
 // Accept invitation
+export const getInvitationByTokenApi = async (token: string) => {
+  try {
+    const response = await BaseUrl.get(`/organizations/invitations/${token}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching invitation:", error);
+    throw error;
+  }
+};
+
 export const acceptInvitationApi = async (token: string) => {
   try {
     const response = await BaseUrl.post("/organizations/invitations/accept", {

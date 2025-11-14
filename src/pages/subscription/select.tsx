@@ -1,11 +1,24 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createCheckoutSessionApi } from "@/api/api";
-import { Check, Loader2, CreditCard, Users, Briefcase, Sparkles } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  CreditCard,
+  Users,
+  Briefcase,
+  Sparkles,
+} from "lucide-react";
 
 type Plan = "STANDARD" | "BUSINESS";
 
@@ -17,7 +30,10 @@ export default function SubscriptionSelectPage() {
   useEffect(() => {
     // Check if plan was pre-selected from marketing site
     const preSelected = localStorage.getItem("selectedPlan");
-    if (preSelected && (preSelected === "STANDARD" || preSelected === "BUSINESS")) {
+    if (
+      preSelected &&
+      (preSelected === "STANDARD" || preSelected === "BUSINESS")
+    ) {
       setSelectedPlan(preSelected as Plan);
     }
   }, []);
@@ -26,7 +42,9 @@ export default function SubscriptionSelectPage() {
     const organizationId = localStorage.getItem("organizationId");
 
     if (!organizationId) {
-      toast.error("Organization not found. Please create an organization first.");
+      toast.error(
+        "Organization not found. Please create an organization first."
+      );
       navigate("/create-organization");
       return;
     }
@@ -51,7 +69,9 @@ export default function SubscriptionSelectPage() {
       }
     } catch (error: any) {
       console.error("Error creating checkout session:", error);
-      toast.error(error.response?.data?.error || "Failed to create checkout session");
+      toast.error(
+        error.response?.data?.error || "Failed to create checkout session"
+      );
       setLoading(false);
     }
   };
@@ -65,7 +85,7 @@ export default function SubscriptionSelectPage() {
       icon: Briefcase,
       popular: false,
       features: [
-        "1 team member (just you)",
+        "2 team members",
         "Unlimited cases",
         "Unlimited jurors",
         "AI-powered jury assessment",
@@ -83,7 +103,7 @@ export default function SubscriptionSelectPage() {
       icon: Users,
       popular: true,
       features: [
-        "Up to 3 team members",
+        "Up to 5 team members",
         "Unlimited cases",
         "Unlimited jurors",
         "AI-powered jury assessment",
@@ -110,7 +130,8 @@ export default function SubscriptionSelectPage() {
             Start Your 14-Day Free Trial
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            No credit card required • Cancel anytime • Full access to all features
+            No credit card required • Cancel anytime • Full access to all
+            features
           </p>
         </div>
 
@@ -139,15 +160,29 @@ export default function SubscriptionSelectPage() {
                 )}
 
                 <CardHeader className="text-center pb-8 pt-10">
-                  <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                    plan.popular ? "bg-gradient-to-r from-blue-600 to-indigo-600" : "bg-gray-200"
-                  }`}>
-                    <Icon className={`w-8 h-8 ${plan.popular ? "text-white" : "text-gray-600"}`} />
+                  <div
+                    className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                      plan.popular
+                        ? "bg-gradient-to-r from-blue-600 to-indigo-600"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-8 h-8 ${
+                        plan.popular ? "text-white" : "text-gray-600"
+                      }`}
+                    />
                   </div>
-                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                  <CardDescription className="text-base mt-2">{plan.description}</CardDescription>
+                  <CardTitle className="text-2xl font-bold">
+                    {plan.name}
+                  </CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    {plan.description}
+                  </CardDescription>
                   <div className="mt-6">
-                    <span className="text-5xl font-bold text-gray-900">${plan.price}</span>
+                    <span className="text-5xl font-bold text-gray-900">
+                      ${plan.price}
+                    </span>
                     <span className="text-gray-500 text-lg">/month</span>
                   </div>
                 </CardHeader>
@@ -198,14 +233,20 @@ export default function SubscriptionSelectPage() {
         {/* Additional Info */}
         <div className="mt-12 text-center">
           <p className="text-gray-600 mb-4">
-            Have questions? <a href="mailto:support@jurydutysaas.com" className="text-blue-600 hover:underline">Contact us</a>
+            Have questions?{" "}
+            <a
+              href="mailto:support@jurydutysaas.com"
+              className="text-blue-600 hover:underline"
+            >
+              Contact us
+            </a>
           </p>
           <p className="text-sm text-gray-500">
-            All plans include our 14-day free trial. No credit card required to start.
+            All plans include our 14-day free trial. No credit card required to
+            start.
           </p>
         </div>
       </div>
     </div>
   );
 }
-

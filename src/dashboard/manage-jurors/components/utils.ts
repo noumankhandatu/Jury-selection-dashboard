@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Juror } from "./types";
 import { extractJurorsFromPDFApi } from "@/api/api";
+import OpenAI from "openai";
 
 export const generateAvatar = (name: string) => {
   if (!name) {
@@ -223,6 +224,217 @@ export const extractAndParseJurorsFromPDF = async (
     console.error("Error in PDF processing:", error);
     throw new Error(
       `Failed to process PDF: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+};
+
+// Helper function to convert file to base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+// Extract and parse juror data from image using OpenAI Vision API
+export const extractAndParseJurorsFromImage = async (
+  file: File,
+  caseId: string
+): Promise<Juror[]> => {
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+
+  try {
+    // Check if API key exists
+    if (!apiKey) {
+      throw new Error(
+        "OpenAI API key not found. Please check your environment variables."
+      );
+    }
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: apiKey,
+      dangerouslyAllowBrowser: true,
+    });
+
+    // Convert image to base64
+    const base64 = await fileToBase64(file);
+    
+    // Determine MIME type
+    const mimeType = file.type || "image/jpeg";
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    const prompt = `
+You are an AI assistant specialized in extracting juror information from juror questionnaire documents.
+
+Analyze this image of a juror questionnaire and extract ALL juror information you can find.
+
+Return ONLY a JSON array of juror objects. Each juror object should have this exact structure:
+{
+  "jurorNumber": "string (e.g., 'J-001' or 'Juror 1')",
+  "name": "string (full name)",
+  "age": number,
+  "dateOfBirth": "string (MM/DD/YYYY format if available)",
+  "gender": "string (Male/Female/Other)",
+  "race": "string",
+  "address": "string (full address)",
+  "mailingAddress": "string (if different from address)",
+  "phone": "string",
+  "email": "string",
+  "county": "string",
+  "location": "string",
+  "occupation": "string",
+  "employer": "string",
+  "employmentDuration": "string",
+  "workPhone": "string",
+  "education": "string",
+  "maritalStatus": "string",
+  "spouse": "string",
+  "children": "string (number as string)",
+  "citizenship": "string (Yes/No)",
+  "tdl": "string (Texas Driver License if applicable)",
+  "criminalCase": "string (Yes/No)",
+  "accidentalInjury": "string (Yes/No)",
+  "civilJury": "string (Yes/No)",
+  "criminalJury": "string (Yes/No)",
+  "panelPosition": "string",
+  "experience": "string (description of prior jury experience)",
+  "biasStatus": "string (low/moderate/high)",
+  "availability": "string (Available/Limited/Unavailable)"
+}
+
+Rules:
+- Extract ALL jurors found in the image
+- If a field is not available, use an empty string ""
+- For numbers, use 0 if not available
+- For yes/no fields, use "No" as default if not specified
+- For biasStatus, use "moderate" as default
+- For availability, use "Available" as default
+- Return ONLY the JSON array, no other text
+- If no jurors found, return an empty array []
+`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: prompt,
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: dataUrl,
+                detail: "high",
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 4000,
+      temperature: 0.1,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("No response from OpenAI");
+    }
+
+    // Parse the JSON response
+    let extractedJurors: any[] = [];
+    try {
+      // Try to extract JSON array from the response
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        extractedJurors = JSON.parse(jsonMatch[0]);
+      } else {
+        // Try parsing the entire content
+        extractedJurors = JSON.parse(content);
+      }
+    } catch (parseError) {
+      console.error("Error parsing OpenAI response:", parseError);
+      console.error("Response content:", content);
+      throw new Error("Failed to parse juror data from image. Please ensure the image contains readable juror questionnaire information.");
+    }
+
+    if (!Array.isArray(extractedJurors)) {
+      throw new Error("Invalid response format from OpenAI");
+    }
+
+    if (extractedJurors.length === 0) {
+      throw new Error(
+        "No jurors were extracted from the image. Please check if the image contains readable juror questionnaire information."
+      );
+    }
+
+    // Process and format jurors
+    const processedJurors: Juror[] = extractedJurors.map(
+      (juror: any, index: number) => {
+        return {
+          id: `ai-image-${Date.now()}-${index}`,
+          caseId: caseId,
+          isStrikedOut: false,
+          jurorNumber: safeString(
+            juror.jurorNumber,
+            `J-${String(index + 1).padStart(3, "0")}`
+          ),
+          name: safeString(juror.name, "Unknown Juror"),
+          age: safeNumber(juror.age, 0),
+          dateOfBirth: safeString(juror.dateOfBirth),
+          gender: safeString(juror.gender),
+          race: safeString(juror.race),
+          address: safeString(juror.address),
+          mailingAddress: safeString(
+            juror.mailingAddress,
+            safeString(juror.address)
+          ),
+          phone: safeString(juror.phone),
+          email: safeString(juror.email),
+          county: safeString(juror.county),
+          location: safeString(juror.location, safeString(juror.county)),
+          occupation: safeString(juror.occupation),
+          employer: safeString(juror.employer),
+          employmentDuration: safeString(juror.employmentDuration),
+          workPhone: safeString(juror.workPhone),
+          education: safeString(juror.education),
+          maritalStatus: safeString(juror.maritalStatus),
+          spouse: safeString(juror.spouse),
+          children: safeString(juror.children, "0"),
+          citizenship: safeString(juror.citizenship, "Yes"),
+          tdl: safeString(juror.tdl),
+          criminalCase: safeString(juror.criminalCase, "No"),
+          accidentalInjury: safeString(juror.accidentalInjury, "No"),
+          civilJury: safeString(juror.civilJury, "No"),
+          criminalJury: safeString(juror.criminalJury, "No"),
+          panelPosition: safeString(juror.panelPosition),
+          experience: safeString(juror.experience, "No prior jury experience"),
+          biasStatus: ["low", "moderate", "high"].includes(juror.biasStatus)
+            ? juror.biasStatus
+            : "moderate",
+          availability: ["Available", "Limited", "Unavailable"].includes(
+            juror.availability
+          )
+            ? juror.availability
+            : "Available",
+        };
+      }
+    );
+
+    return processedJurors;
+  } catch (error) {
+    console.error("Error in image processing:", error);
+    throw new Error(
+      `Failed to process image: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );

@@ -1,17 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import BaseUrl from "@/utils/config/baseUrl";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Scale, Mail, Lock, User, Phone } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Users, XCircle, Loader2 } from "lucide-react";
+import { getInvitationByTokenApi } from "@/api/api";
 
-export default function SignUpPage() {
+export default function TeamSignUpPage() {
   const [searchParams] = useSearchParams();
-  const inviteToken = searchParams.get("inviteToken");
+  const inviteToken = searchParams.get("token");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loadingInvitation, setLoadingInvitation] = useState(true);
+  const [invitationError, setInvitationError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     email: "",
@@ -22,6 +25,37 @@ export default function SignUpPage() {
     phoneNumber: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch invitation details on mount
+  useEffect(() => {
+    const fetchInvitationDetails = async () => {
+      if (!inviteToken) {
+        setLoadingInvitation(false);
+        setInvitationError("Invalid invitation link");
+        return;
+      }
+
+      try {
+        const response = await getInvitationByTokenApi(inviteToken);
+        if (response.invitation) {
+          // Auto-fill email from invitation
+          setForm((prev) => ({
+            ...prev,
+            email: response.invitation.email,
+          }));
+        }
+        setLoadingInvitation(false);
+      } catch (error: any) {
+        console.error("Error fetching invitation:", error);
+        const errorMsg = error?.response?.data?.error || "Failed to load invitation details";
+        setInvitationError(errorMsg);
+        setLoadingInvitation(false);
+        toast.error(errorMsg);
+      }
+    };
+
+    fetchInvitationDetails();
+  }, [inviteToken]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -53,6 +87,12 @@ export default function SignUpPage() {
       toast.error("Passwords do not match.");
       return;
     }
+
+    if (!inviteToken) {
+      toast.error("Invalid invitation link. Please contact your organization administrator.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = { email, password, firstName, lastName, phoneNumber };
@@ -68,84 +108,12 @@ export default function SignUpPage() {
         localStorage.setItem("userId", user.id);
         localStorage.setItem("user", JSON.stringify(user));
 
-      toast.success("Account created successfully!");
+        toast.success("Account created successfully!");
 
-      // If there's an invitation token, redirect to accept invitation
-      if (inviteToken) {
+        // Redirect to accept invitation
         setTimeout(() => {
-            window.location.href = `/accept-invitation?token=${inviteToken}`;
-          }, 1000);
-          return;
-        }
-
-        // Check for organizations to determine next step
-        try {
-          const orgsResponse = await BaseUrl.get(
-            `${import.meta.env.VITE_BASEURL}/organizations`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-
-          const organizations = orgsResponse.data.organizations;
-
-          if (!organizations || organizations.length === 0) {
-            // No organization - redirect to create one
-            toast.success("Welcome! Let's set up your organization");
-            setTimeout(() => {
-              window.location.href = "/create-organization";
-            }, 1000);
-            return;
-          }
-
-          // Has organization(s) - use the first one
-          const org = organizations[0];
-          localStorage.setItem("organizationId", org.id);
-          localStorage.setItem("organizationName", org.name);
-          localStorage.setItem("userRole", org.memberRole);
-
-          // Check subscription status
-          try {
-            const subResponse = await BaseUrl.get(
-              `${import.meta.env.VITE_BASEURL}/subscriptions/${org.id}`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              }
-            );
-
-            const subscription = subResponse.data.subscription;
-
-            if (
-              subscription.status === "ACTIVE" ||
-              subscription.status === "TRIALING"
-            ) {
-              // All good - go to dashboard
-              toast.success("Welcome back!");
-              setTimeout(() => {
-                window.location.href = "/dashboard";
+          window.location.href = `/accept-invitation?token=${inviteToken}`;
         }, 1000);
-      } else {
-              // Subscription not active - redirect to pricing
-              toast.warning("Please activate your subscription");
-              setTimeout(() => {
-                window.location.href = "/subscription/select";
-              }, 1000);
-            }
-          } catch {
-            // No subscription or error - redirect to pricing
-            toast.warning("Please select a subscription plan");
-            setTimeout(() => {
-              window.location.href = "/subscription/select";
-            }, 1000);
-          }
-        } catch (orgError) {
-          // Error checking organizations - redirect to create one
-          console.error("Error checking organizations:", orgError);
-          toast.success("Welcome! Let's set up your organization");
-        setTimeout(() => {
-            window.location.href = "/create-organization";
-          }, 1000);
-        }
       }
     } catch (err: any) {
       console.error(err);
@@ -156,6 +124,47 @@ export default function SignUpPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (loadingInvitation) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-cover bg-center relative" style={{ backgroundImage: "url('/bg/2.png')" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="backdrop-blur-xl bg-white/70 border border-white/40 shadow-2xl rounded-3xl max-w-md w-full mx-4 p-8 flex flex-col items-center"
+        >
+          <div className="text-center">
+            <Loader2 className="h-16 w-16 text-indigo-600 mx-auto mb-4 animate-spin" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Invitation...</h2>
+            <p className="text-gray-600">Please wait while we verify your invitation.</p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!inviteToken || invitationError) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-cover bg-center relative" style={{ backgroundImage: "url('/bg/2.png')" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="backdrop-blur-xl bg-white/70 border border-white/40 shadow-2xl rounded-3xl max-w-md w-full mx-4 p-8 flex flex-col items-center"
+        >
+          <div className="text-center">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Invalid Invitation</h2>
+            <p className="text-gray-600 mb-4">{invitationError || "This invitation link is invalid or has expired."}</p>
+            <Link to="/signin" className="text-indigo-600 hover:text-indigo-500 font-medium">
+              Go to Sign In
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -173,21 +182,15 @@ export default function SignUpPage() {
         <div className="flex flex-col items-center w-full">
           <div className="mb-6">
             <div className="flex justify-center mb-4">
-              <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg">
-                <Scale className="h-8 w-8 text-white" />
+              <div className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-lg">
+                <Users className="h-8 w-8 text-white" />
               </div>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 text-center">
-              Create an account
+              Join Your Team
             </h2>
             <p className="text-gray-600 text-center mt-2 text-sm">
-              Already have an account?{" "}
-              <Link
-                to="/signin"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Log in
-              </Link>
+              You've been invited to join a team. Create your account to get started.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="w-full space-y-4">
@@ -237,10 +240,14 @@ export default function SignUpPage() {
                 type="email"
                 required
                 value={form.email}
-                onChange={handleChange}
+                disabled
                 placeholder="Email"
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none bg-white/80 placeholder-gray-400 text-gray-700 transition"
+                className="w-full pl-10 pr-20 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed outline-none transition"
+                title="Email is pre-filled from your invitation and cannot be changed"
               />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">Locked</span>
+              </div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -326,13 +333,28 @@ export default function SignUpPage() {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2 rounded-lg bg-black text-white font-semibold hover:bg-gray-900 transition disabled:opacity-60"
+              className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold hover:from-purple-700 hover:to-indigo-700 transition disabled:opacity-60"
             >
-              {isSubmitting ? "Signing up..." : "Sign Up"}
+              {isSubmitting ? "Joining Team..." : "Join Team"}
             </motion.button>
           </form>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            className="text-center w-full mt-4 text-sm"
+          >
+            Already have an account?{" "}
+            <Link
+              to={`/signin?inviteToken=${inviteToken}`}
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              Sign in
+            </Link>
+          </motion.p>
         </div>
       </motion.div>
     </div>
   );
 }
+

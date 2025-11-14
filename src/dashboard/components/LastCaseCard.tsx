@@ -37,7 +37,7 @@ export default function LastCaseCard() {
         } else {
           setLastCase(null);
         }
-      } catch (e) {
+      } catch {
         setError("Failed to load last case");
       } finally {
         setLoading(false);

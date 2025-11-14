@@ -69,7 +69,8 @@ export default function AIQuestionSuggestions({
     }
   };
 
-  const parseQuestionsFromResponse = (content: string): string[] => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _parseQuestionsFromResponse = (content: string): string[] => {
     try {
       // Try to parse JSON response
       const jsonMatch = content.match(/\{[\s\S]*\}/);

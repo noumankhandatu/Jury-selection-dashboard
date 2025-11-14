@@ -1,23 +1,32 @@
 // manage-jurors-page.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SelectCase, type Case } from "@/components/shared/select-case";
 import { PDFUploader } from "./components/pdf-uploader";
 import { JurorDisplay } from "./components/juror-display";
 import { ManageJurorDetailsModal } from "./components/manage-juror-details-modal";
 import { AddJurorDialog } from "./components/add-juror-dialog";
-import { extractAndParseJurorsFromPDF } from "./components/utils";
+import { extractAndParseJurorsFromPDF, extractAndParseJurorsFromImage } from "./components/utils";
 import type { Juror } from "./components/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, CheckCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Send, CheckCircle, CheckCircle2 } from "lucide-react";
 import { itemVariants } from "@/utils/fn";
 import TagBtnJuror from "@/components/shared/tag/tag-btn-manage-juror";
 import { createJurorsApi, getCasesApi } from "@/api/api";
 import { toast } from "sonner";
 
 export default function ManageJurorsPage() {
+  const [searchParams] = useSearchParams();
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [selectedJuror, setSelectedJuror] = useState<Juror | null>(null);
   const [isJurorDetailsOpen, setIsJurorDetailsOpen] = useState(false);
@@ -31,6 +40,8 @@ export default function ManageJurorsPage() {
   const [uploadSuccess, setUploadSuccess] = useState("");
   const [hasUploadedOnce, setHasUploadedOnce] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successDialogData, setSuccessDialogData] = useState<{ count: number; fileName: string } | null>(null);
   const handleViewJurorDetails = (juror: Juror) => {
     setSelectedJuror(juror);
     setIsJurorDetailsOpen(true);
@@ -56,25 +67,80 @@ export default function ManageJurorsPage() {
     setUploadSuccess("");
 
     try {
-      const parsedJurors = (await extractAndParseJurorsFromPDF(file, selectedCase.id)).map((j) => ({
-        ...j,
-        submitted: false,
-      }));
-
-      if (parsedJurors.length === 0) {
-        setUploadError("No juror data found in the PDF.");
-        setHasUploadedOnce(true);
+      // Determine file type and use appropriate extraction function
+      const isPDF = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+      const isImage = file.type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name);
+      
+      let parsedJurors;
+      if (isPDF) {
+        // Extract jurors from PDF
+        parsedJurors = (await extractAndParseJurorsFromPDF(file, selectedCase.id)).map((j) => ({
+          ...j,
+          submitted: false,
+        }));
+      } else if (isImage) {
+        // Extract jurors from image
+        parsedJurors = (await extractAndParseJurorsFromImage(file, selectedCase.id)).map((j) => ({
+          ...j,
+          submitted: false,
+        }));
+      } else {
+        setUploadError("Please upload a PDF file or an image (JPG, PNG, etc.)");
+        setIsUploading(false);
         return;
       }
 
-      const updatedJurorsByCase = { ...jurorsByCase };
-      const currentCaseJurors = updatedJurorsByCase[selectedCase.id] || [];
-      updatedJurorsByCase[selectedCase.id] = [...currentCaseJurors, ...parsedJurors];
-      setJurorsByCase(updatedJurorsByCase);
+      if (parsedJurors.length === 0) {
+        setUploadError(`No juror data found in the ${isPDF ? "PDF" : "image"}.`);
+        setHasUploadedOnce(true);
+        setIsUploading(false);
+        return;
+      }
 
-      setUploadSuccess(`✅ Extracted ${parsedJurors.length} jurors from ${file.name}`);
-      setHasUploadedOnce(true);
-      setTimeout(() => setUploadSuccess(""), 8000);
+      // Automatically submit jurors to the server
+      setIsSubmitting(true);
+      try {
+        const payload = {
+          caseId: selectedCase.id,
+          caseName: selectedCase.name,
+          caseNumber: selectedCase.number,
+          totalJurors: parsedJurors.length,
+          submissionDate: new Date().toISOString(),
+          jurors: parsedJurors.map((j) => ({
+            ...j,
+            source: isPDF ? "PDF Extraction" : "Image Extraction",
+            createdAt: new Date().toISOString(),
+          })),
+        };
+
+        await createJurorsApi(payload);
+        
+        // Update state with submitted jurors
+        const updatedJurorsByCase = { ...jurorsByCase };
+        const currentCaseJurors = updatedJurorsByCase[selectedCase.id] || [];
+        const submittedJurors = parsedJurors.map((j) => ({ ...j, submitted: true }));
+        updatedJurorsByCase[selectedCase.id] = [...currentCaseJurors, ...submittedJurors];
+        setJurorsByCase(updatedJurorsByCase);
+
+        // Show success dialog
+        setSuccessDialogData({ count: parsedJurors.length, fileName: file.name });
+        setShowSuccessDialog(true);
+        setHasUploadedOnce(true);
+        
+        toast.success(`${parsedJurors.length} jurors uploaded successfully!`);
+      } catch (submitErr: any) {
+        // If submission fails, still add jurors to state but mark as not submitted
+        const updatedJurorsByCase = { ...jurorsByCase };
+        const currentCaseJurors = updatedJurorsByCase[selectedCase.id] || [];
+        updatedJurorsByCase[selectedCase.id] = [...currentCaseJurors, ...parsedJurors];
+        setJurorsByCase(updatedJurorsByCase);
+        
+        setUploadError(`Failed to save jurors: ${submitErr?.error || submitErr?.message || "Unknown error"}`);
+        setHasUploadedOnce(true);
+        toast.error("Failed to save jurors. Please try submitting manually.");
+      } finally {
+        setIsSubmitting(false);
+      }
     } catch (err) {
       setUploadError(`Processing failed for "${file.name}": ${err instanceof Error ? err.message : "Unknown error"}`);
       setHasUploadedOnce(true);
@@ -161,12 +227,25 @@ export default function ManageJurorsPage() {
 
         setCases(transformedCases);
         setJurorsByCase(jurorsMap);
+
+        // Auto-select case from URL parameter if provided
+        const caseIdFromUrl = searchParams.get("caseId");
+        if (caseIdFromUrl && transformedCases.length > 0) {
+          const caseToSelect = transformedCases.find((c) => c.id === caseIdFromUrl);
+          if (caseToSelect) {
+            setSelectedCase(caseToSelect);
+            const caseJurors = jurorsMap[caseToSelect.id] || [];
+            setHasUploadedOnce(caseJurors.length > 0);
+            // Clear the URL parameter after selecting
+            window.history.replaceState({}, "", "/dashboard/manage-jurors");
+          }
+        }
       } catch (error) {
         console.error("❌ Error getting cases:", error);
       }
     };
     getCases();
-  }, []);
+  }, [searchParams]);
 
   const currentJurors = selectedCase ? jurorsByCase[selectedCase.id] || [] : [];
   const newJurors = currentJurors.filter((j: any) => !j.submitted);
@@ -195,6 +274,7 @@ export default function ManageJurorsPage() {
               selectedCase={selectedCase}
               onFileUpload={handleFileUpload}
               isUploading={isUploading}
+              isSubmitting={isSubmitting}
               uploadError={uploadError}
               uploadSuccess={uploadSuccess}
             />
@@ -249,6 +329,40 @@ export default function ManageJurorsPage() {
 
         <ManageJurorDetailsModal isOpen={isJurorDetailsOpen} onClose={() => setIsJurorDetailsOpen(false)} juror={selectedJuror} />
         <AddJurorDialog isOpen={isAddJurorOpen} onClose={() => setIsAddJurorOpen(false)} onSave={handleAddJuror} selectedCase={selectedCase} />
+        
+        {/* Success Dialog */}
+        <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="h-10 w-10 text-green-600" />
+                </div>
+              </div>
+              <DialogTitle className="text-center text-2xl">Jurors Uploaded Successfully!</DialogTitle>
+              <DialogDescription className="text-center pt-2">
+                {successDialogData && (
+                  <>
+                    <p className="text-lg font-semibold text-gray-900 mb-2">
+                      {successDialogData.count} juror{successDialogData.count > 1 ? "s" : ""} extracted and saved
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      from <span className="font-medium">{successDialogData.fileName}</span>
+                    </p>
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center pt-4">
+              <Button
+                onClick={() => setShowSuccessDialog(false)}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Got it!
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </div>
   );

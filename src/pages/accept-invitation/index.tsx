@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { acceptInvitationApi, getUserOrganizationsApi, getSubscriptionApi } from "@/api/api";
+import { acceptInvitationApi, getUserOrganizationsApi } from "@/api/api";
 import { CheckCircle2, Loader2, UserPlus, XCircle } from "lucide-react";
 import axios from "axios";
 
@@ -15,7 +15,6 @@ export default function AcceptInvitationPage() {
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [organizationName, setOrganizationName] = useState("");
 
   const isLoggedIn = !!localStorage.getItem("token");
 
@@ -28,8 +27,8 @@ export default function AcceptInvitationPage() {
 
     // Check if user is logged in
     if (!isLoggedIn) {
-      // Redirect to signup with token
-      navigate(`/signup?inviteToken=${token}`);
+      // Redirect to team signup page with token
+      navigate(`/signup/team?token=${token}`);
       return;
     }
 
@@ -46,7 +45,7 @@ export default function AcceptInvitationPage() {
     setAccepting(true);
 
     try {
-      const response = await acceptInvitationApi(token);
+      await acceptInvitationApi(token);
       
       toast.success("Invitation accepted successfully!");
       

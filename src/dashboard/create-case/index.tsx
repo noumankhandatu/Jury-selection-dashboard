@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Save } from "lucide-react";
@@ -10,6 +11,7 @@ import TitleTag from "@/components/shared/tag/tag";
 import { createCaseApi } from "@/api/api";
 
 export default function CreateCasePage() {
+  const navigate = useNavigate();
   const [questions, setQuestions] = useState<string[]>([]);
   const [caseData, setCaseData] = useState({
     caseName: "",
@@ -66,7 +68,11 @@ export default function CreateCasePage() {
     };
 
     try {
-      await createCaseApi(newCase);
+      const response = await createCaseApi(newCase);
+      // Handle response structure: response.data or response.data.data
+      const createdCase = response.data || response;
+      const caseId = createdCase?.id || createdCase?.data?.id;
+      
       toast.success(`Case created successfully with ${questions.length} questions!`);
 
       // Reset form
@@ -77,6 +83,13 @@ export default function CreateCasePage() {
         jurorTraits: "",
       });
       setQuestions([]);
+
+      // Navigate to manage jurors page with the new case ID
+      if (caseId) {
+        navigate(`/dashboard/manage-jurors?caseId=${caseId}`);
+      } else {
+        navigate("/dashboard/manage-jurors");
+      }
     } catch (error) {
       console.error("❌ Failed to create case:", error);
       toast.error("Failed to create case. Please try again.");

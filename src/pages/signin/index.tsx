@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { Scale, Mail, Eye, EyeOff, Lock } from "lucide-react";
 
 export default function SignInPage() {
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("inviteToken");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +47,14 @@ export default function SignInPage() {
           );
 
           const organizations = orgsResponse.data.organizations;
+
+          // If there's an invitation token, redirect to accept invitation first
+          if (inviteToken) {
+            setTimeout(() => {
+              window.location.href = `/accept-invitation?token=${inviteToken}`;
+            }, 1000);
+            return;
+          }
 
           if (!organizations || organizations.length === 0) {
             // No organization - redirect to create one

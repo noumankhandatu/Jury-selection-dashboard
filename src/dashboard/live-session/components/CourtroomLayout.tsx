@@ -52,7 +52,7 @@ const CourtroomLayout = ({
     Record<string, { overallScore?: number }>
   >({});
   const [waitingJurors, setWaitingJurors] = useState<Set<string>>(new Set());
-  const [selectedJurors, setSelectedJurors] = useState<CaseJuror[]>([]);
+  const [selectedJurors] = useState<CaseJuror[]>([]);
 
   const refreshScoresNow = async () => {
     if (!sessionId) return;
@@ -122,19 +122,23 @@ const CourtroomLayout = ({
     }
   };
 
-  const onSubmitMultiple = async (
-    questionId: string,
-    responseType: "yes-no" | "rating",
-    responseValue: string
+  // Legacy path no longer used; kept for compatibility if invoked
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _onSubmitMultiple = async (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _questionId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _responseType: "yes-no" | "rating",
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _responseValue: string
   ) => {
-    // Legacy path no longer used; kept for compatibility if invoked
     if (!sessionId) return;
-    const mappedType = responseType === "yes-no" ? "YES_NO" : "RATING";
     // No-op in new flow; responses are handled per-juror inside modal
   };
 
   // Helper function to get dynamic jury boxes
-  const getJuryBoxes = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _getJuryBoxes = () => {
     const jurorsPerBox = 6;
     const totalBoxes = Math.ceil(allJurors.length / jurorsPerBox);
 

@@ -106,7 +106,7 @@ export default function ForgotPasswordPage() {
     try {
       await axios.post(`${import.meta.env.VITE_BASEURL}/auth/forgot-password`, { email });
       toast.success("New code sent to your email!");
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to resend code.");
     } finally {
       setIsSubmitting(false);

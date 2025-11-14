@@ -66,7 +66,8 @@ const AddQuestionModal = ({
     }
   };
 
-  const handleSuggestByAI = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleSuggestByAI = () => {
     // TODO: Implement AI question suggestion functionality
     console.log("AI suggestion functionality to be implemented");
   };

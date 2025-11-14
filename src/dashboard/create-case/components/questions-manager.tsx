@@ -74,7 +74,8 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
 
         const imageBase64 = images[i];
 
-        const prompt = `
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _prompt = `
         Extract all jury selection questions from this page of a PDF document.
         
         Return only a JSON object with this exact format:
@@ -210,7 +211,8 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
     });
   };
 
-  const extractQuestionsFromText = (text: string): string[] => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _extractQuestionsFromText = (text: string): string[] => {
     const questions: string[] = [];
 
     try {

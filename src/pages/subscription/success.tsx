@@ -25,18 +25,23 @@ import { getUserOrganizationsApi, verifySubscriptionApi } from "@/api/api";
 
 export default function SubscriptionSuccessPage() {
   const [loading, setLoading] = useState(true);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
 
   useEffect(() => {
+    // Get returnTo from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnToParam = urlParams.get("returnTo");
+    setReturnTo(returnToParam);
+
     // Verify and activate subscription
     const verifySubscription = async () => {
       try {
         // Get session ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get("session_id");
 
         if (!sessionId) {
           toast.error("Invalid session");
-          window.location.href = "/dashboard";
+          window.location.href = returnToParam || "/dashboard";
           return;
         }
 
@@ -57,9 +62,16 @@ export default function SubscriptionSuccessPage() {
 
           setLoading(false);
           toast.success("Your subscription is now active!");
+
+          // Redirect to returnTo URL if provided, otherwise stay on success page
+          if (returnToParam) {
+            setTimeout(() => {
+              window.location.href = returnToParam;
+            }, 2000); // Show success message for 2 seconds then redirect
+          }
         } else {
           toast.error("Organization not found");
-          window.location.href = "/create-organization";
+          window.location.href = returnToParam || "/create-organization";
         }
       } catch (error) {
         console.error("Error verifying subscription:", error);
@@ -72,7 +84,7 @@ export default function SubscriptionSuccessPage() {
   }, []);
 
   const handleContinue = () => {
-    window.location.href = "/dashboard";
+    window.location.href = returnTo || "/dashboard";
   };
 
   if (loading) {

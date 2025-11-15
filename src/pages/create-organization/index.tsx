@@ -110,199 +110,199 @@ export default function CreateOrganizationPage() {
               </div>
               <div className="absolute -top-1 -right-1">
                 <Sparkles className="w-6 h-6 text-yellow-400 animate-pulse" />
-              </div>
+          </div>
             </motion.div>
             <CardTitle className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Create Your Organization
-            </CardTitle>
+            Create Your Organization
+          </CardTitle>
             <CardDescription className="text-lg text-gray-600">
-              Set up your workspace to start using Jury Duty SaaS
-            </CardDescription>
-          </CardHeader>
+            Set up your workspace to start using Jury Duty SaaS
+          </CardDescription>
+        </CardHeader>
 
           <CardContent className="p-8 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Organization Name - Required */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Organization Name - Required */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
                 className="space-y-2"
               >
-                <Label
-                  htmlFor="name"
+              <Label
+                htmlFor="name"
                   className="text-sm font-semibold text-gray-700 flex items-center gap-2"
-                >
+              >
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
                     <Building2 className="w-4 h-4 text-white" />
                   </div>
-                  Organization Name <span className="text-red-500">*</span>
-                </Label>
+                Organization Name <span className="text-red-500">*</span>
+              </Label>
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-md opacity-20 blur-sm"></div>
                   <div className="relative bg-white rounded-md p-[1px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
                     <div className="bg-white rounded-[calc(0.375rem-1px)]">
                       <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500 z-10" />
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="e.g., Smith Law Firm"
-                        value={formData.name}
-                        onChange={(e) => handleChange("name", e.target.value)}
+              <Input
+                id="name"
+                type="text"
+                placeholder="e.g., Smith Law Firm"
+                value={formData.name}
+                onChange={(e) => handleChange("name", e.target.value)}
                         className="h-12 pl-12 pr-4 text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent placeholder:text-gray-400"
-                        required
-                        disabled={loading}
-                      />
+                required
+                disabled={loading}
+              />
                     </div>
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 flex items-center gap-1">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  This will be displayed across your dashboard
-                </p>
+                This will be displayed across your dashboard
+              </p>
               </motion.div>
 
-              {/* Email - Optional */}
+            {/* Email - Optional */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
                 className="space-y-2"
               >
-                <Label
-                  htmlFor="email"
+              <Label
+                htmlFor="email"
                   className="text-sm font-semibold text-gray-700 flex items-center gap-2"
-                >
+              >
                   <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
                     <Mail className="w-4 h-4 text-white" />
                   </div>
-                  Organization Email
-                </Label>
+                Organization Email
+              </Label>
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-md opacity-20 blur-sm"></div>
                   <div className="relative bg-white rounded-md p-[1px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
                     <div className="bg-white rounded-[calc(0.375rem-1px)]">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-indigo-500 z-10" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="contact@smithlaw.com"
-                        value={formData.email}
-                        onChange={(e) => handleChange("email", e.target.value)}
+              <Input
+                id="email"
+                type="email"
+                placeholder="contact@smithlaw.com"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
                         className="h-12 pl-12 pr-4 text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent placeholder:text-gray-400"
-                        disabled={loading}
-                      />
+                disabled={loading}
+              />
                     </div>
                   </div>
                 </div>
-                {formData.email && (
+              {formData.email && (
                   <p className="text-xs text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-md inline-flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
-                    Pre-filled from your account. You can edit if needed.
-                  </p>
-                )}
+                  Pre-filled from your account. You can edit if needed.
+                </p>
+              )}
               </motion.div>
 
-              {/* Phone - Optional */}
+            {/* Phone - Optional */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
                 className="space-y-2"
               >
-                <Label
-                  htmlFor="phone"
+              <Label
+                htmlFor="phone"
                   className="text-sm font-semibold text-gray-700 flex items-center gap-2"
-                >
+              >
                   <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                     <Phone className="w-4 h-4 text-white" />
                   </div>
-                  Phone Number
-                </Label>
+                Phone Number
+              </Label>
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-md opacity-20 blur-sm"></div>
                   <div className="relative bg-white rounded-md p-[1px] bg-gradient-to-r from-purple-500 via-pink-500 to-red-500">
                     <div className="bg-white rounded-[calc(0.375rem-1px)]">
                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-purple-500 z-10" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+1 (555) 123-4567"
-                        value={formData.phone}
-                        onChange={(e) => handleChange("phone", e.target.value)}
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+1 (555) 123-4567"
+                value={formData.phone}
+                onChange={(e) => handleChange("phone", e.target.value)}
                         className="h-12 pl-12 pr-4 text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent placeholder:text-gray-400"
-                        disabled={loading}
-                      />
+                disabled={loading}
+              />
                     </div>
                   </div>
                 </div>
-                {formData.phone && (
+              {formData.phone && (
                   <p className="text-xs text-purple-600 bg-purple-50 px-3 py-1.5 rounded-md inline-flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
-                    Pre-filled from your account. You can edit if needed.
-                  </p>
-                )}
+                  Pre-filled from your account. You can edit if needed.
+                </p>
+              )}
               </motion.div>
 
-              {/* Address - Optional */}
+            {/* Address - Optional */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 }}
                 className="space-y-2"
               >
-                <Label
-                  htmlFor="address"
+              <Label
+                htmlFor="address"
                   className="text-sm font-semibold text-gray-700 flex items-center gap-2"
-                >
+              >
                   <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-red-500 rounded-lg flex items-center justify-center">
                     <MapPin className="w-4 h-4 text-white" />
                   </div>
-                  Address
-                </Label>
+                Address
+              </Label>
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 rounded-md opacity-20 blur-sm"></div>
                   <div className="relative bg-white rounded-md p-[1px] bg-gradient-to-r from-pink-500 via-red-500 to-orange-500">
                     <div className="bg-white rounded-[calc(0.375rem-1px)]">
                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-pink-500 z-10" />
-                      <Input
-                        id="address"
-                        type="text"
-                        placeholder="123 Legal Street, City, State 12345"
-                        value={formData.address}
-                        onChange={(e) => handleChange("address", e.target.value)}
+              <Input
+                id="address"
+                type="text"
+                placeholder="123 Legal Street, City, State 12345"
+                value={formData.address}
+                onChange={(e) => handleChange("address", e.target.value)}
                         className="h-12 pl-12 pr-4 text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent placeholder:text-gray-400"
-                        disabled={loading}
-                      />
-                    </div>
+                disabled={loading}
+              />
+            </div>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Submit Button */}
+            {/* Submit Button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
                 className="pt-4"
               >
-                <Button
-                  type="submit"
+            <Button
+              type="submit"
                   className="w-full h-14 text-base font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02]"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Creating Organization...
-                    </>
-                  ) : (
-                    <>
-                      <Building2 className="w-5 h-5 mr-2" />
-                      Create Organization & Continue
-                    </>
-                  )}
-                </Button>
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Creating Organization...
+                </>
+              ) : (
+                <>
+                  <Building2 className="w-5 h-5 mr-2" />
+                  Create Organization & Continue
+                </>
+              )}
+            </Button>
               </motion.div>
 
               <motion.p
@@ -314,9 +314,9 @@ export default function CreateOrganizationPage() {
                 <Sparkles className="w-4 h-4 text-purple-500" />
                 After creating your organization, you'll choose a subscription plan
               </motion.p>
-            </form>
-          </CardContent>
-        </Card>
+          </form>
+        </CardContent>
+      </Card>
       </motion.div>
     </div>
   );

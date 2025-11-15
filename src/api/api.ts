@@ -430,6 +430,7 @@ export const updateOrganizationApi = async (
 export const createCheckoutSessionApi = async (payload: {
   plan: "STANDARD" | "BUSINESS";
   organizationId: string;
+  returnTo?: string;
 }) => {
   try {
     const response = await BaseUrl.post(
@@ -493,6 +494,23 @@ export const getBillingPortalApi = async (organizationId: string) => {
     return response.data;
   } catch (error: any) {
     console.error("Error getting billing portal:", error);
+    throw error;
+  }
+};
+
+// Cancel subscription
+export const cancelSubscriptionApi = async (
+  organizationId: string,
+  immediately: boolean = false
+) => {
+  try {
+    const response = await BaseUrl.post(
+      `/subscriptions/${organizationId}/cancel`,
+      { immediately }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error canceling subscription:", error);
     throw error;
   }
 };

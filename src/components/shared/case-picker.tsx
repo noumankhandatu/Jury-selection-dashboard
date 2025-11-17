@@ -156,7 +156,11 @@ const CasePicker = ({
               <div className=" gap-4 text-sm text-muted-foreground hidden md:flex">
                 <span>Type: {selectedCase.type}</span>
                 <span>Questions: {selectedCase.questions.length}</span>
-                <span>Created: {new Date(selectedCase.createdDate).toLocaleDateString()}</span>
+                <span>Created: {new Date(selectedCase.createdDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}</span>
                 {sessionStartTime && <span>Session Started: {sessionStartTime}</span>}
               </div>
             </div>

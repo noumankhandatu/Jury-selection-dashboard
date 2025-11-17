@@ -90,7 +90,11 @@ export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTablePr
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>{new Date(case_.createdDate).toLocaleDateString()}</span>
+                          <span>{new Date(case_.createdDate).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}</span>
                         </div>
                       </TableCell>
                       <TableCell>

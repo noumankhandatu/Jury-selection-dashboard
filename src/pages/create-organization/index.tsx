@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createOrganizationApi } from "@/api/api";
 import { Building2, Mail, Phone, MapPin, Loader2, Sparkles, CheckCircle2 } from "lucide-react";
+import { formatPhoneInput } from "@/utils/format";
 
 export default function CreateOrganizationPage() {
   const [loading, setLoading] = useState(false);
@@ -116,7 +117,7 @@ export default function CreateOrganizationPage() {
             Create Your Organization
           </CardTitle>
             <CardDescription className="text-lg text-gray-600">
-            Set up your workspace to start using Jury Duty SaaS
+            Set up your workspace to start using Jury AI
           </CardDescription>
         </CardHeader>
 
@@ -227,11 +228,12 @@ export default function CreateOrganizationPage() {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+1 (555) 123-4567"
+                placeholder="(555) 123-4567"
                 value={formData.phone}
-                onChange={(e) => handleChange("phone", e.target.value)}
+                onChange={(e) => handleChange("phone", formatPhoneInput(e.target.value))}
                         className="h-12 pl-12 pr-4 text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent placeholder:text-gray-400"
                 disabled={loading}
+                maxLength={14}
               />
                     </div>
                   </div>

@@ -179,7 +179,7 @@ export function Sidebar({ onClose }: SidebarProps) {
             <Scale className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-            Jury Duty
+            Jury AI
           </h1>
         </div>
         {/* Organization Name */}

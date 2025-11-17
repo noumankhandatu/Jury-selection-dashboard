@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import BaseUrl from "@/utils/config/baseUrl";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, Phone, Users, XCircle, Loader2 } from "lucide-react";
+import { formatPhoneInput } from "@/utils/format";
 import { getInvitationByTokenApi } from "@/api/api";
 
 export default function TeamSignUpPage() {
@@ -261,8 +262,12 @@ export default function TeamSignUpPage() {
                 type="tel"
                 required
                 value={form.phoneNumber}
-                onChange={handleChange}
-                placeholder="Phone Number"
+                onChange={(e) => {
+                  const formatted = formatPhoneInput(e.target.value);
+                  setForm((prev) => ({ ...prev, phoneNumber: formatted }));
+                }}
+                placeholder="(555) 123-4567"
+                maxLength={14}
                 className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none bg-white/80 placeholder-gray-400 text-gray-700 transition"
               />
             </motion.div>

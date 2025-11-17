@@ -1080,7 +1080,11 @@ export default function BillingPage() {
                           <div>
                             <p className="text-sm text-gray-600">Trial Ends</p>
                             <p className="text-lg font-bold text-gray-900">
-                              {trialEndsAt.toLocaleDateString()}
+                              {trialEndsAt.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
                             </p>
                             <p className="text-xs text-gray-500">
                               {daysUntilTrialEnd}{" "}
@@ -1103,7 +1107,11 @@ export default function BillingPage() {
                               : "Next Billing"}
                           </p>
                       <p className="text-lg font-bold text-gray-900">
-                            {currentPeriodEnd.toLocaleDateString()}
+                            {currentPeriodEnd.toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
                       </p>
                           {subscriptionState === "ACTIVE_CANCELLING" &&
                             daysUntilPeriodEnd > 0 && (
@@ -1133,7 +1141,11 @@ export default function BillingPage() {
                       <p className="text-lg font-bold text-gray-900">
                               {new Date(
                                 subscription.canceledAt
-                              ).toLocaleDateString()}
+                              ).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
                       </p>
                     </div>
                   </div>
@@ -1364,7 +1376,11 @@ export default function BillingPage() {
                               : " Your tokens will reset on " +
                                 new Date(
                                   tokenUsage.tokens.resetDate
-                                ).toLocaleDateString() +
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }) +
                                 "."}
                       </p>
                     </div>

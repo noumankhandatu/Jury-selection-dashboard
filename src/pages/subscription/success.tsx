@@ -168,7 +168,7 @@ export default function SubscriptionSuccessPage() {
               </div>
             </motion.div>
             <CardTitle className="text-4xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-3">
-              Welcome to Jury Duty SaaS! 🎉
+              Welcome to Jury AI! 🎉
             </CardTitle>
             <CardDescription className="text-lg text-gray-600">
               Your subscription is now active and your 14-day free trial has

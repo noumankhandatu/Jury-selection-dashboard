@@ -223,7 +223,7 @@ export default function AcceptInvitationPage() {
             You've Been Invited! 🎉
           </CardTitle>
             <CardDescription className="text-lg text-gray-600">
-            You've been invited to join an organization on Jury Duty SaaS
+            You've been invited to join an organization on Jury AI
           </CardDescription>
         </CardHeader>
 

@@ -28,6 +28,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { handleLogout } from "@/utils/config/baseUrl";
+import { formatPhoneInput } from "@/utils/format";
 import {
   requestPasswordChangeOTPApi,
   verifyPasswordOTPApi,
@@ -678,10 +679,13 @@ export default function AccountPage() {
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                           <Input
                             id="phoneNumber"
+                            type="tel"
                             value={editData.phoneNumber}
                             onChange={(e) =>
-                              handleInputChange("phoneNumber", e.target.value)
+                              handleInputChange("phoneNumber", formatPhoneInput(e.target.value))
                             }
+                            placeholder="(555) 123-4567"
+                            maxLength={14}
                             className="pl-11 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                           />
                         </div>

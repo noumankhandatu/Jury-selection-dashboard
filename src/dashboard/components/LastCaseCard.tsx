@@ -50,9 +50,9 @@ export default function LastCaseCard() {
     if (!lastCase?.createdAt) return "";
     try {
       const d = new Date(lastCase.createdAt);
-      const date = d.toLocaleDateString(undefined, {
-        day: "2-digit",
+      const date = d.toLocaleDateString("en-US", {
         month: "2-digit",
+        day: "2-digit",
         year: "numeric",
       });
       const time = d.toLocaleTimeString(undefined, {

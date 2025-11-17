@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Save, X } from "lucide-react";
 import type { Juror } from "./types";
+import { formatPhoneInput } from "@/utils/format";
 
 interface AddJurorDialogProps {
   isOpen: boolean;
@@ -233,9 +234,11 @@ export function AddJurorDialog({
                   <Label htmlFor="phone">Phone</Label>
                   <Input
                     id="phone"
+                    type="tel"
                     value={newJuror.phone || ""}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    onChange={(e) => handleInputChange("phone", formatPhoneInput(e.target.value))}
                     placeholder="(555) 123-4567"
+                    maxLength={14}
                   />
                 </div>
 
@@ -389,11 +392,13 @@ export function AddJurorDialog({
                   <Label htmlFor="workPhone">Work Phone</Label>
                   <Input
                     id="workPhone"
+                    type="tel"
                     value={newJuror.workPhone || ""}
                     onChange={(e) =>
-                      handleInputChange("workPhone", e.target.value)
+                      handleInputChange("workPhone", formatPhoneInput(e.target.value))
                     }
                     placeholder="(555) 987-6543"
+                    maxLength={14}
                   />
                 </div>
 

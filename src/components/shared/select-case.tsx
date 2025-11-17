@@ -125,7 +125,11 @@ export function SelectCase({
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {case_.type} • Created{" "}
-                          {new Date(case_.createdDate).toLocaleDateString()}
+                          {new Date(case_.createdDate).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
                           {jurorsByCase[case_.id] &&
                             ` • ${jurorsByCase[case_.id].length} jurors`}
                         </span>
@@ -164,7 +168,11 @@ export function SelectCase({
                     <span>Type: {selectedCase.type}</span>
                     <span>
                       Created:{" "}
-                      {new Date(selectedCase.createdDate).toLocaleDateString()}
+                      {new Date(selectedCase.createdDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
                     </span>
                     {jurorsByCase[selectedCase.id] && (
                       <span>

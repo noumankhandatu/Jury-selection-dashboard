@@ -52,7 +52,7 @@ export function JurorMiniCard({
       <CardContent className="p-5">
         <div className="flex flex-col items-center text-center">
           <Avatar className="h-16 w-16 mb-3">
-            <AvatarImage src={generateAvatar(juror.name)} alt={juror.name} />
+            <AvatarImage src={generateAvatar(juror.name, juror.gender)} alt={juror.name} />
             <AvatarFallback>
               {juror.name
                 .split(" ")

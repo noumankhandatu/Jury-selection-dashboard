@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Search, ChevronDown, MessageSquare, Brain, AlertTriangle, CheckCircle, Clock, Scale, Users, BarChart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
+import { generateAvatar } from "@/dashboard/manage-jurors/components/utils";
 
 interface Case {
   id: string;
@@ -293,11 +294,6 @@ export default function JurorAnalysisPage() {
 
   const [filteredJurors, setFilteredJurors] = useState<JurorAnalysis[]>([]);
 
-  const generateAvatar = (name: string) => {
-    const seed = name.toLowerCase().replace(/\s+/g, "");
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
-  };
-
   const handleCaseSelect = (case_: Case) => {
     setSelectedCase(case_);
     setOpen(false);
@@ -474,7 +470,7 @@ export default function JurorAnalysisPage() {
                           <div className="flex items-start space-x-4">
                             <div className="relative">
                               <Avatar className="h-16 w-16">
-                                <AvatarImage src={generateAvatar(juror.name)} alt={juror.name} />
+                                <AvatarImage src={generateAvatar(juror.name, (juror as any).gender)} alt={juror.name} />
                                 <AvatarFallback>
                                   {juror.name
                                     .split(" ")
@@ -556,7 +552,7 @@ export default function JurorAnalysisPage() {
               <DialogTitle className="flex items-center gap-3">
                 <div className="relative">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={selectedJuror ? generateAvatar(selectedJuror.name) : "/placeholder.svg"} alt={selectedJuror?.name} />
+                    <AvatarImage src={selectedJuror ? generateAvatar(selectedJuror.name, (selectedJuror as any).gender) : "/placeholder.svg"} alt={selectedJuror?.name} />
                     <AvatarFallback>
                       {selectedJuror?.name
                         .split(" ")

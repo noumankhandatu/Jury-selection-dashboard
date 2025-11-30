@@ -384,7 +384,7 @@ export default function BillingPage() {
         name: "Standard Plan",
         price: 29,
         features: [
-          "2 team members",
+          "Up to 1 team member (plus owner)",
           "1,000,000 AI tokens/month",
           "Unlimited cases",
           "AI assessments",
@@ -395,7 +395,7 @@ export default function BillingPage() {
         name: "Business Plan",
         price: 79,
         features: [
-          "Up to 5 team members",
+          "Up to 4 team members (plus owner)",
           "2,000,000 AI tokens/month",
           "Unlimited cases",
           "AI assessments",

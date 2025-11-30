@@ -89,7 +89,7 @@ export function ResponseDetailsDialog({
             <div className="flex items-center gap-4 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
               <Avatar className="h-12 w-12 ring-2 ring-blue-100">
                 <AvatarImage
-                  src={generateAvatar(jurorDetail?.score?.juror?.name || "")}
+                  src={generateAvatar(jurorDetail?.score?.juror?.name || "", jurorDetail?.score?.juror?.gender)}
                   alt={jurorDetail?.score?.juror?.name}
                 />
                 <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">

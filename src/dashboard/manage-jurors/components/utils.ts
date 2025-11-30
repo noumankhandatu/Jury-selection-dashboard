@@ -3,12 +3,19 @@ import type { Juror } from "./types";
 import { extractJurorsFromPDFApi } from "@/api/api";
 import OpenAI from "openai";
 
-export const generateAvatar = (name: string) => {
-  if (!name) {
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=default&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+export const generateAvatar = (name: string, gender?: string | null) => {
+  // Use gender to determine which image to show
+  // Gender is normalized to "male" | "female" | null
+  const normalizedGender = gender?.toLowerCase() || "";
+
+  // Return local images from public folder based on gender
+  if (normalizedGender === "female") {
+    // Female placeholder from public folder
+    return "/female.png";
+  } else {
+    // Male placeholder from public folder (default for male or null/undefined)
+    return "/male.png";
   }
-  const safeName = String(name).replace(/\s+/g, "");
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${safeName}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 };
 
 export const getBiasColor = (status: string) => {
@@ -180,7 +187,12 @@ export const extractAndParseJurorsFromPDF = async (
           name: safeString(juror.name, "Unknown Juror"),
           age: safeNumber(juror.age, 0),
           dateOfBirth: safeString(juror.dateOfBirth),
-          gender: safeString(juror.gender),
+          // Gender: normalize to lowercase "male" or "female", or null
+          gender: juror.gender 
+            ? (juror.gender.toLowerCase() === "male" || juror.gender.toLowerCase() === "female" 
+                ? juror.gender.toLowerCase() 
+                : null)
+            : null,
           race: safeString(juror.race),
           address: safeString(juror.address),
           mailingAddress: safeString(
@@ -205,7 +217,14 @@ export const extractAndParseJurorsFromPDF = async (
           accidentalInjury: safeString(juror.accidentalInjury, "No"),
           civilJury: safeString(juror.civilJury, "No"),
           criminalJury: safeString(juror.criminalJury, "No"),
-          panelPosition: safeString(juror.panelPosition),
+          // Panel Position: convert to number, or null if not a valid number
+          panelPosition: juror.panelPosition !== null && juror.panelPosition !== undefined
+            ? (typeof juror.panelPosition === "number" 
+                ? juror.panelPosition 
+                : (typeof juror.panelPosition === "string" && juror.panelPosition.trim() !== ""
+                    ? (isNaN(Number(juror.panelPosition)) ? null : Number(juror.panelPosition))
+                    : null))
+            : null,
           experience: safeString(juror.experience, "No prior jury experience"),
           biasStatus: ["low", "moderate", "high"].includes(juror.biasStatus)
             ? juror.biasStatus
@@ -266,7 +285,7 @@ export const extractAndParseJurorsFromImage = async (
 
     // Convert image to base64
     const base64 = await fileToBase64(file);
-    
+
     // Determine MIME type
     const mimeType = file.type || "image/jpeg";
     const dataUrl = `data:${mimeType};base64,${base64}`;
@@ -282,7 +301,7 @@ Return ONLY a JSON array of juror objects. Each juror object should have this ex
   "name": "string (full name)",
   "age": number,
   "dateOfBirth": "string (MM/DD/YYYY format if available)",
-  "gender": "string (Male/Female/Other)",
+  "gender": "string - MUST be exactly 'male' or 'female' (lowercase) or null. Look for checked boxes next to 'Male' or 'Female' labels. If neither checkbox is checked or cannot be determined, use null.",
   "race": "string",
   "address": "string (full address)",
   "mailingAddress": "string (if different from address)",
@@ -304,16 +323,28 @@ Return ONLY a JSON array of juror objects. Each juror object should have this ex
   "accidentalInjury": "string (Yes/No)",
   "civilJury": "string (Yes/No)",
   "criminalJury": "string (Yes/No)",
-  "panelPosition": "string",
+  "panelPosition": "number (integer) - Extract the number after 'Panel Position:' or 'Panel Position' field. If not found or cannot be determined, use null (not 0, not empty string)",
   "experience": "string (description of prior jury experience)",
   "biasStatus": "string (low/moderate/high)",
   "availability": "string (Available/Limited/Unavailable)"
 }
 
+CRITICAL INSTRUCTIONS FOR GENDER:
+- Look for checkbox fields labeled "Male" or "Female"
+- If "Male" checkbox is checked/marked, return "male" (lowercase)
+- If "Female" checkbox is checked/marked, return "female" (lowercase)
+- If neither is checked or unclear, return null
+- Do NOT use variations like "Male", "M", "Female", "F" - ONLY "male" or "female" (lowercase) or null
+
+CRITICAL INSTRUCTIONS FOR PANEL POSITION:
+- Look for text like "Panel Position: 4" or "Panel Position 4" or similar patterns
+- Extract ONLY the numeric value (e.g., if "Panel Position: 4", return 4 as a number)
+- If the field is missing or cannot be found, return null (not 0, not empty string)
+
 Rules:
 - Extract ALL jurors found in the image
-- If a field is not available, use an empty string ""
-- For numbers, use 0 if not available
+- If a field is not available, use an empty string "" (except for gender and panelPosition which use null)
+- For numbers, use 0 if not available (except panelPosition which uses null)
 - For yes/no fields, use "No" as default if not specified
 - For biasStatus, use "moderate" as default
 - For availability, use "Available" as default
@@ -364,7 +395,9 @@ Rules:
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError);
       console.error("Response content:", content);
-      throw new Error("Failed to parse juror data from image. Please ensure the image contains readable juror questionnaire information.");
+      throw new Error(
+        "Failed to parse juror data from image. Please ensure the image contains readable juror questionnaire information."
+      );
     }
 
     if (!Array.isArray(extractedJurors)) {
@@ -391,7 +424,12 @@ Rules:
           name: safeString(juror.name, "Unknown Juror"),
           age: safeNumber(juror.age, 0),
           dateOfBirth: safeString(juror.dateOfBirth),
-          gender: safeString(juror.gender),
+          // Gender: normalize to lowercase "male" or "female", or null
+          gender: juror.gender 
+            ? (juror.gender.toLowerCase() === "male" || juror.gender.toLowerCase() === "female" 
+                ? juror.gender.toLowerCase() 
+                : null)
+            : null,
           race: safeString(juror.race),
           address: safeString(juror.address),
           mailingAddress: safeString(
@@ -416,7 +454,14 @@ Rules:
           accidentalInjury: safeString(juror.accidentalInjury, "No"),
           civilJury: safeString(juror.civilJury, "No"),
           criminalJury: safeString(juror.criminalJury, "No"),
-          panelPosition: safeString(juror.panelPosition),
+          // Panel Position: convert to number, or null if not a valid number
+          panelPosition: juror.panelPosition !== null && juror.panelPosition !== undefined
+            ? (typeof juror.panelPosition === "number" 
+                ? juror.panelPosition 
+                : (typeof juror.panelPosition === "string" && juror.panelPosition.trim() !== ""
+                    ? (isNaN(Number(juror.panelPosition)) ? null : Number(juror.panelPosition))
+                    : null))
+            : null,
           experience: safeString(juror.experience, "No prior jury experience"),
           biasStatus: ["low", "moderate", "high"].includes(juror.biasStatus)
             ? juror.biasStatus

@@ -45,6 +45,17 @@ export const getJurorsApi = async () => {
   }
 };
 
+// Update a juror
+export const updateJurorApi = async (jurorId: string, jurorData: Partial<any>) => {
+  try {
+    const response = await BaseUrl.put(`/jurors/update/${jurorId}`, jurorData);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating juror:", error);
+    throw error;
+  }
+};
+
 // Get jurors for a specific case
 export const getCaseJurorsApi = async (caseId: string) => {
   try {

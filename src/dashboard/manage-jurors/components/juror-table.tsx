@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Info, Calendar, Briefcase, MapPin, User, Clock } from "lucide-react";
+import { Info, Calendar, Briefcase, MapPin, User, Clock, Hash } from "lucide-react";
 import type { Juror } from "./types";
 import { generateAvatar, getAvailabilityColor } from "./utils";
 
@@ -33,7 +33,7 @@ export function JurorTable({ jurors, onViewDetails }: JurorTableProps) {
                   <div className="flex items-center space-x-3">
                     <div className="relative">
                       <Avatar className="h-10 w-10 border-2 border-white shadow-md">
-                        <AvatarImage src={generateAvatar(juror.name) || "/placeholder.svg"} alt={juror.name} />
+                        <AvatarImage src={generateAvatar(juror.name, juror.gender) || "/placeholder.svg"} alt={juror.name} />
                         <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm">
                           {juror.name
                             .split(" ")
@@ -48,11 +48,24 @@ export function JurorTable({ jurors, onViewDetails }: JurorTableProps) {
                         <Calendar className="h-3 w-3 mr-1" />
                         {juror.age} years
                       </div>
-                      {juror.jurorNumber && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 mt-1">
-                          <User className="h-3 w-3 mr-1" />#{juror.jurorNumber}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-1 flex-wrap mt-1">
+                        {/* {juror.jurorNumber && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            <User className="h-3 w-3 mr-1" />#{juror.jurorNumber}
+                          </Badge>
+                        )} */}
+                        {/* {juror.gender && (
+                          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                            {juror.gender === "male" ? "♂" : "♀"} {juror.gender.charAt(0).toUpperCase() + juror.gender.slice(1)}
+                          </Badge>
+                        )} */}
+                        {juror.panelPosition !== null && juror.panelPosition !== undefined && (
+                          <Badge variant="outline" className="text-xs font-bold bg-indigo-50 text-indigo-700 border-indigo-300 px-2 py-1 shadow-sm">
+                            <Hash className="h-3 w-3 mr-1" />
+                            Panel {juror.panelPosition}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
@@ -83,9 +96,10 @@ export function JurorTable({ jurors, onViewDetails }: JurorTableProps) {
                       <Clock className="h-3 w-3 mr-1" />
                       {juror.availability}
                     </Badge>
-                    {juror.gender && (
-                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs block w-fit">
-                        {juror.gender}
+                    {juror.panelPosition !== null && juror.panelPosition !== undefined && (
+                      <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-300 text-xs font-bold px-2 py-1 shadow-sm block w-fit">
+                        <Hash className="h-3 w-3 mr-1 inline" />
+                        Panel {juror.panelPosition}
                       </Badge>
                     )}
                   </div>

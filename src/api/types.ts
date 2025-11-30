@@ -10,7 +10,7 @@ export interface Juror {
   jurorNumber: string;
   age: number;
   dateOfBirth: string;
-  gender: string;
+  gender: "male" | "female" | null; // Normalized to lowercase or null
   race: string;
   email: string;
   phone: string;
@@ -28,7 +28,7 @@ export interface Juror {
   children: string;
   citizenship: string;
   tdl: string;
-  panelPosition: string;
+  panelPosition: number | null; // Panel position number (null if not specified)
   criminalCase: string;
   accidentalInjury: string;
   civilJury: string;

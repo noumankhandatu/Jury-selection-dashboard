@@ -122,7 +122,7 @@ export function JurorDetailsDialog({ juror, isOpen, onClose, sessionId }: JurorD
           <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
             <div className="relative">
               <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-white shadow-md">
-                <AvatarImage src={generateAvatar(jurorProfile?.name || "") || "/placeholder.svg"} alt={jurorProfile?.name || "Juror"} />
+                <AvatarImage src={generateAvatar(jurorProfile?.name || "", jurorProfile?.gender) || "/placeholder.svg"} alt={jurorProfile?.name || "Juror"} />
                 <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm sm:text-lg font-semibold">
                   {jurorInitials}
                 </AvatarFallback>

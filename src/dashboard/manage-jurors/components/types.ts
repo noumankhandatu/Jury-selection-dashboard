@@ -18,7 +18,7 @@ export interface Juror {
   // Additional fields from PDF
   dateOfBirth: string;
   race: string;
-  gender: string;
+  gender: "male" | "female" | null; // Normalized to lowercase or null
   employer: string;
   maritalStatus: string;
   citizenship: string;
@@ -27,7 +27,7 @@ export interface Juror {
   workPhone: string;
   employmentDuration: string;
   children: string;
-  panelPosition: string;
+  panelPosition: number | null; // Panel position number (null if not specified)
   jurorNumber: string;
   criminalCase: string;
   accidentalInjury: string;

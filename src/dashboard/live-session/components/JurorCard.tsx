@@ -1,4 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Hash } from "lucide-react";
 import OverallGauge from "@/components/shared/overall-gauge";
 import { generateAvatar } from "@/dashboard/manage-jurors/components/utils";
 
@@ -50,6 +52,7 @@ export interface CaseJuror {
   race: string;
   occupation: string;
   status: string;
+  panelPosition?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -90,7 +93,7 @@ const JurorCard = ({
         <div className="relative">
           <Avatar className="h-12 w-12 border-2 border-white shadow rounded-full">
             <AvatarImage
-              src={generateAvatar(juror.name)}
+              src={generateAvatar(juror.name, juror.gender)}
               alt={juror.name}
               className="rounded-full"
             />
@@ -111,6 +114,13 @@ const JurorCard = ({
       <span className="text-xs font-medium text-gray-700 text-center">
         #{juror.jurorNumber}
       </span>
+
+      {juror.panelPosition !== null && juror.panelPosition !== undefined && (
+        <Badge variant="outline" className="text-xs font-bold bg-indigo-50 text-indigo-700 border-indigo-300 px-1.5 py-0.5 shadow-sm">
+          <Hash className="h-2.5 w-2.5 mr-1" />
+          Panel {juror.panelPosition}
+        </Badge>
+      )}
 
       {typeof overallScore === "number" && (
         <div className="mt-1">

@@ -35,6 +35,38 @@ export default function ManageJurorsPage() {
   const [cases, setCases] = useState<Case[]>([]);
   const [jurorsByCase, setJurorsByCase] = useState<Record<string, Juror[]>>({});
 
+  // Helper function to extract numeric part from juror number for sorting
+  const getJurorNumberForSort = (jurorNumber: string | undefined): number => {
+    if (!jurorNumber) return 999999; // Put jurors without numbers at the end
+    // Extract numbers from strings like "J-001", "J-056", "M-1234", etc.
+    const match = jurorNumber.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 999999;
+  };
+
+  // Sort function for jurors by panelPosition ASC (nulls at bottom), then by juror number
+  const sortJurorsByNumber = (jurors: Juror[]): Juror[] => {
+    return [...jurors].sort((a, b) => {
+      // First sort by panelPosition (nulls go to bottom)
+      const panelA = a.panelPosition ?? 999999;
+      const panelB = b.panelPosition ?? 999999;
+      
+      // If both have panelPosition, sort by panelPosition
+      if (a.panelPosition !== null && b.panelPosition !== null) {
+        if (panelA !== panelB) {
+          return panelA - panelB;
+        }
+      } else if (a.panelPosition !== null && b.panelPosition === null) {
+        return -1; // a comes before b
+      } else if (a.panelPosition === null && b.panelPosition !== null) {
+        return 1; // b comes before a
+      }
+      // If both are null or equal panelPosition, sort by juror number
+      const numA = getJurorNumberForSort(a.jurorNumber);
+      const numB = getJurorNumberForSort(b.jurorNumber);
+      return numA - numB;
+    });
+  };
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
@@ -119,7 +151,7 @@ export default function ManageJurorsPage() {
         const updatedJurorsByCase = { ...jurorsByCase };
         const currentCaseJurors = updatedJurorsByCase[selectedCase.id] || [];
         const submittedJurors = parsedJurors.map((j) => ({ ...j, submitted: true }));
-        updatedJurorsByCase[selectedCase.id] = [...currentCaseJurors, ...submittedJurors];
+        updatedJurorsByCase[selectedCase.id] = sortJurorsByNumber([...currentCaseJurors, ...submittedJurors]);
         setJurorsByCase(updatedJurorsByCase);
 
         // Show success dialog
@@ -132,7 +164,7 @@ export default function ManageJurorsPage() {
         // If submission fails, still add jurors to state but mark as not submitted
         const updatedJurorsByCase = { ...jurorsByCase };
         const currentCaseJurors = updatedJurorsByCase[selectedCase.id] || [];
-        updatedJurorsByCase[selectedCase.id] = [...currentCaseJurors, ...parsedJurors];
+        updatedJurorsByCase[selectedCase.id] = sortJurorsByNumber([...currentCaseJurors, ...parsedJurors]);
         setJurorsByCase(updatedJurorsByCase);
         
         setUploadError(`Failed to save jurors: ${submitErr?.error || submitErr?.message || "Unknown error"}`);
@@ -154,7 +186,7 @@ export default function ManageJurorsPage() {
   const handleAddJuror = (newJuror: Juror) => {
     if (!selectedCase) return;
     const updatedJurors = [...(jurorsByCase[selectedCase.id] || []), { ...newJuror, submitted: false }];
-    setJurorsByCase({ ...jurorsByCase, [selectedCase.id]: updatedJurors });
+    setJurorsByCase({ ...jurorsByCase, [selectedCase.id]: sortJurorsByNumber(updatedJurors) });
     setHasUploadedOnce(true);
     setUploadSuccess(`Juror ${newJuror.name} added to case ${selectedCase.number}`);
   };
@@ -164,6 +196,15 @@ export default function ManageJurorsPage() {
     const updatedJurors = jurorsByCase[selectedCase.id].filter((j) => j.id !== jurorId);
     setJurorsByCase({ ...jurorsByCase, [selectedCase.id]: updatedJurors });
     setUploadSuccess(`Juror deleted from case ${selectedCase.number}`);
+  };
+
+  const handleUpdateJuror = (updatedJuror: Juror) => {
+    if (!selectedCase) return;
+    const updatedJurors = jurorsByCase[selectedCase.id].map((j) =>
+      j.id === updatedJuror.id ? { ...updatedJuror, submitted: j.submitted || false } : j
+    );
+    setJurorsByCase({ ...jurorsByCase, [selectedCase.id]: sortJurorsByNumber(updatedJurors) });
+    setSelectedJuror(updatedJuror);
   };
 
   const handleSubmitJurors = async () => {
@@ -195,7 +236,7 @@ export default function ManageJurorsPage() {
       toast.success("Jurors submitted successfully!");
 
       const updated = jurorsByCase[selectedCase.id].map((j) => ({ ...j, submitted: true }));
-      setJurorsByCase({ ...jurorsByCase, [selectedCase.id]: updated });
+      setJurorsByCase({ ...jurorsByCase, [selectedCase.id]: sortJurorsByNumber(updated) });
       setUploadSuccess(`✅ Submitted ${jurors.length} jurors!`);
       setTimeout(() => setUploadSuccess(""), 10000);
     } catch (err: any) {
@@ -212,7 +253,8 @@ export default function ManageJurorsPage() {
         const jurorsMap: Record<string, Juror[]> = {};
 
         (response as any[]).forEach((c) => {
-          jurorsMap[String(c.id)] = (c.jurors || []).map((j: Juror) => ({ ...j, submitted: true }));
+          const jurors = (c.jurors || []).map((j: Juror) => ({ ...j, submitted: true }));
+          jurorsMap[String(c.id)] = sortJurorsByNumber(jurors);
         });
 
         const transformedCases = (response as any[]).map((c) => ({
@@ -248,8 +290,9 @@ export default function ManageJurorsPage() {
   }, [searchParams]);
 
   const currentJurors = selectedCase ? jurorsByCase[selectedCase.id] || [] : [];
-  const newJurors = currentJurors.filter((j: any) => !j.submitted);
-  const oldJurors = currentJurors.filter((j: any) => j.submitted);
+  const sortedCurrentJurors = sortJurorsByNumber(currentJurors);
+  const newJurors = sortJurorsByNumber(sortedCurrentJurors.filter((j: any) => !j.submitted));
+  const oldJurors = sortJurorsByNumber(sortedCurrentJurors.filter((j: any) => j.submitted));
 
   const shouldShowSubmitButton = selectedCase && newJurors.length > 0;
   const shouldShowJurorDisplay = selectedCase && (hasUploadedOnce || currentJurors.length > 0);
@@ -327,7 +370,12 @@ export default function ManageJurorsPage() {
           )}
         </div>
 
-        <ManageJurorDetailsModal isOpen={isJurorDetailsOpen} onClose={() => setIsJurorDetailsOpen(false)} juror={selectedJuror} />
+        <ManageJurorDetailsModal 
+          isOpen={isJurorDetailsOpen} 
+          onClose={() => setIsJurorDetailsOpen(false)} 
+          juror={selectedJuror}
+          onUpdate={handleUpdateJuror}
+        />
         <AddJurorDialog isOpen={isAddJurorOpen} onClose={() => setIsAddJurorOpen(false)} onSave={handleAddJuror} selectedCase={selectedCase} />
         
         {/* Success Dialog */}

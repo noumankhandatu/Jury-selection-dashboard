@@ -23,9 +23,10 @@ import {
   Shield,
   Star,
   ArrowRight,
+  Building2,
 } from "lucide-react";
 
-type Plan = "STANDARD" | "BUSINESS";
+type Plan = "STANDARD" | "BUSINESS" | "ENTERPRISE";
 
 export default function SubscriptionSelectPage() {
   const navigate = useNavigate();
@@ -41,9 +42,16 @@ export default function SubscriptionSelectPage() {
     ) {
       setSelectedPlan(preSelected as Plan);
     }
+    // Note: Enterprise plan cannot be pre-selected as it's coming soon
   }, []);
 
   const handleSelectPlan = async (plan: Plan) => {
+    // Enterprise plan is coming soon
+    if (plan === "ENTERPRISE") {
+      toast.info("Enterprise plan is coming soon! Contact sales for more information.");
+      return;
+    }
+
     const organizationId = localStorage.getItem("organizationId");
 
     if (!organizationId) {
@@ -90,7 +98,7 @@ export default function SubscriptionSelectPage() {
       icon: Briefcase,
       popular: false,
       features: [
-        "2 team members",
+        "Up to 1 team member (plus owner)",
         "Unlimited cases",
         "Unlimited jurors",
         "AI-powered jury assessment",
@@ -108,7 +116,7 @@ export default function SubscriptionSelectPage() {
       icon: Users,
       popular: true,
       features: [
-        "Up to 5 team members",
+        "Up to 4 team members (plus owner)",
         "Unlimited cases",
         "Unlimited jurors",
         "AI-powered jury assessment",
@@ -119,6 +127,23 @@ export default function SubscriptionSelectPage() {
         "Email & push notifications",
         "Priority support",
         "14-day free trial",
+      ],
+    },
+    {
+      id: "ENTERPRISE" as Plan,
+      name: "Enterprise Plan",
+      price: "Custom",
+      description: "For large organizations",
+      icon: Building2,
+      popular: false,
+      comingSoon: true,
+      features: [
+        "Unlimited team members",
+        "Custom integrations",
+        "Dedicated support",
+        "White-label options",
+        "On-premise deployment",
+        "Custom AI training",
       ],
     },
   ];
@@ -170,7 +195,7 @@ export default function SubscriptionSelectPage() {
         </motion.div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {plans.map((plan, index) => {
             const Icon = plan.icon;
             const isSelected = selectedPlan === plan.id;
@@ -186,6 +211,8 @@ export default function SubscriptionSelectPage() {
                   className={`relative border-none shadow-2xl transition-all duration-300 overflow-hidden ${
                     plan.popular
                       ? "bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 scale-105"
+                      : plan.comingSoon
+                      ? "bg-white/70 backdrop-blur-sm opacity-90"
                       : "bg-white/90 backdrop-blur-sm"
                   } ${
                     isSelected ? "ring-4 ring-blue-300 ring-opacity-50" : ""
@@ -231,6 +258,13 @@ export default function SubscriptionSelectPage() {
                           <Sparkles className="w-6 h-6 text-yellow-400 animate-pulse" />
                         </div>
                       )}
+                      {plan.comingSoon && (
+                        <div className="absolute -top-1 -right-1">
+                          <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 text-xs font-semibold shadow-lg">
+                            Coming Soon
+                          </Badge>
+                        </div>
+                      )}
                     </motion.div>
                     <CardTitle className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                       {plan.name}
@@ -239,10 +273,18 @@ export default function SubscriptionSelectPage() {
                       {plan.description}
                     </CardDescription>
                     <div className="mt-8">
-                      <span className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        ${plan.price}
-                      </span>
-                      <span className="text-gray-500 text-xl ml-2">/month</span>
+                      {typeof plan.price === "number" ? (
+                        <>
+                          <span className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            ${plan.price}
+                          </span>
+                          <span className="text-gray-500 text-xl ml-2">/month</span>
+                        </>
+                      ) : (
+                        <span className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                          {plan.price}
+                        </span>
+                      )}
                     </div>
                   </CardHeader>
 
@@ -277,28 +319,39 @@ export default function SubscriptionSelectPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.7 + index * 0.1 }}
                     >
-                      <Button
-                        onClick={() => handleSelectPlan(plan.id)}
-                        disabled={loading}
-                        className={`group w-full h-14 text-base font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-xl hover:shadow-2xl ${
-                          plan.popular
-                            ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white"
-                            : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-700"
-                        }`}
-                      >
-                        {loading && isSelected ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="w-5 h-5 mr-2" />
-                            Start Free Trial
-                            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                          </>
-                        )}
-                      </Button>
+                      {plan.comingSoon ? (
+                        <Button
+                          onClick={() => handleSelectPlan(plan.id)}
+                          disabled
+                          className="group w-full h-14 text-base font-bold transition-all duration-300 cursor-not-allowed opacity-60 bg-gray-200 border-2 border-gray-300 text-gray-500"
+                        >
+                          <Sparkles className="w-5 h-5 mr-2" />
+                          Coming Soon
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleSelectPlan(plan.id)}
+                          disabled={loading}
+                          className={`group w-full h-14 text-base font-bold transition-all duration-300 transform hover:scale-[1.02] shadow-xl hover:shadow-2xl ${
+                            plan.popular
+                              ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white"
+                              : "bg-white border-2 border-blue-600 text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:border-blue-700"
+                          }`}
+                        >
+                          {loading && isSelected ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-5 h-5 mr-2" />
+                              Start Free Trial
+                              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </motion.div>
 
                     <div className="flex items-center justify-center gap-2 text-sm text-gray-500 pt-2">

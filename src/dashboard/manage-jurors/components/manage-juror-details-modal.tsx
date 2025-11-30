@@ -1,24 +1,80 @@
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FileText, Calendar, Briefcase, GraduationCap, MapPin, User, Mail, Phone, Home, Building, Heart, Users, Flag, Car, Wrench, BookOpen, Shield } from "lucide-react";
+import { FileText, Calendar, Briefcase, GraduationCap, MapPin, User, Mail, Phone, Home, Building, Heart, Users, Flag, Car, Wrench, BookOpen, Shield, Edit, Save, X, Loader2 } from "lucide-react";
 import type { Juror } from "./types";
 import { generateAvatar } from "./utils";
+import { updateJurorApi } from "@/api/api";
+import { toast } from "sonner";
 
 interface ManageJurorDetailsModalProps {
   juror: Juror | null;
   isOpen: boolean;
   onClose: () => void;
+  onUpdate?: (updatedJuror: Juror) => void;
 }
 
-export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorDetailsModalProps) {
+export function ManageJurorDetailsModal({ juror, isOpen, onClose, onUpdate }: ManageJurorDetailsModalProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedJuror, setEditedJuror] = useState<Partial<Juror>>({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (juror) {
+      setEditedJuror(juror);
+      setIsEditing(false);
+    }
+  }, [juror]);
+
   if (!juror) return null;
 
-  const jurorInitials = juror.name
+  const jurorInitials = (editedJuror.name || juror.name)
     .split(" ")
     .map((n) => n[0])
     .join("");
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditedJuror(juror);
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!juror.id) return;
+    
+    setIsSaving(true);
+    try {
+      const response = await updateJurorApi(juror.id, editedJuror);
+      if (response.success) {
+        toast.success("Juror updated successfully");
+        setIsEditing(false);
+        if (onUpdate) {
+          onUpdate(response.data as Juror);
+        }
+      }
+    } catch (error: any) {
+      console.error("Error updating juror:", error);
+      toast.error(error.response?.data?.error || "Failed to update juror");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleFieldChange = (field: keyof Juror, value: any) => {
+    setEditedJuror((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const displayValue = (field: keyof Juror) => {
+    return editedJuror[field] || juror[field] || "Not specified";
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -29,6 +85,34 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               Juror Profile Details
             </DialogTitle>
+            <div className="flex items-center gap-2">
+              {!isEditing ? (
+                <Button onClick={handleEdit} variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              ) : (
+                <>
+                  <Button onClick={handleCancel} variant="outline" size="sm" disabled={isSaving}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave} size="sm" disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
           <DialogDescription>Complete juror information and profile</DialogDescription>
         </DialogHeader>
@@ -38,7 +122,7 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
           <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
             <div className="relative">
               <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-white shadow-md">
-                <AvatarImage src={generateAvatar(juror.name) || "/placeholder.svg"} alt={juror.name} />
+                <AvatarImage src={generateAvatar(juror.name, juror.gender) || "/placeholder.svg"} alt={juror.name} />
                 <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm sm:text-lg font-semibold">
                   {jurorInitials}
                 </AvatarFallback>
@@ -48,7 +132,7 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
               <h2 className="text-lg sm:text-xl font-bold truncate">{juror.name}</h2>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 {juror.jurorNumber && (
-                  <Badge variant="outline" className="font-medium text-xs">Juror #{juror.jurorNumber}</Badge>
+                  <Badge variant="outline" className="font-semibold text-base sm:text-lg">#{juror.jurorNumber}</Badge>
                 )}
                 <Badge variant="secondary" className="text-xs">{juror.availability}</Badge>
                 {juror.isStrikedOut && (
@@ -67,33 +151,66 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3">
                   <Calendar className="h-4 w-4 text-blue-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Age</p>
-                    <p className="text-base">{juror.age} years old</p>
+                    {isEditing ? (
+                      <Input
+                        type="number"
+                        value={editedJuror.age || ""}
+                        onChange={(e) => handleFieldChange("age", parseInt(e.target.value) || 0)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("age")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Heart className="h-4 w-4 text-pink-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Gender</p>
-                    <p className="text-base">{juror.gender || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.gender || ""}
+                        onChange={(e) => handleFieldChange("gender", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("gender")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Flag className="h-4 w-4 text-green-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Race</p>
-                    <p className="text-base">{juror.race || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.race || ""}
+                        onChange={(e) => handleFieldChange("race", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("race")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Users className="h-4 w-4 text-purple-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Marital Status</p>
-                    <p className="text-base">{juror.maritalStatus || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.maritalStatus || ""}
+                        onChange={(e) => handleFieldChange("maritalStatus", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("maritalStatus")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -112,9 +229,17 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
                 </div>
                 <div className="flex items-center gap-3">
                   <MapPin className="h-4 w-4 text-red-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">County</p>
-                    <p className="text-base">{juror.county || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.county || ""}
+                        onChange={(e) => handleFieldChange("county", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("county")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -137,19 +262,35 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3">
                   <Building className="h-4 w-4 text-blue-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Occupation</p>
-                    <p className="text-base">{juror.occupation || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.occupation || ""}
+                        onChange={(e) => handleFieldChange("occupation", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("occupation")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Wrench className="h-4 w-4 text-orange-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Employer</p>
-                    <p className="text-base">{juror.employer || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.employer || ""}
+                        onChange={(e) => handleFieldChange("employer", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("employer")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -161,23 +302,47 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
                 </div>
                 <div className="flex items-center gap-3">
                   <GraduationCap className="h-4 w-4 text-purple-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Education</p>
-                    <p className="text-base">{juror.education}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.education || ""}
+                        onChange={(e) => handleFieldChange("education", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("education")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <BookOpen className="h-4 w-4 text-indigo-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Jury Experience</p>
-                    <p className="text-base">{juror.experience}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.experience || ""}
+                        onChange={(e) => handleFieldChange("experience", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("experience")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <MapPin className="h-4 w-4 text-red-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Location</p>
-                    <p className="text-base">{juror.location}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.location || ""}
+                        onChange={(e) => handleFieldChange("location", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("location")}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -193,33 +358,66 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3">
                   <Mail className="h-4 w-4 text-blue-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Email</p>
-                    <p className="text-base">{juror.email || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        type="email"
+                        value={editedJuror.email || ""}
+                        onChange={(e) => handleFieldChange("email", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("email")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="h-4 w-4 text-green-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Phone</p>
-                    <p className="text-base">{juror.phone || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.phone || ""}
+                        onChange={(e) => handleFieldChange("phone", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("phone")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Wrench className="h-4 w-4 text-orange-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Work Phone</p>
-                    <p className="text-base">{juror.workPhone || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.workPhone || ""}
+                        onChange={(e) => handleFieldChange("workPhone", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("workPhone")}</p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Home className="h-4 w-4 text-purple-600" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Address</p>
-                    <p className="text-base">{juror.address || "Not specified"}</p>
+                    {isEditing ? (
+                      <Input
+                        value={editedJuror.address || ""}
+                        onChange={(e) => handleFieldChange("address", e.target.value)}
+                        className="text-base mt-1"
+                      />
+                    ) : (
+                      <p className="text-base">{displayValue("address")}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -235,7 +433,7 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3">
                   <Flag className="h-4 w-4 text-red-600" />
                   <div>
@@ -277,7 +475,7 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose }: ManageJurorD
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-blue-600" />
                   <div>

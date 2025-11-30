@@ -54,6 +54,44 @@ const CourtroomLayout = ({
   const [waitingJurors, setWaitingJurors] = useState<Set<string>>(new Set());
   const [selectedJurors] = useState<CaseJuror[]>([]);
 
+  // Helper function to extract numeric part from juror number for sorting
+  const getJurorNumberForSort = (jurorNumber: string | undefined): number => {
+    if (!jurorNumber) return 999999; // Put jurors without numbers at the end
+    // Extract numbers from strings like "J-001", "J-056", "M-1234", etc.
+    const match = jurorNumber.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 999999;
+  };
+
+  // Sort function for jurors by panelPosition ASC (nulls at bottom), then by juror number
+  const sortJurorsByNumber = (jurors: CaseJuror[]): CaseJuror[] => {
+    return [...jurors].sort((a, b) => {
+      // First sort by panelPosition (nulls go to bottom)
+      const panelA = a.panelPosition ?? 999999;
+      const panelB = b.panelPosition ?? 999999;
+      
+      // If both have panelPosition, sort by panelPosition
+      if (a.panelPosition !== null && a.panelPosition !== undefined && 
+          b.panelPosition !== null && b.panelPosition !== undefined) {
+        if (panelA !== panelB) {
+          return panelA - panelB;
+        }
+      } else if (a.panelPosition !== null && a.panelPosition !== undefined && 
+                 (b.panelPosition === null || b.panelPosition === undefined)) {
+        return -1; // a comes before b
+      } else if ((a.panelPosition === null || a.panelPosition === undefined) && 
+                 b.panelPosition !== null && b.panelPosition !== undefined) {
+        return 1; // b comes before a
+      }
+      // If both are null or equal panelPosition, sort by juror number
+      const numA = getJurorNumberForSort(a.jurorNumber);
+      const numB = getJurorNumberForSort(b.jurorNumber);
+      return numA - numB;
+    });
+  };
+
+  // Sort jurors before displaying
+  const sortedJurors = sortJurorsByNumber(allJurors);
+
   const refreshScoresNow = async () => {
     if (!sessionId) return;
     try {
@@ -170,6 +208,7 @@ const CourtroomLayout = ({
       <CourtroomHeader
         selectedCaseId={selectedCaseId}
         selectedCase={selectedCase}
+        allJurors={sortedJurors}
         onAskMultipleJurors={handleAskMultipleJurors}
         onToggleBenchPosition={handleToggleBenchPosition}
         onQuestionsAdded={onRefreshSessionData}
@@ -177,16 +216,16 @@ const CourtroomLayout = ({
 
       <div className="flex flex-col gap-6">
         {benchAbove && <JudgesBench />}
-        {allJurors.length === 0 ? (
+        {sortedJurors.length === 0 ? (
           <div className="flex items-center justify-center p-8">
             <div className="text-lg text-gray-600">No jurors available</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: Math.ceil(allJurors.length / 6) }, (_, i) => {
+            {Array.from({ length: Math.ceil(sortedJurors.length / 6) }, (_, i) => {
               const startIndex = i * 6;
               const endIndex = startIndex + 6;
-              const boxJurors = allJurors.slice(startIndex, endIndex);
+              const boxJurors = sortedJurors.slice(startIndex, endIndex);
               if (boxJurors.length === 0) return null;
               return (
                 <JuryBox
@@ -235,7 +274,7 @@ const CourtroomLayout = ({
       <MultipleJurorsModal
         isOpen={multipleJurorsModalOpen}
         onOpenChange={setMultipleJurorsModalOpen}
-        allJurors={allJurors}
+        allJurors={sortedJurors}
         selectedCaseId={selectedCaseId}
         sessionId={sessionId}
         onRequestScoresRefresh={refreshScoresNow}

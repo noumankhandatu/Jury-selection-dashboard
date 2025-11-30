@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Briefcase, MapPin, Info, User, Award, AlertTriangle } from "lucide-react";
+import { Calendar, Briefcase, MapPin, Info, User, Award, AlertTriangle, Hash } from "lucide-react";
 import type { Juror } from "./types";
 import { generateAvatar } from "./utils";
 import { itemVariants } from "@/utils/fn";
@@ -67,7 +67,7 @@ export function ManageJurorCard({ juror, onViewDetails, isHighlighted = false }:
                 <div className="relative flex-shrink-0">
                   <div className="relative">
                     <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-3 border-white shadow-xl ring-2 ring-blue-100 transition-all duration-300 group-hover:ring-blue-200">
-                      <AvatarImage src={generateAvatar(juror.name) || "/placeholder.svg"} alt={juror.name} />
+                      <AvatarImage src={generateAvatar(juror.name, juror.gender) || "/placeholder.svg"} alt={juror.name} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm sm:text-lg font-bold">
                         {juror.name
                           .split(" ")
@@ -93,19 +93,25 @@ export function ManageJurorCard({ juror, onViewDetails, isHighlighted = false }:
                   <h3 className="font-bold text-sm sm:text-lg text-gray-900 truncate mb-1 group-hover:text-blue-700 transition-colors">
                     {juror.name}
                   </h3>
-                  <div className="flex items-center text-xs sm:text-sm text-gray-600 mb-2">
-                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-500 flex-shrink-0" />
-                    <span className="font-medium">{juror.age} years old</span>
-                  </div>
-                  {juror.jurorNumber && (
-                    <div className="flex items-center">
-                      <Badge variant="outline" className="text-xs font-semibold bg-blue-50 text-blue-700 border-blue-200">
-                        <User className="h-3 w-3 mr-1" />
-                        <span className="hidden sm:inline">#</span>
-                        {juror.jurorNumber}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* {juror.jurorNumber && (
+                      <Badge variant="outline" className="text-base sm:text-lg font-bold bg-blue-50 text-blue-700 border-blue-200 px-3 py-1">
+                        <User className="h-4 w-4 mr-1" />
+                        #{juror.jurorNumber}
                       </Badge>
-                    </div>
-                  )}
+                    )} */}
+                    {/* {juror.gender && (
+                      <Badge variant="outline" className="text-xs sm:text-sm font-medium bg-purple-50 text-purple-700 border-purple-200 px-2 py-1">
+                        {juror.gender === "male" ? "♂" : "♀"} {juror.gender.charAt(0).toUpperCase() + juror.gender.slice(1)}
+                      </Badge>
+                    )} */}
+                    {juror.panelPosition !== null && juror.panelPosition !== undefined && (
+                      <Badge variant="outline" className="text-xs sm:text-sm font-bold bg-indigo-50 text-indigo-700 border-indigo-300 px-2.5 py-1.5 shadow-sm">
+                        <Hash className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5" />
+                        Panel {juror.panelPosition}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

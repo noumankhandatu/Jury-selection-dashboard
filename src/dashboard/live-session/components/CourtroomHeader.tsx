@@ -6,6 +6,7 @@ import AddQuestionModal from "./AddQuestionModal";
 interface CourtroomHeaderProps {
   selectedCaseId?: string;
   selectedCase?: any;
+  allJurors?: any[];
   onAskMultipleJurors: () => void;
   onToggleBenchPosition: () => void;
   onQuestionsAdded?: () => void;
@@ -14,11 +15,17 @@ interface CourtroomHeaderProps {
 const CourtroomHeader = ({
   selectedCaseId,
   selectedCase,
+  allJurors = [],
   onAskMultipleJurors,
   onToggleBenchPosition,
   onQuestionsAdded,
 }: CourtroomHeaderProps) => {
   const [isAddQuestionModalOpen, setIsAddQuestionModalOpen] = useState(false);
+
+  // Calculate dynamic values
+  const totalJurors = allJurors.length;
+  const seatsPerBox = 6;
+  const totalBoxes = Math.ceil(totalJurors / seatsPerBox);
 
   return (
     <div className="flex justify-between items-center">
@@ -26,9 +33,11 @@ const CourtroomHeader = ({
         <h2 className="text-xl font-bold text-gray-900">
           U.S. Courtroom Jury Box Layout
         </h2>
-        <p className="text-sm text-gray-600">
-          36 Jurors • 6 Boxes • 6 Seats per Box
-        </p>
+        {totalJurors > 0 && (
+          <p className="text-sm text-gray-600">
+            {totalJurors} Juror{totalJurors !== 1 ? "s" : ""} • {totalBoxes} Box{totalBoxes !== 1 ? "es" : ""} • {seatsPerBox} Seats per Box
+          </p>
+        )}
       </div>
       <div className="flex items-center gap-2">
         <Button

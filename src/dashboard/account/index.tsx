@@ -120,9 +120,8 @@ export default function AccountPage() {
     confirm: "",
   });
 
-  const generateAvatar = (name: string): string => {
-    const seed = name.toLowerCase().replace(/\s+/g, "");
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+  const generateAvatar = (): string => {
+    return "/male.png";
   };
 
   // Image upload handlers
@@ -480,12 +479,7 @@ export default function AccountPage() {
                 <div className="relative p-1 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 shadow-2xl">
                   <Avatar className="h-36 w-36 rounded-full border-4 border-white shadow-xl">
                     <AvatarImage
-                      src={
-                        userData.avatar ||
-                        generateAvatar(
-                          `${userData.firstName} ${userData.lastName}`
-                        )
-                      }
+                      src={userData.avatar || generateAvatar()}
                       className="object-cover"
                       alt={`${userData.firstName} ${userData.lastName}`}
                     />

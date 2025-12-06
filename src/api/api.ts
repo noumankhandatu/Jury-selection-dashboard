@@ -308,6 +308,47 @@ export const getBestJurorsApi = async (
   }
 };
 
+// ============================================
+// STRIKE RECOMMENDATION APIs
+// ============================================
+
+/**
+ * Generate strike recommendations for low-scoring jurors
+ * Categorizes as STRIKE_FOR_CAUSE or PEREMPTORY_STRIKE
+ */
+export const generateStrikeRecommendationsApi = async (sessionId: string) => {
+  try {
+    const response = await BaseUrl.post(
+      `/scores/session/${sessionId}/generate-strike-recommendations`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error generating strike recommendations:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get jurors by strike recommendation type
+ */
+export const getJurorsByStrikeTypeApi = async (
+  sessionId: string,
+  strikeType: "STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE"
+) => {
+  try {
+    const response = await BaseUrl.get(
+      `/scores/session/${sessionId}/performance`,
+      {
+        params: { strikeType },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching jurors by strike type:", error);
+    throw error;
+  }
+};
+
 // Get detailed assessment for a specific response
 export const getResponseAssessmentApi = async (responseId: string) => {
   try {

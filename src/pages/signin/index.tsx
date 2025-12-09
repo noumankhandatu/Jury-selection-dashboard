@@ -28,8 +28,14 @@ export default function SignInPage() {
         {
           email,
           password,
+        },
+        {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+          },
         }
       );
+
 
       if (response.data.token) {
         const { token, user } = response.data;
@@ -42,7 +48,10 @@ export default function SignInPage() {
           const orgsResponse = await axios.get(
             `${import.meta.env.VITE_BASEURL}/organizations`,
             {
-              headers: { Authorization: `Bearer ${token}` },
+              headers: {
+                Authorization: `Bearer ${token}`, "Content-Type": "application/json",
+                "ngrok-skip-browser-warning": "true",
+              },
             }
           );
 
@@ -76,7 +85,10 @@ export default function SignInPage() {
             const subResponse = await axios.get(
               `${import.meta.env.VITE_BASEURL}/subscriptions/${org.id}`,
               {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: {
+                  Authorization: `Bearer ${token}`, "Content-Type": "application/json",
+                  "ngrok-skip-browser-warning": "true",
+                },
               }
             );
 

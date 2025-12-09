@@ -9,10 +9,11 @@ import CaseForm from "./components/case-form";
 import QuestionsManager from "./components/questions-manager";
 import TitleTag from "@/components/shared/tag/tag";
 import { createCaseApi } from "@/api/api";
+import { GeneratedQuestion } from "@/types/questions";
 
 export default function CreateCasePage() {
   const navigate = useNavigate();
-  const [questions, setQuestions] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
   const [caseData, setCaseData] = useState({
     caseName: "",
     caseType: "",
@@ -85,11 +86,11 @@ export default function CreateCasePage() {
       setQuestions([]);
 
       // Navigate to manage jurors page with the new case ID
-      if (caseId) {
-        navigate(`/dashboard/manage-jurors?caseId=${caseId}`);
-      } else {
-        navigate("/dashboard/manage-jurors");
-      }
+      // if (caseId) {
+      //   navigate(`/dashboard/manage-jurors?caseId=${caseId}`);
+      // } else {
+      //   navigate("/dashboard/manage-jurors");
+      // }
     } catch (error) {
       console.error("❌ Failed to create case:", error);
       toast.error("Failed to create case. Please try again.");

@@ -6,6 +6,10 @@ const BASEURL = import.meta.env.VITE_BASEURL;
 
 const BaseUrl = axios.create({
   baseURL: BASEURL,
+    headers: {
+    "ngrok-skip-browser-warning": "true", // ✅ Add Ngrok header globally
+  },
+
 });
 
 // Request Interceptor

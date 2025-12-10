@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users } from "lucide-react";
 import AIQuestionGenerator from "./ai-question-generator";
-import { GeneratedQuestion } from "../../../types/questions";
+import { Question } from "../../../types/questions";
 
 interface CaseFormProps {
   caseData: {
@@ -14,7 +14,7 @@ interface CaseFormProps {
     jurorTraits: string;
   };
   onCaseDataChange: (field: string, value: string) => void;
-  onAddQuestions: (questions: GeneratedQuestion[]) => void;
+  onAddQuestions: (questions: Question[]) => void;
 }
 
 export default function CaseForm({ caseData, onCaseDataChange, onAddQuestions }: CaseFormProps) {

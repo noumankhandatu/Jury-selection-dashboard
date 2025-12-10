@@ -1,4 +1,3 @@
-// types/question.ts (or types.ts)
 export type QuestionType = 'YES_NO' | 'TEXT' | 'RATING';
 
 export interface QuestionTag {
@@ -7,7 +6,7 @@ export interface QuestionTag {
   description?: string;
 }
 
-export interface GeneratedQuestion {
+export interface Question {
   question: string;
   tags: string[];
   percentage: number;
@@ -15,13 +14,13 @@ export interface GeneratedQuestion {
 }
 
 export interface AIQuestionsResponse {
-  questions: GeneratedQuestion[];
+  questions: Question[];
   total?: number;
   generatedAt?: string;
 }
 
 // For the form/component state
-export interface QuestionWithSelection extends GeneratedQuestion {
+export interface QuestionWithSelection extends Question {
   selected: boolean;
 }
 

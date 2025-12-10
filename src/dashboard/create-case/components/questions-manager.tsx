@@ -7,17 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, FileUp, Loader2, Plus, Trash2, FileText, X, HelpCircle, Tag, Percent, Type, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { extractQuestionsFromPDFApi } from "@/api/api";
-import { GeneratedQuestion, QuestionType } from "../../../types/questions";
+import { Question, QuestionType } from "../../../types/questions";
 import { AddQuestionDialog } from "./add-question-dialog";
 
 interface QuestionsManagerProps {
-  questions: GeneratedQuestion[];
-  onQuestionsChange: (questions: GeneratedQuestion[]) => void;
+  questions: Question[];
+  onQuestionsChange: (questions: Question[]) => void;
 }
 
 export default function QuestionsManager({ questions, onQuestionsChange }: QuestionsManagerProps) {
   const [isAddQuestionDialogOpen, setIsAddQuestionDialogOpen] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<{ question: GeneratedQuestion; index: number } | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<{ question: Question; index: number } | null>(null);
   const [isProcessingPDF, setIsProcessingPDF] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -66,7 +66,7 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
       setCurrentStep(`Processing ${images.length} page(s) with AI...`);
       toast.info(`Processing ${images.length} page(s) from PDF...`);
 
-      let allExtractedQuestions: GeneratedQuestion[] = [];
+      let allExtractedQuestions: Question[] = [];
 
       // Process each page
       for (let i = 0; i < images.length; i++) {
@@ -108,7 +108,7 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
       setCurrentStep("Finalizing results...");
 
       // Remove duplicates based on question text
-      const uniqueQuestions = allExtractedQuestions.reduce((acc: GeneratedQuestion[], current) => {
+      const uniqueQuestions = allExtractedQuestions.reduce((acc: Question[], current) => {
         const exists = acc.find(q => q.question === current.question);
         if (!exists) {
           acc.push(current);
@@ -257,7 +257,7 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
     });
   };
 
-  const handleUpdateQuestion = (updatedQuestion: GeneratedQuestion, index: number) => {
+  const handleUpdateQuestion = (updatedQuestion: Question, index: number) => {
     const updatedQuestions = [...questions];
     updatedQuestions[index] = updatedQuestion;
     onQuestionsChange(updatedQuestions);
@@ -271,7 +271,7 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
     }
   };
 
-  const handleAddQuestion = (question: GeneratedQuestion) => {
+  const handleAddQuestion = (question: Question) => {
     onQuestionsChange([...questions, question]);
     setIsAddQuestionDialogOpen(false);
   };

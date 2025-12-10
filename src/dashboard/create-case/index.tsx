@@ -9,11 +9,11 @@ import CaseForm from "./components/case-form";
 import QuestionsManager from "./components/questions-manager";
 import TitleTag from "@/components/shared/tag/tag";
 import { createCaseApi } from "@/api/api";
-import { GeneratedQuestion } from "@/types/questions";
+import { Question } from "@/types/questions";
 
 export default function CreateCasePage() {
   const navigate = useNavigate();
-  const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [caseData, setCaseData] = useState({
     caseName: "",
     caseType: "",

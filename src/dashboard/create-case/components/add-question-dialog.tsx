@@ -8,14 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { X, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { GeneratedQuestion, QuestionType } from "../../../types/questions";
+import { Question, QuestionType } from "../../../types/questions";
 
 interface AddQuestionDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddQuestion: (question: GeneratedQuestion) => void;
-  onEditQuestion?: (question: GeneratedQuestion, index: number) => void;
-  editingQuestion?: { question: GeneratedQuestion; index: number } | null;
+  onAddQuestion: (question: Question) => void;
+  onEditQuestion?: (question: Question, index: number) => void;
+  editingQuestion?: { question: Question; index: number } | null;
 }
 
 const DEFAULT_TAGS = [
@@ -105,7 +105,7 @@ export function AddQuestionDialog({
 
     const backendPercentage = getBackendPercentage(percentage);
 
-    const newQuestion: GeneratedQuestion = {
+    const newQuestion: Question = {
       question: questionText.trim(),
       tags: selectedTags,
       percentage: backendPercentage,

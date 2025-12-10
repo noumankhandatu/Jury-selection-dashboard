@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, Loader2, CheckSquare, Square, Plus, Tag, Percent, Type } from "lucide-react";
 import { toast } from "sonner";
 import { generateAIQuestionsApi } from "@/api/api";
-import { GeneratedQuestion, QuestionType } from "../../../types/questions";
+import { Question, QuestionType } from "../../../types/questions";
 
 interface AIQuestionGeneratorProps {
   caseData: {
@@ -15,7 +15,7 @@ interface AIQuestionGeneratorProps {
     description: string;
     jurorTraits: string;
   };
-  onAddQuestions: (questions: GeneratedQuestion[]) => void;
+  onAddQuestions: (questions: Question[]) => void;
 }
 
 export default function AIQuestionGenerator({
@@ -23,7 +23,7 @@ export default function AIQuestionGenerator({
   onAddQuestions,
 }: AIQuestionGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [suggestedQuestions, setSuggestedQuestions] = useState<GeneratedQuestion[]>([]);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<Question[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<Set<number>>(
     new Set()
   );

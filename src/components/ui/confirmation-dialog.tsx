@@ -19,6 +19,7 @@ interface ConfirmationDialogProps {
   cancelText?: string;
   variant?: "default" | "destructive";
   isLoading?: boolean;
+  Children?: React.ReactNode
 }
 
 const ConfirmationDialog = ({
@@ -31,13 +32,17 @@ const ConfirmationDialog = ({
   cancelText = "Cancel",
   variant = "default",
   isLoading = false,
+  Children = undefined
 }: ConfirmationDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <AlertDialogDescription>
+            {description}
+            {Children}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>{cancelText}</AlertDialogCancel>

@@ -5,6 +5,7 @@ export interface LiveSessionDataProps {
   caseSelected: any;
   onSessionCreated: (id: string, status: SessionStatus) => void;
   refreshSessionData: number;
+  setSessionId: React.Dispatch<React.SetStateAction<string | null>>;
   sessionId: string | null;
   sessionStatus?: SessionStatus | null;
   onSessionStatusUpdate?: (status: SessionStatus) => void;

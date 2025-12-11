@@ -5,11 +5,12 @@ import { itemVariants } from "@/utils/fn";
 import { useLiveSession } from "./useLiveSession";
 import LiveSessionData from "./components/live-session-data";
 import CourtroomLayout from "./components/CourtroomLayout";
-import { getCaseJurorsApi, createSessionApi, updateSessionStatusApi } from "@/api/api";
+import { getCaseJurorsApi, createSessionApi, updateSessionStatusApi, postSessionSummaryApi } from "@/api/api";
 import { CaseJuror } from "./components/JurorCard";
 import { useEffect, useState } from "react";
 import ConfirmationDialog from "@/components/ui/confirmation-dialog";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 interface SessionStatus {
   status: 'active' | 'pending' | 'completed';
@@ -25,6 +26,7 @@ const LiveSession = () => {
   const [showStartConfirm, setShowStartConfirm] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [summary, setSummary] = useState('');
 
   // Calculate sessionStarted based on status
   const sessionStarted = sessionStatus?.status === 'active';
@@ -62,10 +64,10 @@ const LiveSession = () => {
       };
 
       const response = await createSessionApi(sessionPayload);
-      
+
       let sessionId: string;
       let sessionStatus: SessionStatus;
-      
+
       // Handle different response structures
       if (response.session) {
         sessionId = response.session.id;
@@ -74,7 +76,7 @@ const LiveSession = () => {
         };
 
         await updateSessionStatusApi(sessionId, 'ACTIVE', currentTime, undefined);
-        
+
         if (response.isExisting) {
           toast.info("Existing session found. Resuming session.");
         } else {
@@ -90,7 +92,7 @@ const LiveSession = () => {
 
       handleSessionCreated(sessionId, sessionStatus);
       triggerSessionDataRefresh();
-      
+
     } catch (error: any) {
       console.error("Error starting session:", error);
       let errorMessage = "Failed to start session";
@@ -125,19 +127,36 @@ const LiveSession = () => {
     setIsProcessing(true);
     try {
       const endTime = new Date().toISOString();
+
+      // 1. First, end the session
       await updateSessionStatusApi(sessionId, 'COMPLETED', undefined, endTime);
 
+      // 2. Send summary to summary API if summary exist
+      if (summary.trim()) {
+        try {
+          await postSessionSummaryApi(sessionId, summary.trim());
+          toast.success("Session ended with summary saved!");
+        } catch (summaryError: any) {
+          // Log but don't fail the entire session end process
+          console.warn("Failed to save summary, but session ended:", summaryError);
+          toast.success("Session ended (summary may not have been saved)");
+        }
+      } else {
+        toast.success("Session ended successfully!");
+      }
+
+      // 3. Update local state
       const newStatus: SessionStatus = { status: 'completed' };
       setSessionStatus(newStatus);
-      toast.success("Session ended successfully!");
       triggerSessionDataRefresh();
-      
+
     } catch (error: any) {
       console.error("Error ending session:", error);
       toast.error(error.message || "Failed to end session");
     } finally {
       setIsProcessing(false);
       setShowEndConfirm(false);
+      setSummary(''); // Reset summary for next time
     }
   };
 
@@ -199,6 +218,7 @@ const LiveSession = () => {
                 onSessionStatusUpdate={handleSessionStatusUpdate}
                 refreshSessionData={refreshSessionData}
                 sessionId={sessionId}
+                setSessionId={setSessionId}
                 sessionStatus={sessionStatus}
                 onStartSessionClick={() => setShowStartConfirm(true)}
                 onEndSessionClick={() => setShowEndConfirm(true)}
@@ -247,7 +267,25 @@ const LiveSession = () => {
           confirmText="End Session"
           variant="destructive"
           isLoading={isProcessing}
-        />
+          Children={
+            <div className="space-y-2 py-2 mt-1">
+              <p className="text-sm font-medium text-black">
+                Add any final summary about this session:
+              </p>
+              <Textarea
+                placeholder="Enter session summary here..."
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                className="min-h-[100px] resize-none"
+                disabled={isProcessing}
+              />
+              <p className="text-xs text-gray-700">
+                These summary will be saved as part of the session summary.
+              </p>
+            </div>
+          }
+        >
+        </ConfirmationDialog>
       </motion.div>
     </div>
   );

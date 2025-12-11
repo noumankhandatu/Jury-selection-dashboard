@@ -14,6 +14,7 @@ const LiveSessionData = ({
   caseSelected,
   refreshSessionData,
   sessionId,
+  setSessionId,
   sessionStatus: externalSessionStatus,
   onSessionStatusUpdate,
   onStartSessionClick,
@@ -38,6 +39,7 @@ const LiveSessionData = ({
         const firstSession = response.sessions[0];
         const status = firstSession.status.toLowerCase() as SessionStatus['status'];
         const newStatus: SessionStatus = { status };
+        setSessionId(firstSession?.id)
         setInternalSessionStatus(newStatus);
 
         if (onSessionStatusUpdate) {

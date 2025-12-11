@@ -68,9 +68,9 @@ export const getCaseJurorsApi = async (caseId: string) => {
 };
 
 // Add this to your API functions file (e.g., api.ts)
-export const postSessionSummaryApi = async (sessionId: string, notes: string) => {
+export const postSessionSummaryApi = async (sessionId: string, summary: string) => {
   try {
-    const response = await BaseUrl.put(`/sessions/${sessionId}/summary`, { notes });
+    const response = await BaseUrl.put(`/sessions/${sessionId}/summary`, { summary });
     return response.data;
   } catch (error: any) {
     console.error("Error posting session summary:", error);

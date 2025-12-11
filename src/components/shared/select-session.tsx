@@ -18,6 +18,7 @@ export interface SessionItem {
   endTime?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  summary?: string;
   _count?: {
     assignments?: number;
     responses?: number;

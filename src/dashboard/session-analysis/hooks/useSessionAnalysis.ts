@@ -82,6 +82,7 @@ export const useSessionAnalysis = () => {
           endTime: s.endTime,
           createdAt: s.createdAt,
           updatedAt: s.updatedAt,
+          summary: s.summary,
           _count: s._count,
         }));
         setSessions(transformed);
@@ -92,45 +93,50 @@ export const useSessionAnalysis = () => {
     fetchSessions();
   }, [selectedCase?.id]);
 
-  useEffect(() => {
-    const fetchDetail = async () => {
-      if (!selectedSession?.id) {
-        setSessionDetail(null);
-        setSelectedResponseId("");
-        return;
-      }
-      try {
-        const stats = await getSessionStatisticsApi(selectedSession.id);
-        setSessionStats(stats as ApiSessionStatisticsResponse);
-        // Provide minimal sessionDetail for existing consumers
-        const session: ApiSessionById = {
-          id: stats?.session?.id,
-          name: stats?.session?.name,
-          description: "",
-          status: "",
-          startTime: "",
-          endTime: null,
-          createdAt: "",
-          updatedAt: "",
-          caseId: stats?.session?.case?.id || "",
-          case: {
-            caseNumber: stats?.session?.case?.caseNumber || "",
-            caseName: stats?.session?.case?.caseName || "",
-            caseType: stats?.session?.case?.caseType || "",
-          },
-          assignments: [],
-          responses: [],
-          scores: [],
-        } as any;
-        setSessionDetail(session);
-      } catch {
-        setSessionStats(null);
-        setSessionDetail(null);
-        setBestJurors(null);
-      }
-    };
-    fetchDetail();
-  }, [selectedSession?.id]);
+useEffect(() => {
+  const fetchDetail = async () => {
+    if (!selectedSession?.id) {
+      setSessionDetail(null);
+      setSelectedResponseId("");
+      return;
+    }
+    try {
+      const stats = await getSessionStatisticsApi(selectedSession.id);
+      setSessionStats(stats as ApiSessionStatisticsResponse);
+      
+      // Get summary from selectedSession (which comes from sessions list)
+      const sessionSummary = selectedSession.summary;
+      
+      // Provide minimal sessionDetail for existing consumers
+      const session: ApiSessionById = {
+        id: stats?.session?.id || selectedSession.id,
+        name: stats?.session?.name || selectedSession.name,
+        description: "",
+        status: selectedSession.status || "",
+        startTime: selectedSession.startTime || "",
+        endTime: selectedSession.endTime || null,
+        createdAt: selectedSession.createdAt || "",
+        updatedAt: selectedSession.updatedAt || "",
+        summary: sessionSummary, // ADDED SUMMARY HERE
+        caseId: stats?.session?.case?.id || "",
+        case: {
+          caseNumber: stats?.session?.case?.caseNumber || "",
+          caseName: stats?.session?.case?.caseName || "",
+          caseType: stats?.session?.case?.caseType || "",
+        },
+        assignments: [],
+        responses: [],
+        scores: [],
+      } as any;
+      setSessionDetail(session);
+    } catch {
+      setSessionStats(null);
+      setSessionDetail(null);
+      setBestJurors(null);
+    }
+  };
+  fetchDetail();
+}, [selectedSession?.id]);
 
   // assessment fetching removed as it's unused in UI
 

@@ -72,6 +72,8 @@ const LiveSession = () => {
         sessionStatus = {
           status: response.session.status.toLowerCase() as SessionStatus['status']
         };
+
+        await updateSessionStatusApi(sessionId, 'ACTIVE', currentTime, undefined);
         
         if (response.isExisting) {
           toast.info("Existing session found. Resuming session.");

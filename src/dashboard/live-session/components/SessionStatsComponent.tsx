@@ -60,6 +60,7 @@ const mapToApiStatus = (status: SessionStatusType['status']): ApiSessionStatus =
 };
 
 const SessionStatusComponent = ({ sessionId, sessionStatus, onStatusChange }: SessionStatusProps) => {
+
   const handleStatusChange = async (newStatus: SessionStatusType['status']) => {
     if (!sessionId) {
       toast.error("No session selected");

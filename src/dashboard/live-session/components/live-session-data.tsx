@@ -39,7 +39,7 @@ const LiveSessionData = ({
         const status = firstSession.status.toLowerCase() as SessionStatus['status'];
         const newStatus: SessionStatus = { status };
         setInternalSessionStatus(newStatus);
-        
+
         if (onSessionStatusUpdate) {
           onSessionStatusUpdate(newStatus);
         }
@@ -117,13 +117,11 @@ const LiveSessionData = ({
                 </span>
               </div>
 
-              {sessionId && (
-                <SessionStatusComponent
-                  sessionId={sessionId}
-                  sessionStatus={sessionStatus}
-                  onStatusChange={handleStatusChange}
-                />
-              )}
+              <SessionStatusComponent
+                sessionId={sessionId}
+                sessionStatus={sessionStatus}
+                onStatusChange={handleStatusChange}
+              />
             </CardTitle>
           </CardHeader>
 
@@ -154,7 +152,7 @@ const LiveSessionData = ({
                   caseSelected={caseSelected}
                   sessionStatus={sessionStatus}
                   onStartSessionClick={onStartSessionClick as any}
-                  onEndSessionClick={onEndSessionClick as any} 
+                  onEndSessionClick={onEndSessionClick as any}
                   isStartDisabled={isStartDisabled || sessionStatus?.status === 'completed'}
                 />
               </motion.div>

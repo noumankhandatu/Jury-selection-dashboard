@@ -3,9 +3,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, UserPlus, Loader2, CheckCircle2 } from 'lucide-react';
-import { CaseJuror } from '@/types/court-room';
-import { Question } from '@/types/questions';
+import { MessageSquare, UserPlus, Loader2, CheckCircle2, Star } from 'lucide-react';
+import { QuestionAnswerPanelProps } from '@/types/court-room';
 
 // Utility: Generate avatar
 const generateAvatar = (name: string, gender: string) => {
@@ -13,19 +12,6 @@ const generateAvatar = (name: string, gender: string) => {
   return `https://api.dicebear.com/7.x/${gender === 'Male' ? 'avataaars' : 'avataaars-neutral'}/svg?seed=${seed}`;
 };
 
-interface QuestionAnswerPanelProps {
-  selectedQuestion: Question | null;
-  selectedJuror: CaseJuror | null;
-  answer: string;
-  yesNoChoice: string;
-  rating: string;
-  isSubmitting: boolean;
-  hasAnswered: boolean;
-  onAnswerChange: (value: string) => void;
-  onYesNoChange: (value: string) => void;
-  onRatingChange: (value: string) => void;
-  onSubmit: () => void;
-}
 
 const QuestionAnswerPanel = ({
   selectedQuestion,
@@ -56,9 +42,9 @@ const QuestionAnswerPanel = ({
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="text-xs">
-                {selectedQuestion.questionType === 'TEXT' ? '📝 Text' : 
-                 selectedQuestion.questionType === 'YES_NO' ? '✓ Yes/No' : 
-                 '⭐ Rating'}
+                {selectedQuestion.questionType === 'TEXT' ? '📝 Text' :
+                  selectedQuestion.questionType === 'YES_NO' ? '✓ Yes/No' :
+                    '⭐ Rating'}
               </Badge>
               {selectedQuestion.tags && selectedQuestion.tags.length > 0 && (
                 selectedQuestion.tags.map(tag => (
@@ -142,11 +128,10 @@ const QuestionAnswerPanel = ({
                     variant={yesNoChoice === 'yes' ? 'default' : 'outline'}
                     onClick={() => onYesNoChange('yes')}
                     disabled={isDisabled}
-                    className={`h-14 text-lg font-semibold ${
-                      yesNoChoice === 'yes' 
-                        ? 'bg-green-500 hover:bg-green-600' 
-                        : 'hover:bg-green-50'
-                    }`}
+                    className={`h-14 text-lg font-semibold ${yesNoChoice === 'yes'
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'hover:bg-green-50'
+                      }`}
                   >
                     ✓ Yes
                   </Button>
@@ -155,11 +140,10 @@ const QuestionAnswerPanel = ({
                     variant={yesNoChoice === 'no' ? 'default' : 'outline'}
                     onClick={() => onYesNoChange('no')}
                     disabled={isDisabled}
-                    className={`h-14 text-lg font-semibold ${
-                      yesNoChoice === 'no' 
-                        ? 'bg-red-500 hover:bg-red-600' 
-                        : 'hover:bg-red-50'
-                    }`}
+                    className={`h-14 text-lg font-semibold ${yesNoChoice === 'no'
+                      ? 'bg-red-500 hover:bg-red-600'
+                      : 'hover:bg-red-50'
+                      }`}
                   >
                     ✗ No
                   </Button>
@@ -172,25 +156,36 @@ const QuestionAnswerPanel = ({
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
                   Select Rating
                 </Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant={rating === value.toString() ? 'default' : 'outline'}
-                      onClick={() => onRatingChange(value.toString())}
-                      disabled={isDisabled}
-                      className={`h-16 flex flex-col items-center justify-center ${
-                        rating === value.toString()
-                          ? 'bg-amber-500 hover:bg-amber-600'
-                          : 'hover:bg-amber-50'
-                      }`}
-                    >
-                      <span className="text-2xl mb-1">⭐</span>
-                      <span className="text-xs font-bold">{value}</span>
-                    </Button>
-                  ))}
+
+                <div className="grid grid-cols-10 gap-1.5">
+                  {Array.from({ length: 10 }, (_, i) => {
+                    const value = i + 1;
+                    const isActive = Number(rating) >= value;
+
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() => onRatingChange(value.toString())}
+                        className="flex items-center justify-center"
+                      >
+                        <Star
+                          className={`h-7 w-7 transition-colors ${isActive
+                              ? 'text-amber-500 fill-amber-500'
+                              : 'text-gray-300'
+                            }`}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {rating && (
+                  <p className="mt-2 text-xs text-gray-600">
+                    Selected: <span className="font-semibold">{rating} / 10</span>
+                  </p>
+                )}
               </div>
             )}
 

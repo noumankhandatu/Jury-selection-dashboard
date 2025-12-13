@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { UserPlus, MessageSquare } from 'lucide-react';
 import { CaseJuror, CourtroomLayoutProps } from '@/types/court-room';
 import { Question, QuestionType } from '@/types/questions';
-import { dummyJurors } from '@/mock/court-room';
 import {
   assignQuestionsToJurorsApi,
   saveJurorResponseApi,
@@ -23,13 +22,12 @@ interface JurorResponse {
 
 // Main LiveSessionLayout Component
 const CourtroomLayout = ({
-  allJurors = dummyJurors,
-  selectedCaseId = 'dummy-case-123',
-  sessionId = 'dummy-session-456',
+  allJurors = [],
+  selectedCaseId,
+  sessionId,
   onRefreshSessionData
 }: CourtroomLayoutProps) => {
   // Session State
-  const [sessionJurors, setSessionJurors] = useState<CaseJuror[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedJuror, setSelectedJuror] = useState<CaseJuror | null>(null);
   
@@ -48,26 +46,18 @@ const CourtroomLayout = ({
   const [jurorResponses, setJurorResponses] = useState<Record<string, JurorResponse>>({});
 
   // Handlers
-  const handleAddJurors = (jurors: CaseJuror[]) => {
-    setSessionJurors(prev => {
-      const existingIds = new Set(prev.map(j => j.id));
-      const newJurors = jurors.filter(j => !existingIds.has(j.id));
-      return [...prev, ...newJurors];
-    });
-  };
-
   const handleSelectQuestion = async (question: Question) => {
     setSelectedQuestion(question);
     resetAnswerFields();
 
     // IMPORTANT: Assign question to all session jurors
-    if (sessionId && sessionJurors.length > 0) {
+    if (sessionId && allJurors.length > 0) {
       try {
         await assignQuestionsToJurorsApi({
           sessionId,
           assignments: [{
             questionId: question.id,
-            jurorIds: sessionJurors.map(j => j.id),
+            jurorIds: allJurors.map(j => j.id),
           }],
         });
       } catch (err) {
@@ -190,19 +180,10 @@ const CourtroomLayout = ({
           <div>
             <h2 className="text-xl font-bold text-gray-900">Live Session</h2>
             <p className="text-sm text-gray-600">
-              {sessionJurors.length} Juror{sessionJurors.length !== 1 ? 's' : ''} in session
+              {allJurors.length} Juror{allJurors.length !== 1 ? 's' : ''} in session
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowJurorDialog(true)}
-              className="flex items-center gap-2"
-              disabled={!selectedCaseId}
-            >
-              <UserPlus className="h-4 w-4" />
-              Add Juror
-            </Button>
             <Button
               onClick={() => setShowQuestionDialog(true)}
               className="flex items-center gap-2"
@@ -218,7 +199,7 @@ const CourtroomLayout = ({
       {/* Main Content - 70/30 Split */}
       <div className="flex flex-1 overflow-hidden">
         <JurorListPanel
-          sessionJurors={sessionJurors}
+          sessionJurors={allJurors}
           selectedJuror={selectedJuror}
           scoresByJurorId={scoresByJurorId}
           onJurorClick={handleJurorClick}
@@ -240,13 +221,6 @@ const CourtroomLayout = ({
       </div>
 
       {/* Dialogs */}
-      <SelectJurorsDialog
-        isOpen={showJurorDialog}
-        onOpenChange={setShowJurorDialog}
-        allJurors={allJurors}
-        onAddJurors={handleAddJurors}
-      />
-
       <SelectQuestionDialog
         isOpen={showQuestionDialog}
         onOpenChange={setShowQuestionDialog}

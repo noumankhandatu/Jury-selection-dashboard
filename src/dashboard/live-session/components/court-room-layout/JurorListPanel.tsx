@@ -71,8 +71,8 @@ const JurorListPanel = ({
                   </Badge>
                 )}
                 {typeof score === 'number' && (
-                  <Badge className="text-xs bg-green-100 text-green-700 border-green-300">
-                    Score: {score}%
+                  <Badge className="text-xs bg-green-100 hover:bg-green-100 text-green-700 border-green-300">
+                    Score: {score.toFixed(2)}%
                   </Badge>
                 )}
               </div>

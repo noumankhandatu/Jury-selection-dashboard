@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { Question, QuestionType } from '@/types/questions';
-import { dummyQuestions } from '@/mock/court-room';
+import { getCaseQuestionsApi } from '@/api/api';
+import { QuestionRowShimmer } from '@/components/shimmer/question-row';
 
 interface SelectQuestionDialogProps {
   isOpen: boolean;
@@ -13,11 +14,11 @@ interface SelectQuestionDialogProps {
   onSelectQuestion: (question: Question) => void;
 }
 
-const SelectQuestionDialog = ({ 
-  isOpen, 
-  onOpenChange, 
-  selectedCaseId, 
-  onSelectQuestion 
+const SelectQuestionDialog = ({
+  isOpen,
+  onOpenChange,
+  selectedCaseId,
+  onSelectQuestion
 }: SelectQuestionDialogProps) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,15 +33,11 @@ const SelectQuestionDialog = ({
     if (!selectedCaseId) return;
     try {
       setLoading(true);
-      // Use dummy data for demo - replace with actual API call
-      // const response = await getCaseQuestionsApi(selectedCaseId);
-      // setQuestions(response.questions || []);
-      setTimeout(() => {
-        setQuestions(dummyQuestions);
-        setLoading(false);
-      }, 500);
+      const response = await getCaseQuestionsApi(selectedCaseId);
+      setQuestions(response.questions || []);
     } catch (error) {
       console.error("Failed to fetch questions:", error);
+    } finally {
       setLoading(false);
     }
   };
@@ -66,8 +63,10 @@ const SelectQuestionDialog = ({
         </DialogHeader>
         <div className="max-h-[500px] overflow-auto space-y-3 py-4">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
+            <div className="space-y-3 py-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <QuestionRowShimmer key={i} />
+              ))}
             </div>
           ) : questions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">No questions available</div>

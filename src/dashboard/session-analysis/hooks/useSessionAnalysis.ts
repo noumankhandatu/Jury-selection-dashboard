@@ -5,6 +5,7 @@ import {
   getSessionsByCaseApi,
   getSessionStatisticsApi,
   getBestJurorsApi,
+  generateStrikeRecommendationsApi,
 } from "@/api/api";
 import type { Case as UISelectCase } from "@/components/shared/select-case";
 import type { SessionItem } from "@/components/shared/select-session";

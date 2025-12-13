@@ -10,8 +10,9 @@ import { Selectors } from "./components/Selectors";
 import { useSessionAnalysis } from "./hooks/useSessionAnalysis";
 import { JurorResponses } from "./components/JurorResponses";
 import SessionOverview from "./components/SessionOverview";
+import StrikeRecommendationsSection from "./components/StrikeRecommendationsSection";
+import { StrikeRecommendationsResponse } from "./components/StrikeRecommendationsSection";
 
-//
 
 const SessionAnalysisPage = () => {
   const {
@@ -34,7 +35,8 @@ const SessionAnalysisPage = () => {
   const [selectedBucket, setSelectedBucket] = useState<
     "low" | "mid" | "high" | null
   >(null);
-
+const [strikeRecommendations, setStrikeRecommendations] =
+  useState<StrikeRecommendationsResponse | null>(null);
   // data fetching moved to useSessionAnalysis hook
 
   // Read caseId from query to deep-link from dashboard
@@ -42,6 +44,8 @@ const SessionAnalysisPage = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("caseId");
   }, []);
+
+  
 
   useEffect(() => {
     if (!queryCaseId || !cases.length) return;
@@ -74,7 +78,7 @@ const SessionAnalysisPage = () => {
             <Button
               className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 border-0"
               onClick={() =>
-                exportSessionReport({ session: sessionDetail, sessionStats })
+                exportSessionReport({ session: sessionDetail, sessionStats,strikeRecommendations })
               }
             >
               <FileDown className="h-4 w-4 mr-2" /> Export PDF
@@ -115,6 +119,14 @@ const SessionAnalysisPage = () => {
           </div>
         )}
       </motion.div>
+      {selectedSession && (
+  <StrikeRecommendationsSection
+  sessionId={selectedSession.id}
+  onDataLoaded={setStrikeRecommendations}
+/>
+)}
+
+
     </div>
   );
 };

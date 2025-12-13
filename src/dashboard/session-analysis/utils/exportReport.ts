@@ -4,9 +4,11 @@
 export async function exportSessionReport({
   session,
   sessionStats,
+  strikeRecommendations,
 }: {
   session: any | null;
   sessionStats: any | null;
+  strikeRecommendations:any |null
 }) {
 
   try {
@@ -152,18 +154,86 @@ export async function exportSessionReport({
       marginX,
       595 - marginX * 2
     );
-
     y += 6;
-    text("Additional Notes", marginX, y, 14, true);
-    y += 18;
+    line(Math.min(y, 780));
+
+    // ===============================
+// STRIKE RECOMMENDATIONS SECTION
+// ===============================
+
+if (strikeRecommendations) {
+  y += 24;
+
+  text("Strike Recommendations", marginX, y, 14, true);
+  y += 18;
+
+  // Summary row
+  const summary = strikeRecommendations.summary || {
+    cause: 0,
+    peremptory: 0,
+    none: 0,
+  };
+
+  const summaryLine = `Strike for Cause: ${summary.cause}   |   Peremptory Strikes: ${summary.peremptory}   |   No Strike: ${summary.none}`;
+  wrapText(summaryLine, marginX, 595 - marginX * 2);
+
+  y += 12;
+
+  if (
+    Array.isArray(strikeRecommendations.evaluations) &&
+    strikeRecommendations.evaluations.length > 0
+  ) {
+    strikeRecommendations.evaluations.forEach(
+      (rec: any, index: number) => {
+        // Page break protection
+        if (y > 720) {
+          doc.addPage();
+          y = 56;
+        }
+
+        text(
+          `${index + 1}. ${rec.jurorName || "Unknown Juror"} (${rec.jurorNumber || "—"})`,
+          marginX,
+          y,
+          12,
+          true
+        );
+        y += 16;
+
+        const readableType =
+          rec.strikeRecommendation === "STRIKE_FOR_CAUSE"
+            ? "Strike for Cause"
+            : rec.strikeRecommendation === "PEREMPTORY_STRIKE"
+            ? "Peremptory Strike"
+            : "No Strike Recommended";
+
+        text(`Recommendation: ${readableType}`, marginX, y);
+        y += 16;
+
+        wrapText(
+          `Reason: ${rec.strikeReason || "No reason provided."}`,
+          marginX,
+          595 - marginX * 2
+        );
+
+        y += 10;
+        doc.setDrawColor(230);
+        doc.line(marginX, y, 595 - marginX, y);
+        y += 14;
+      }
+    );
+  } else {
     wrapText(
-      "This section is intentionally left for attorney notes and observations captured during voir dire or strategy meetings.",
+      "No jurors met the threshold for strike recommendations in this session.",
       marginX,
       595 - marginX * 2
     );
+    y += 10;
+  }
 
-    y += 6;
-    line(Math.min(y, 780));
+  y += 6;
+  line(Math.min(y, 780));
+}
     
     // Footer with summary info
     const issued = new Date().toLocaleString();

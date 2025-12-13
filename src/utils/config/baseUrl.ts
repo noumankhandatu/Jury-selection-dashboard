@@ -1,4 +1,3 @@
-// utils/config/baseUrl.js
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -7,9 +6,8 @@ const BASEURL = import.meta.env.VITE_BASEURL;
 const BaseUrl = axios.create({
   baseURL: BASEURL,
     headers: {
-    "ngrok-skip-browser-warning": "true", // ✅ Add Ngrok header globally
+    "ngrok-skip-browser-warning": "true", // Remove in production
   },
-
 });
 
 // Request Interceptor

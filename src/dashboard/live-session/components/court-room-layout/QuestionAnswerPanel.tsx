@@ -1,21 +1,19 @@
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, UserPlus, Loader2, CheckCircle2, Star } from 'lucide-react';
+import {
+  MessageSquare,
+  UserPlus,
+  Loader2,
+  CheckCircle2,
+  Star
+} from 'lucide-react';
 import { QuestionAnswerPanelProps } from '@/types/court-room';
-
-// Utility: Generate avatar
-const generateAvatar = (name: string, gender: string) => {
-  const seed = name.toLowerCase().replace(/\s+/g, '-');
-  return `https://api.dicebear.com/7.x/${gender === 'Male' ? 'avataaars' : 'avataaars-neutral'}/svg?seed=${seed}`;
-};
-
+import { Label } from 'recharts';
 
 const QuestionAnswerPanel = ({
   selectedQuestion,
-  selectedJuror,
+  selectedJurorCount,
   answer,
   yesNoChoice,
   rating,
@@ -30,91 +28,52 @@ const QuestionAnswerPanel = ({
 
   return (
     <div className="w-[30%] bg-white overflow-auto">
-      {/* Sticky Header - Selected Question */}
       <div className="sticky top-0 bg-white border-b p-4 shadow-sm z-10">
-        <h3 className="font-semibold text-gray-900 mb-1">Selected Question</h3>
+        <div className='flex gap-3'>
+          <h3 className="font-semibold text-lg mb-1">Selected Question</h3>
+          <Badge variant="outline" className="text-xs">
+            {selectedQuestion?.questionType}
+          </Badge>
+        </div>
+
         {!selectedQuestion ? (
           <p className="text-sm text-gray-500">No question selected</p>
         ) : (
           <div className="mt-2 space-y-2">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-gray-900 leading-relaxed">{selectedQuestion.question}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="text-xs">
-                {selectedQuestion.questionType === 'TEXT' ? '📝 Text' :
-                  selectedQuestion.questionType === 'YES_NO' ? '✓ Yes/No' :
-                    '⭐ Rating'}
-              </Badge>
-              {selectedQuestion.tags && selectedQuestion.tags.length > 0 && (
-                selectedQuestion.tags.map(tag => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))
-              )}
+            <div className="p-3 bg-blue-50 border rounded-lg">
+              {selectedQuestion.question}
             </div>
           </div>
         )}
       </div>
 
-      {/* Answer Section */}
       <div className="p-4">
         {!selectedQuestion ? (
           <div className="text-center py-12 text-gray-500">
-            <MessageSquare className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-            <p className="text-sm">Select a question to begin</p>
+            <MessageSquare className="h-10 w-10 mx-auto mb-3" />
+            Select a question
           </div>
-        ) : !selectedJuror ? (
+        ) : selectedJurorCount === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            <UserPlus className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-            <p className="text-sm">Select a juror from the list to answer on their behalf</p>
+            <UserPlus className="h-10 w-10 mx-auto mb-3" />
+            Select jurors from the list
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Juror Info */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Answering for: #{selectedJuror.jurorNumber}
-              </Label>
-              <div className="mt-2 p-3 bg-gray-50 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={generateAvatar(selectedJuror.name, selectedJuror.gender)} />
-                    <AvatarFallback>{selectedJuror.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium text-gray-900">{selectedJuror.name}</div>
-                    <div className="text-xs text-gray-600">{selectedJuror.occupation}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Already Answered Badge */}
             {hasAnswered && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-green-50 border rounded-lg">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-green-700">Answer submitted successfully</span>
+                Answer saved for selected jurors
               </div>
             )}
 
-            {/* Dynamic Response Input based on Question Type */}
             {selectedQuestion.questionType === 'TEXT' && (
-              <div>
-                <Label htmlFor="answer-input" className="text-sm font-medium text-gray-700">
-                  Answer
-                </Label>
-                <Textarea
-                  id="answer-input"
-                  placeholder="Type the juror's response..."
-                  value={answer}
-                  onChange={(e) => onAnswerChange(e.target.value)}
-                  className="mt-2"
-                  disabled={isDisabled}
-                  rows={4}
-                />
-              </div>
+              <Textarea
+                value={answer}
+                onChange={e => onAnswerChange(e.target.value)}
+                disabled={isDisabled}
+                rows={4}
+              />
             )}
 
             {selectedQuestion.questionType === 'YES_NO' && (
@@ -125,24 +84,22 @@ const QuestionAnswerPanel = ({
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     type="button"
-                    variant={yesNoChoice === 'yes' ? 'default' : 'outline'}
                     onClick={() => onYesNoChange('yes')}
                     disabled={isDisabled}
-                    className={`h-14 text-lg font-semibold ${yesNoChoice === 'yes'
-                      ? 'bg-green-500 hover:bg-green-600'
-                      : 'hover:bg-green-50'
+                    className={`h-12 text-lg border font-semibold ${yesNoChoice === 'yes'
+                      ? 'bg-green-500 hover:bg-green-600 text-white'
+                      : 'bg-white hover:bg-green-50 text-gray-900'
                       }`}
                   >
                     ✓ Yes
                   </Button>
                   <Button
                     type="button"
-                    variant={yesNoChoice === 'no' ? 'default' : 'outline'}
                     onClick={() => onYesNoChange('no')}
                     disabled={isDisabled}
-                    className={`h-14 text-lg font-semibold ${yesNoChoice === 'no'
-                      ? 'bg-red-500 hover:bg-red-600'
-                      : 'hover:bg-red-50'
+                    className={`h-12 border text-lg font-semibold ${yesNoChoice === 'no'
+                      ? 'bg-red-500 hover:bg-red-600 text-white'
+                      : 'bg-white hover:bg-red-50 text-gray-900'
                       }`}
                   >
                     ✗ No
@@ -152,66 +109,44 @@ const QuestionAnswerPanel = ({
             )}
 
             {selectedQuestion.questionType === 'RATING' && (
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                  Select Rating
-                </Label>
-
-                <div className="grid grid-cols-10 gap-1.5">
-                  {Array.from({ length: 10 }, (_, i) => {
-                    const value = i + 1;
-                    const isActive = Number(rating) >= value;
-
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        disabled={isDisabled}
-                        onClick={() => onRatingChange(value.toString())}
-                        className="flex items-center justify-center"
-                      >
-                        <Star
-                          className={`h-7 w-7 transition-colors ${isActive
-                              ? 'text-amber-500 fill-amber-500'
-                              : 'text-gray-300'
-                            }`}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {rating && (
-                  <p className="mt-2 text-xs text-gray-600">
-                    Selected: <span className="font-semibold">{rating} / 10</span>
-                  </p>
-                )}
+              <div className="grid grid-cols-10 gap-1.5">
+                {Array.from({ length: 10 }, (_, i) => {
+                  const v = i + 1;
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => onRatingChange(v.toString())}
+                      disabled={isDisabled}
+                    >
+                      <Star
+                        className={`h-7 w-7 ${Number(rating) >= v
+                          ? 'text-amber-500 fill-amber-500'
+                          : 'text-gray-300'
+                          }`}
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
 
-            {/* Submit Button */}
             <Button
               onClick={onSubmit}
+              className="w-full"
               disabled={
                 isDisabled ||
                 (selectedQuestion.questionType === 'TEXT' && !answer.trim()) ||
                 (selectedQuestion.questionType === 'YES_NO' && !yesNoChoice) ||
                 (selectedQuestion.questionType === 'RATING' && !rating)
               }
-              className="w-full"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : hasAnswered ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Answer Saved
+                  Submitting…
                 </>
               ) : (
-                'Submit Answer'
+                `Submit Answer (${selectedJurorCount})`
               )}
             </Button>
           </div>

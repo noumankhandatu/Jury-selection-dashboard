@@ -25,14 +25,14 @@ export interface CourtroomLayoutProps {
 
 export interface QuestionAnswerPanelProps {
   selectedQuestion: Question | null;
-  selectedJuror: CaseJuror | null;
+  selectedJurorCount: number;
   answer: string;
   yesNoChoice: string;
   rating: string;
   isSubmitting: boolean;
   hasAnswered: boolean;
-  onAnswerChange: (value: string) => void;
-  onYesNoChange: (value: string) => void;
-  onRatingChange: (value: string) => void;
+  onAnswerChange: (v: string) => void;
+  onYesNoChange: (v: string) => void;
+  onRatingChange: (v: string) => void;
   onSubmit: () => void;
 }

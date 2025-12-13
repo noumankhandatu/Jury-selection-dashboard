@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
 import { CaseJuror, CourtroomLayoutProps } from '@/types/court-room';
@@ -12,6 +12,7 @@ import {
 import QuestionAnswerPanel from './QuestionAnswerPanel';
 import SelectQuestionDialog from './SelectQuestionDialog';
 import JurorListPanel from './JurorListPanel';
+import { toast } from 'sonner';
 
 interface JurorResponse {
   questionId: string;
@@ -19,77 +20,28 @@ interface JurorResponse {
   responseType: QuestionType;
 }
 
-// Main LiveSessionLayout Component
 const CourtroomLayout = ({
   allJurors = [],
   selectedCaseId,
   sessionId,
   onRefreshSessionData
 }: CourtroomLayoutProps) => {
-  // Session State
+
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [selectedJuror, setSelectedJuror] = useState<CaseJuror | null>(null);
-  
-  // Answer States
+  const [selectedJurorIds, setSelectedJurorIds] = useState<Set<string>>(new Set());
+
+  // Answer states
   const [answer, setAnswer] = useState('');
   const [yesNoChoice, setYesNoChoice] = useState('');
   const [rating, setRating] = useState('');
-  
-  // UI States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showQuestionDialog, setShowQuestionDialog] = useState(false);
-  
-  // Data States
-  const [scoresByJurorId, setScoresByJurorId] = useState<Record<string, { overallScore?: number }>>({});
+  const [scoresByJurorId, setScoresByJurorId] =
+    useState<Record<string, { overallScore?: number }>>({});
   const [jurorResponses, setJurorResponses] = useState<Record<string, JurorResponse>>({});
 
-  // Handlers
-  const handleSelectQuestion = async (question: Question) => {
-    setSelectedQuestion(question);
-    resetAnswerFields();
 
-    // IMPORTANT: Assign question to all session jurors
-    if (sessionId && allJurors.length > 0) {
-      try {
-        await assignQuestionsToJurorsApi({
-          sessionId,
-          assignments: [{
-            questionId: question.id,
-            jurorIds: allJurors.map(j => j.id),
-          }],
-        });
-      } catch (err) {
-        console.error("Failed to assign question to jurors:", err);
-      }
-    }
-  };
-
-  const handleJurorClick = (juror: CaseJuror) => {
-    setSelectedJuror(juror);
-    
-    // Load existing answer if available
-    const responseKey = `${juror.id}-${selectedQuestion?.id}`;
-    const existingResponse = jurorResponses[responseKey];
-    
-    if (existingResponse) {
-      // Pre-fill the answer fields based on question type
-      if (existingResponse.responseType === 'TEXT') {
-        setAnswer(existingResponse.response);
-        setYesNoChoice('');
-        setRating('');
-      } else if (existingResponse.responseType === 'YES_NO') {
-        setYesNoChoice(existingResponse.response);
-        setAnswer('');
-        setRating('');
-      } else if (existingResponse.responseType === 'RATING') {
-        setRating(existingResponse.response);
-        setAnswer('');
-        setYesNoChoice('');
-      }
-    } else {
-      resetAnswerFields();
-    }
-  };
+  /* -------------------- HELPERS -------------------- */
 
   const resetAnswerFields = () => {
     setAnswer('');
@@ -97,13 +49,45 @@ const CourtroomLayout = ({
     setRating('');
   };
 
+  /* -------------------- QUESTION -------------------- */
+
+  const handleSelectQuestion = async (question: Question) => {
+    setSelectedQuestion(question);
+    resetAnswerFields();
+
+    if (!sessionId || selectedJurorIds.size === 0) return;
+
+    await assignQuestionsToJurorsApi({
+      sessionId,
+      assignments: [{
+        questionId: question.id,
+        jurorIds: Array.from(selectedJurorIds),
+      }],
+    });
+  };
+
+  /* -------------------- JUROR MULTI SELECT -------------------- */
+
+  const handleJurorToggle = (juror: CaseJuror) => {
+    setSelectedJurorIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(juror.id)) {
+        newSet.delete(juror.id);
+      } else {
+        newSet.add(juror.id);
+      }
+      return newSet;
+    });
+  };
+
+  /* -------------------- SUBMIT ANSWER (MULTI) -------------------- */
+
   const handleSubmitAnswer = async () => {
-    if (!sessionId || !selectedQuestion || !selectedJuror) return;
+    if (!sessionId || !selectedQuestion || selectedJurorIds.size === 0) return;
 
     let responseValue = '';
-    let responseType = 'TEXT' as QuestionType;
+    let responseType: QuestionType = 'TEXT';
 
-    // Determine response value and type based on question type
     if (selectedQuestion.questionType === 'TEXT') {
       if (!answer.trim()) return;
       responseValue = answer.trim();
@@ -120,97 +104,122 @@ const CourtroomLayout = ({
 
     setIsSubmitting(true);
     try {
-      const saved = await saveJurorResponseApi({
-        sessionId,
-        questionId: selectedQuestion.id,
-        jurorId: selectedJuror.id,
-        response: responseValue,
-        responseType
-      });
-
-      // Store the response locally
-      const responseKey = `${selectedJuror.id}-${selectedQuestion.id}`;
-      setJurorResponses(prev => ({
-        ...prev,
-        [responseKey]: {
+      // Save responses for all selected jurors
+      for (const jurorId of selectedJurorIds) {
+        const saved = await saveJurorResponseApi({
+          sessionId,
           questionId: selectedQuestion.id,
+          jurorId,
           response: responseValue,
-          responseType
-        }
-      }));
-
-      const responseId = saved?.response?.id;
-      if (responseId) {
-        await assessResponseApi(responseId);
-        const scores = await getSessionScoresApi(sessionId);
-        const arr = scores?.scores || [];
-        const mapped: Record<string, any> = {};
-        arr.forEach((s: any) => {
-          if (s?.jurorId) {
-            mapped[s.jurorId] = { overallScore: s.overallScore };
-          }
+          responseType,
         });
-        setScoresByJurorId(mapped);
+
+        const responseKey = `${jurorId}-${selectedQuestion.id}`;
+        setJurorResponses(prev => ({
+          ...prev,
+          [responseKey]: {
+            questionId: selectedQuestion.id,
+            response: responseValue,
+            responseType,
+          },
+        }));
+
+        const responseId = saved?.response?.id;
+        if (responseId) {
+          await assessResponseApi(responseId);
+        }
       }
 
-      if (onRefreshSessionData) {
-        onRefreshSessionData();
-      }
+      const scores = await getSessionScoresApi(sessionId);
+      const mapped: Record<string, any> = {};
+      scores?.scores?.forEach((s: any) => {
+        if (s?.jurorId) mapped[s.jurorId] = { overallScore: s.overallScore };
+      });
+      setScoresByJurorId(mapped);
 
-      // Don't reset fields - keep them filled to show the answer was saved
-    } catch (error) {
-      console.error("Failed to submit answer:", error);
+      if (onRefreshSessionData) onRefreshSessionData();
+      
+      // Unselect jurors after submission
+      setSelectedJurorIds(new Set());
+      resetAnswerFields();
+    } catch (err: any) {
+      console.error("Failed to submit answers:", err.response);
+      toast.error(err?.response?.data?.error)
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Check if current juror has already answered current question
-  const hasAnswered = selectedJuror && selectedQuestion 
-    ? `${selectedJuror.id}-${selectedQuestion.id}` in jurorResponses
-    : false;
+  const hasAnswered =
+    selectedQuestion &&
+    selectedJurorIds.size > 0 &&
+    Array.from(selectedJurorIds).every(
+      jurorId => `${jurorId}-${selectedQuestion.id}` in jurorResponses
+    );
+
+  useEffect(() => {
+    if (!selectedQuestion || selectedJurorIds.size !== 1) return;
+
+    const jurorId = Array.from(selectedJurorIds)[0];
+    const responseKey = `${jurorId}-${selectedQuestion.id}`;
+    const existingResponse = jurorResponses[responseKey];
+
+    if (existingResponse) {
+      if (existingResponse.responseType === 'TEXT') {
+        setAnswer(existingResponse.response);
+        setYesNoChoice('');
+        setRating('');
+      } else if (existingResponse.responseType === 'YES_NO') {
+        setYesNoChoice(existingResponse.response);
+        setAnswer('');
+        setRating('');
+      } else if (existingResponse.responseType === 'RATING') {
+        setRating(existingResponse.response);
+        setAnswer('');
+        setYesNoChoice('');
+      }
+    } else {
+      resetAnswerFields();
+    }
+  }, [selectedJurorIds, selectedQuestion, jurorResponses]);
+
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-b from-slate-50 to-slate-100">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4 shadow-sm">
+    <div className="h-screen flex flex-col bg-slate-50">
+      <div className="bg-white border-b px-6 py-4">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Live Session</h2>
+            <h2 className="text-xl font-bold">Live Session</h2>
             <p className="text-sm text-gray-600">
-              {allJurors.length} Juror{allJurors.length !== 1 ? 's' : ''} in session
+              {selectedJurorIds.size} juror(s) selected
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setShowQuestionDialog(true)}
-              className="flex items-center gap-2"
-              disabled={!selectedCaseId}
-            >
-              <MessageSquare className="h-4 w-4" />
-              Ask Question
-            </Button>
-          </div>
+
+          <Button onClick={() => setShowQuestionDialog(true)}>
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Ask Question
+          </Button>
         </div>
       </div>
 
-      {/* Main Content - 70/30 Split */}
       <div className="flex flex-1 overflow-hidden">
         <JurorListPanel
           sessionJurors={allJurors}
-          selectedJuror={selectedJuror}
+          selectedJurorIds={selectedJurorIds}
           scoresByJurorId={scoresByJurorId}
-          onJurorClick={handleJurorClick}
+          jurorResponses={jurorResponses}
+          selectedQuestion={selectedQuestion}
+          onJurorToggle={handleJurorToggle}
         />
 
         <QuestionAnswerPanel
           selectedQuestion={selectedQuestion}
-          selectedJuror={selectedJuror}
+          selectedJurorCount={selectedJurorIds.size}
           answer={answer}
           yesNoChoice={yesNoChoice}
           rating={rating}
           isSubmitting={isSubmitting}
-          hasAnswered={hasAnswered}
+          hasAnswered={!!hasAnswered}
           onAnswerChange={setAnswer}
           onYesNoChange={setYesNoChoice}
           onRatingChange={setRating}
@@ -218,7 +227,6 @@ const CourtroomLayout = ({
         />
       </div>
 
-      {/* Dialogs */}
       <SelectQuestionDialog
         isOpen={showQuestionDialog}
         onOpenChange={setShowQuestionDialog}

@@ -6,9 +6,8 @@ import { Question } from '@/types/questions';
 
 const generateAvatar = (name: string, gender: string) => {
   const seed = name.toLowerCase().replace(/\s+/g, '-');
-  return `https://api.dicebear.com/7.x/${
-    gender === 'Male' ? 'avataaars' : 'avataaars-neutral'
-  }/svg?seed=${seed}`;
+  return `https://api.dicebear.com/7.x/${gender === 'Male' ? 'avataaars' : 'avataaars-neutral'
+    }/svg?seed=${seed}`;
 };
 
 interface JurorListPanelProps {
@@ -64,9 +63,10 @@ const JurorListPanel = ({
                 ${isSelected
                   ? 'bg-blue-50 border-blue-500'
                   : 'border-gray-200 hover:border-gray-300'}
-              `}
+                  ${avatarBorder}
+                  `}
             >
-              <Avatar className={`h-12 w-12 border-2 shadow-sm ${avatarBorder}`}>
+              <Avatar className="h-12 w-12 border-2 shadow-sm">
                 <AvatarImage src={generateAvatar(juror.name, juror.gender)} />
                 <AvatarFallback>
                   {juror.name.split(' ').map(n => n[0]).join('')}

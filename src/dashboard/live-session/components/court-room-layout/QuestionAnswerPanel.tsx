@@ -31,9 +31,10 @@ const QuestionAnswerPanel = ({
       <div className="sticky top-0 bg-white border-b p-4 shadow-sm z-10">
         <div className='flex gap-3'>
           <h3 className="font-semibold text-lg mb-1">Selected Question</h3>
+          {selectedQuestion?.questionType &&
           <Badge variant="outline" className="text-xs">
-            {selectedQuestion?.questionType}
-          </Badge>
+            {selectedQuestion.questionType}
+          </Badge>}
         </div>
 
         {!selectedQuestion ? (

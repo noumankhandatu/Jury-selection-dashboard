@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { UserPlus, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { CaseJuror, CourtroomLayoutProps } from '@/types/court-room';
 import { Question, QuestionType } from '@/types/questions';
 import {
@@ -9,7 +9,6 @@ import {
   assessResponseApi,
   getSessionScoresApi,
 } from "@/api/api";
-import SelectJurorsDialog from './SelectJurorsDialog';
 import QuestionAnswerPanel from './QuestionAnswerPanel';
 import SelectQuestionDialog from './SelectQuestionDialog';
 import JurorListPanel from './JurorListPanel';
@@ -38,7 +37,6 @@ const CourtroomLayout = ({
   
   // UI States
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showJurorDialog, setShowJurorDialog] = useState(false);
   const [showQuestionDialog, setShowQuestionDialog] = useState(false);
   
   // Data States

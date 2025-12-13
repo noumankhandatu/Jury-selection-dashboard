@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
 import { Question, QuestionType } from '@/types/questions';
 import { getCaseQuestionsApi } from '@/api/api';
 import { QuestionRowShimmer } from '@/components/shimmer/question-row';

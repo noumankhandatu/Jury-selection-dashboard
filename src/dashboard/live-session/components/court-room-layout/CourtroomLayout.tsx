@@ -68,17 +68,30 @@ const CourtroomLayout = ({
 
   /* -------------------- JUROR MULTI SELECT -------------------- */
 
-  const handleJurorToggle = (juror: CaseJuror) => {
+  const handleJurorToggle = async (juror: CaseJuror) => {
     setSelectedJurorIds(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(juror.id)) {
-        newSet.delete(juror.id);
-      } else {
-        newSet.add(juror.id);
-      }
+      if (newSet.has(juror.id)) newSet.delete(juror.id);
+      else newSet.add(juror.id);
       return newSet;
     });
+
+    //  Assign question to newly selected jurors if a question is selected
+    if (selectedQuestion && sessionId) {
+      try {
+        await assignQuestionsToJurorsApi({
+          sessionId,
+          assignments: [{
+            questionId: selectedQuestion.id,
+            jurorIds: Array.from(selectedJurorIds).concat(juror.id), // include newly toggled juror
+          }],
+        });
+      } catch (err) {
+        console.error("Failed to assign question to jurors:", err);
+      }
+    }
   };
+
 
   /* -------------------- SUBMIT ANSWER (MULTI) -------------------- */
 
@@ -138,7 +151,7 @@ const CourtroomLayout = ({
       setScoresByJurorId(mapped);
 
       if (onRefreshSessionData) onRefreshSessionData();
-      
+
       // Unselect jurors after submission
       setSelectedJurorIds(new Set());
       resetAnswerFields();

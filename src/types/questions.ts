@@ -7,6 +7,7 @@ export interface QuestionTag {
 }
 
 export interface Question {
+  id:string;
   question: string;
   tags: string[];
   percentage: number;

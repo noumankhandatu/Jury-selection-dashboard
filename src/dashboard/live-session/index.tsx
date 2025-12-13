@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { itemVariants } from "@/utils/fn";
 import { useLiveSession } from "./useLiveSession";
 import LiveSessionData from "./components/live-session-data";
-import CourtroomLayout from "./components/CourtroomLayout";
+import CourtroomLayout from "./components/court-room-layout/CourtroomLayout";
 import { getCaseJurorsApi, createSessionApi, updateSessionStatusApi, postSessionSummaryApi } from "@/api/api";
 import { CaseJuror } from "./components/JurorCard";
 import { useEffect, useState } from "react";

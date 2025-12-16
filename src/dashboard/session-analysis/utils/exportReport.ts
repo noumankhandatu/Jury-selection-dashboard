@@ -157,7 +157,7 @@ export async function exportSessionReport({
     y += 6;
     line(Math.min(y, 780));
 
-    // ===============================
+   // ===============================
 // STRIKE RECOMMENDATIONS SECTION
 // ===============================
 
@@ -176,64 +176,63 @@ if (strikeRecommendations) {
 
   const summaryLine = `Strike for Cause: ${summary.cause}   |   Peremptory Strikes: ${summary.peremptory}   |   No Strike: ${summary.none}`;
   wrapText(summaryLine, marginX, 595 - marginX * 2);
-
   y += 12;
 
-  if (
-    Array.isArray(strikeRecommendations.evaluations) &&
-    strikeRecommendations.evaluations.length > 0
-  ) {
-    strikeRecommendations.evaluations.forEach(
-      (rec: any, index: number) => {
-        // Page break protection
-        if (y > 720) {
-          doc.addPage();
-          y = 56;
-        }
-
-        text(
-          `${index + 1}. ${rec.jurorName || "Unknown Juror"} (${rec.jurorNumber || "—"})`,
-          marginX,
-          y,
-          12,
-          true
-        );
-        y += 16;
-
-        const readableType =
-          rec.strikeRecommendation === "STRIKE_FOR_CAUSE"
-            ? "Strike for Cause"
-            : rec.strikeRecommendation === "PEREMPTORY_STRIKE"
-            ? "Peremptory Strike"
-            : "No Strike Recommended";
-
-        text(`Recommendation: ${readableType}`, marginX, y);
-        y += 16;
-
-        wrapText(
-          `Reason: ${rec.strikeReason || "No reason provided."}`,
-          marginX,
-          595 - marginX * 2
-        );
-
-        y += 10;
-        doc.setDrawColor(230);
-        doc.line(marginX, y, 595 - marginX, y);
-        y += 14;
+  if (Array.isArray(strikeRecommendations.evaluations) && strikeRecommendations.evaluations.length > 0) {
+    strikeRecommendations.evaluations.forEach((rec: any, index: number) => {
+      // Page break protection
+      if (y > 720) {
+        doc.addPage();
+        y = 56;
       }
-    );
+
+      text(`${index + 1}. ${rec.jurorName || "Unknown Juror"} (${rec.jurorNumber || "—"})`, marginX, y, 12, true);
+      y += 16;
+
+      const readableType =
+        rec.strikeRecommendation === "STRIKE_FOR_CAUSE"
+          ? "Strike for Cause"
+          : rec.strikeRecommendation === "PEREMPTORY_STRIKE"
+          ? "Peremptory Strike"
+          : "No Strike Recommended";
+
+      text(`Recommendation: ${readableType}`, marginX, y,12,true);
+      y += 16;
+
+      wrapText(`Reason: ${rec.strikeReason || "No reason provided."}`, marginX, 595 - marginX * 2);
+      y += 10;
+
+      // Notes
+      if (rec.notes && rec.notes.length > 0) {
+        wrapText("Notes:", marginX + 10, 595 - marginX * 2);
+        rec.notes.forEach((note: string) => {
+          wrapText(`- ${note}`, marginX + 20, 595 - marginX * 2);
+        });
+        y += 6;
+      }
+
+      // Influential Questions
+      if (rec.influentialQuestions && rec.influentialQuestions.length > 0) {
+        wrapText("Influential Questions:", marginX + 10, 595 - marginX * 2);
+        rec.influentialQuestions.forEach((q: any) => {
+          wrapText(`- ${q.question_text} (Answer: ${q.response})`, marginX + 20, 595 - marginX * 2);
+        });
+        y += 6;
+      }
+
+      doc.setDrawColor(230);
+      doc.line(marginX, y, 595 - marginX, y);
+      y += 14;
+    });
   } else {
-    wrapText(
-      "No jurors met the threshold for strike recommendations in this session.",
-      marginX,
-      595 - marginX * 2
-    );
+    wrapText("No jurors met the threshold for strike recommendations in this session.", marginX, 595 - marginX * 2);
     y += 10;
   }
 
   y += 6;
   line(Math.min(y, 780));
 }
+
     
     // Footer with summary info
     const issued = new Date().toLocaleString();

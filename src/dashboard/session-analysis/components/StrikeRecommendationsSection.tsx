@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { generateStrikeRecommendationsApi } from "@/api/api";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CardHeaderTag from "@/components/shared/card-header";
+import { FileText, TriangleAlert, Gavel, CheckCircle2, StickyNote } from "lucide-react";
 
-import {
-  FileText,
-  TriangleAlert,
-  Gavel,
-  CheckCircle2,
-} from "lucide-react";
+interface JurorNote {
+  id: string;
+  note: string;
+  user: string;
+  createdAt: string;
+}
+
+interface influentialQuestion {
+  question_text: string;
+  response: string;
+}
 
 interface StrikeRecommendation {
   jurorId: string;
@@ -22,6 +23,8 @@ interface StrikeRecommendation {
   jurorNumber: string;
   strikeRecommendation: "STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE" | "NONE";
   strikeReason: string;
+  notes: JurorNote[];
+  influentialQuestions: influentialQuestion[];
 }
 
 export interface StrikeRecommendationsResponse {
@@ -35,34 +38,32 @@ export interface StrikeRecommendationsResponse {
   evaluations: StrikeRecommendation[];
 }
 
-const StrikeRecommendationsSection =  ({
+const StrikeRecommendationsSection = ({
   sessionId,
   onDataLoaded,
 }: {
   sessionId: string;
   onDataLoaded?: (data: StrikeRecommendationsResponse) => void;
 }) => {
-  const [strikeRecommendations, setStrikeRecommendations] =
-    useState<StrikeRecommendationsResponse | null>(null);
+  const [strikeRecommendations, setStrikeRecommendations] = useState<StrikeRecommendationsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
- const fetchStrikeRecommendations = async () => {
-  if (!sessionId) return;
-  setLoading(true);
-  setError(null);
+  const fetchStrikeRecommendations = async () => {
+    if (!sessionId) return;
+    setLoading(true);
+    setError(null);
 
-  try {
-    const data = await generateStrikeRecommendationsApi(sessionId);
-    setStrikeRecommendations(data);
-    onDataLoaded?.(data); // 🔥 important
-  } catch (err: any) {
-    setError(err.message || "Failed to fetch strike recommendations");
-  } finally {
-    setLoading(false);
-  }
-};
-
+    try {
+      const data = await generateStrikeRecommendationsApi(sessionId);
+      setStrikeRecommendations(data);
+      onDataLoaded?.(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch strike recommendations");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchStrikeRecommendations();
@@ -70,7 +71,6 @@ const StrikeRecommendationsSection =  ({
 
   if (loading) return <p>Loading strike recommendations...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
-
   if (!strikeRecommendations) return null;
 
   const summaryCards = [
@@ -107,14 +107,10 @@ const StrikeRecommendationsSection =  ({
         />
 
         <CardContent className="p-6 space-y-8">
-
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {summaryCards.map((card) => (
-              <Card
-                key={card.label}
-                className="p-4 flex items-center gap-4 shadow-sm border rounded-xl"
-              >
+              <Card key={card.label} className="p-4 flex items-center gap-4 shadow-sm border rounded-xl">
                 <div className={`p-3 rounded-full ${card.bg}`}>
                   <card.icon className={`h-6 w-6 ${card.color}`} />
                 </div>
@@ -130,17 +126,12 @@ const StrikeRecommendationsSection =  ({
           <div className="space-y-4">
             {strikeRecommendations.evaluations?.length > 0 ? (
               strikeRecommendations.evaluations.map((evalItem) => (
-                <Card
-                  key={evalItem.jurorId}
-                  className="border shadow-sm rounded-xl p-5"
-                >
+                <Card key={evalItem.jurorId} className="border shadow-sm rounded-xl p-5">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-lg font-semibold">
                         {evalItem.jurorName}{" "}
-                        <span className="text-gray-500 text-sm">
-                          ({evalItem.jurorNumber})
-                        </span>
+                        <span className="text-gray-500 text-sm">({evalItem.jurorNumber})</span>
                       </p>
 
                       <p className="mt-1 text-sm font-medium">
@@ -149,8 +140,7 @@ const StrikeRecommendationsSection =  ({
                           className={
                             evalItem.strikeRecommendation === "STRIKE_FOR_CAUSE"
                               ? "text-red-600 font-bold"
-                              : evalItem.strikeRecommendation ===
-                                "PEREMPTORY_STRIKE"
+                              : evalItem.strikeRecommendation === "PEREMPTORY_STRIKE"
                               ? "text-yellow-700 font-bold"
                               : "text-green-700 font-bold"
                           }
@@ -159,9 +149,39 @@ const StrikeRecommendationsSection =  ({
                         </span>
                       </p>
 
-                      <p className="mt-2 text-gray-700 text-sm leading-relaxed">
-                        {evalItem.strikeReason}
-                      </p>
+                      <p className="mt-2 text-gray-700 text-sm leading-relaxed"><strong>Strike Reason</strong>{evalItem.strikeReason}</p>
+
+                      {/* Juror Notes */}
+                      {evalItem.notes.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-sm font-semibold flex items-center gap-2">
+                            <StickyNote className="h-4 w-4" /> Notes:
+                          </p>
+                          <ul className="list-disc list-inside text-sm text-gray-700">
+                            {evalItem.notes.map((note) => (
+                              <li key={note.id}>
+                                <strong>{note.user}:</strong> {note.note}{" "}
+                                <span className="text-gray-400 text-xs">
+                                  ({new Date(note.createdAt).toLocaleString()})
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Influential Questions */}
+                      {evalItem.influentialQuestions.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-sm font-semibold">Influential Questions:</p>
+                          <ul className="list-disc list-inside text-sm text-gray-700">
+                            {evalItem.influentialQuestions.map((qId, idx) => (
+                              <li key={idx}>{qId.question_text} <strong> {qId.response}</strong></li>
+          
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -175,4 +195,5 @@ const StrikeRecommendationsSection =  ({
     </div>
   );
 };
+
 export default StrikeRecommendationsSection;

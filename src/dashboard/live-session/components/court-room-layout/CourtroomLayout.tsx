@@ -10,9 +10,10 @@ import {
   getSessionScoresApi,
 } from "@/api/api";
 import QuestionAnswerPanel from './QuestionAnswerPanel';
-import SelectQuestionDialog from './SelectQuestionDialog';
+import SelectQuestionDialog from './QuestionListPanel';
 import JurorListPanel from './JurorListPanel';
 import { toast } from 'sonner';
+import QuestionListPanel from './QuestionListPanel';
 
 interface JurorResponse {
   questionId: string;
@@ -35,7 +36,6 @@ const CourtroomLayout = ({
   const [yesNoChoice, setYesNoChoice] = useState('');
   const [rating, setRating] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showQuestionDialog, setShowQuestionDialog] = useState(false);
   const [scoresByJurorId, setScoresByJurorId] =
     useState<Record<string, { overallScore?: number }>>({});
   const [jurorResponses, setJurorResponses] = useState<Record<string, JurorResponse>>({});
@@ -92,7 +92,10 @@ const CourtroomLayout = ({
     }
   };
 
-
+  // Add a function to clear selected question (go back to list)
+  const handleClearQuestion = () => {
+    setSelectedQuestion(null);
+  };
   /* -------------------- SUBMIT ANSWER (MULTI) -------------------- */
 
   const handleSubmitAnswer = async () => {
@@ -208,9 +211,9 @@ const CourtroomLayout = ({
             </p>
           </div>
 
-          <Button onClick={() => setShowQuestionDialog(true)}>
+          <Button>
             <MessageSquare className="h-4 w-4 mr-2" />
-            Ask Question
+            Add Question
           </Button>
         </div>
       </div>
@@ -225,27 +228,30 @@ const CourtroomLayout = ({
           onJurorToggle={handleJurorToggle}
         />
 
-        <QuestionAnswerPanel
-          selectedQuestion={selectedQuestion}
-          selectedJurorCount={selectedJurorIds.size}
-          answer={answer}
-          yesNoChoice={yesNoChoice}
-          rating={rating}
-          isSubmitting={isSubmitting}
-          hasAnswered={!!hasAnswered}
-          onAnswerChange={setAnswer}
-          onYesNoChange={setYesNoChoice}
-          onRatingChange={setRating}
-          onSubmit={handleSubmitAnswer}
-        />
+        <div className="flex-1 overflow-hidden border-l">
+          {selectedQuestion ? (
+            <QuestionAnswerPanel
+              handleClearQuestion={handleClearQuestion}
+              selectedQuestion={selectedQuestion}
+              selectedJurorCount={selectedJurorIds.size}
+              answer={answer}
+              yesNoChoice={yesNoChoice}
+              rating={rating}
+              isSubmitting={isSubmitting}
+              hasAnswered={!!hasAnswered}
+              onAnswerChange={setAnswer}
+              onYesNoChange={setYesNoChoice}
+              onRatingChange={setRating}
+              onSubmit={handleSubmitAnswer}
+            />
+          ) : (
+            <QuestionListPanel
+              selectedCaseId={selectedCaseId}
+              onSelectQuestion={handleSelectQuestion}
+            />
+          )}
+        </div>
       </div>
-
-      <SelectQuestionDialog
-        isOpen={showQuestionDialog}
-        onOpenChange={setShowQuestionDialog}
-        selectedCaseId={selectedCaseId}
-        onSelectQuestion={handleSelectQuestion}
-      />
     </div>
   );
 };

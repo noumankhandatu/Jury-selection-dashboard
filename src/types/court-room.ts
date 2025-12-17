@@ -26,6 +26,7 @@ export interface CourtroomLayoutProps {
 export interface QuestionAnswerPanelProps {
   selectedQuestion: Question | null;
   selectedJurorCount: number;
+  handleClearQuestion: ()=>void;
   answer: string;
   yesNoChoice: string;
   rating: string;

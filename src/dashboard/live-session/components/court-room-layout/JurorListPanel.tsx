@@ -179,7 +179,7 @@ const JurorListPanel = ({
               </Avatar>
 
               {/* Info */}
-              <div className="text-center mb-3">
+              <div className="text-center mb-4">
                 <span className="block text-sm font-semibold">
                   #{juror.jurorNumber}
                 </span>
@@ -188,7 +188,7 @@ const JurorListPanel = ({
 
               {/* Score */}
               <OverallGauge valuePercent={overallScore} size="sm" showLabel={false} />
-              <div className="text-xs text-gray-600 mt-1">
+              <div className="text-xs text-gray-600 -mt-3">
                 {overallScore.toFixed(1)}%
               </div>
 

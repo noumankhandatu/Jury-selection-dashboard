@@ -106,6 +106,7 @@ export function AddQuestionDialog({
     const backendPercentage = getBackendPercentage(percentage);
 
     const newQuestion: Question = {
+      id:String(Date.now()),
       question: questionText.trim(),
       tags: selectedTags,
       percentage: backendPercentage,

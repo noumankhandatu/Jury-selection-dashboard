@@ -95,6 +95,29 @@ const CourtroomLayout = ({
     }
   };
 
+  const handleSelectQuestion = async (question: Question) => {
+    if (!sessionId) return;
+
+    setSelectedQuestion(question);
+
+    if (selectedJurorIds.size === 0) return;
+
+    const jurorIds = Array.from(selectedJurorIds);
+
+    assignQuestionsToJurorsApi({
+      sessionId,
+      assignments: [
+        {
+          questionId: question.id,
+          jurorIds,
+        },
+      ],
+    }).catch(err => {
+      console.error("Failed to assign question on select:", err);
+    });
+  };
+
+
   const handleClearQuestion = () => {
     setSelectedQuestion(null);
   };
@@ -238,6 +261,7 @@ const CourtroomLayout = ({
 
       <div className="flex flex-1 overflow-hidden">
         <JurorListPanel
+          sessionId={sessionId}
           sessionJurors={allJurors}
           selectedJurorIds={selectedJurorIds}
           scoresByJurorId={scoresByJurorId}
@@ -265,7 +289,7 @@ const CourtroomLayout = ({
           ) : (
             <QuestionListPanel
               selectedCaseId={selectedCaseId}
-              onSelectQuestion={setSelectedQuestion}
+              onSelectQuestion={handleSelectQuestion}
               questions={questions}
               setQuestions={setQuestions}
             />

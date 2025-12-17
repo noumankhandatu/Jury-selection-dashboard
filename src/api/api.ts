@@ -209,6 +209,23 @@ export const assignQuestionsToJurorsApi = async (payload: {
   }
 };
 
+
+// Add Juror NoteApi
+export const addJurorNoteApi = async (payload: {
+  sessionId: string;
+  jurorId: string;
+  note: string;
+}) => {
+  try {
+    const response = await BaseUrl.post("/juror-notes", payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error adding juror note:", error);
+    throw error;
+  }
+};
+
+
 // Save a juror response
 export const saveJurorResponseApi = async (payload: {
   sessionId: string;

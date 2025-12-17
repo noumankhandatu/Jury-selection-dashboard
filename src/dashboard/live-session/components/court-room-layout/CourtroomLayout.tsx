@@ -8,6 +8,8 @@ import {
   saveJurorResponseApi,
   assessResponseApi,
   getSessionScoresApi,
+  createQuestionApi,
+  updateQuestionApi,
 } from "@/api/api";
 import QuestionAnswerPanel from './QuestionAnswerPanel';
 import QuestionListPanel from './QuestionListPanel';
@@ -24,7 +26,8 @@ const CourtroomLayout = ({
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedJurorIds, setSelectedJurorIds] = useState<Set<string>>(new Set());
   const [showAddQuestionDialog, setShowAddQuestionDialog] = useState(false);
-  const [questions, setQuestions] = useState<Question[]>([]); // Add state for questions
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [editingQuestion, setEditingQuestion] = useState<{ question: Question; index: number } | null>(null);
 
   // Answer states
   const [answer, setAnswer] = useState('');
@@ -39,27 +42,89 @@ const CourtroomLayout = ({
 
   // Handle adding a new question
   const handleAddQuestion = async (question: Question) => {
-    try {
-      // TODO: Uncomment when API is ready
-      // const newQuestion = await addQuestionByCaseId(selectedCaseId, question);
+    if (!selectedCaseId) {
+      toast.error('No case selected');
+      return;
+    }
 
-      // For now, add to local state with a temporary ID
+    try {
+      // Convert percentage from 1-10 to 10-100 for API
+      const questionData = {
+        question: question.question,
+        questionType: question.questionType,
+        tags: question.tags || [],
+        percentage: (question.percentage || 5) * 10,
+        order: questions.length + 1,
+      };
+
+      const response = await createQuestionApi(selectedCaseId, questionData);
+
+      // Convert percentage back from 10-100 to 1-10 for display
       const newQuestion = {
-        ...question,
-        id: `temp-${Date.now()}`,
-        caseId: selectedCaseId || '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        ...response.data,
+        tags: response.data.tags || [],
+        percentage: Math.round((response.data.percentage || 50) / 10),
       };
 
       setQuestions(prev => [newQuestion, ...prev]);
       setShowAddQuestionDialog(false);
       toast.success('Question added successfully');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to add question:', error);
-      toast.error('Failed to add question');
+      toast.error(error?.response?.data?.error || 'Failed to add question');
     }
+  };
+
+  // Handle editing a question
+  const handleEditQuestion = async (updatedQuestion: Question, index: number) => {
+    if (!editingQuestion) return;
+
+    try {
+      // Convert percentage from 1-10 to 10-100 for API
+      const questionData = {
+        question: updatedQuestion.question,
+        questionType: updatedQuestion.questionType,
+        tags: updatedQuestion.tags || [],
+        percentage: (updatedQuestion.percentage || 5) * 10,
+        order: index + 1,
+      };
+
+      const response = await updateQuestionApi(editingQuestion.question.id, questionData);
+
+      // Convert percentage back from 10-100 to 1-10 for display
+      const updated = {
+        ...response.data,
+        tags: response.data.tags || [],
+        percentage: Math.round((response.data.percentage || 50) / 10),
+      };
+
+      setQuestions(prev => {
+        const newQuestions = [...prev];
+        newQuestions[index] = updated;
+        return newQuestions;
+      });
+
+      setShowAddQuestionDialog(false);
+      setEditingQuestion(null);
+      toast.success('Question updated successfully');
+
+    } catch (error: any) {
+      console.error('Failed to update question:', error);
+      toast.error(error?.response?.data?.error || 'Failed to update question');
+    }
+  };
+
+  // Open edit dialog
+  const handleOpenEditQuestion = (question: Question, index: number) => {
+    setEditingQuestion({ question, index });
+    setShowAddQuestionDialog(true);
+  };
+
+  // Close dialog and reset editing state
+  const handleCloseDialog = () => {
+    setShowAddQuestionDialog(false);
+    setEditingQuestion(null);
   };
 
   /* -------------------- HELPER FUNCTIONS -------------------- */
@@ -116,7 +181,6 @@ const CourtroomLayout = ({
       console.error("Failed to assign question on select:", err);
     });
   };
-
 
   const handleClearQuestion = () => {
     setSelectedQuestion(null);
@@ -292,16 +356,19 @@ const CourtroomLayout = ({
               onSelectQuestion={handleSelectQuestion}
               questions={questions}
               setQuestions={setQuestions}
+              onEditQuestion={handleOpenEditQuestion}
             />
           )}
         </div>
       </div>
 
-      {/* Add Question Dialog */}
+      {/* Add/Edit Question Dialog */}
       <AddQuestionDialog
         isOpen={showAddQuestionDialog}
-        onClose={() => setShowAddQuestionDialog(false)}
+        onClose={handleCloseDialog}
         onAddQuestion={handleAddQuestion}
+        onEditQuestion={handleEditQuestion}
+        editingQuestion={editingQuestion}
       />
     </div>
   );

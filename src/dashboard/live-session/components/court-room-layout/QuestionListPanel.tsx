@@ -1,19 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Question, QuestionType } from '@/types/questions';
 import { getCaseQuestionsApi } from '@/api/api';
 import { QuestionRowShimmer } from '@/components/shimmer/question-row';
+import { Pencil } from 'lucide-react';
 
 interface QuestionListPanelProps {
   selectedCaseId?: string;
   onSelectQuestion: (question: Question) => void;
-  questions: Question[],
-  setQuestions: React.Dispatch<React.SetStateAction<Question[]>>
+  onEditQuestion?: (question: Question, index: number) => void;
+  questions: Question[];
+  setQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
 }
 
 const QuestionListPanel = ({
   selectedCaseId,
   onSelectQuestion,
+  onEditQuestion,
   setQuestions,
   questions
 }: QuestionListPanelProps) => {
@@ -30,7 +34,15 @@ const QuestionListPanel = ({
     try {
       setLoading(true);
       const response = await getCaseQuestionsApi(selectedCaseId);
-      setQuestions(response.questions || []);
+
+      // Convert percentage from 10-100 to 1-10 for display
+      const questionsWithConvertedPercentage = (response.questions || []).map((q: Question) => ({
+        ...q,
+        tags: q.tags || [],
+        percentage: Math.round((q.percentage || 50) / 10)
+      }));
+
+      setQuestions(questionsWithConvertedPercentage);
     } catch (error) {
       console.error("Failed to fetch questions:", error);
     } finally {
@@ -43,6 +55,13 @@ const QuestionListPanel = ({
       case 'TEXT': return '📝';
       case 'YES_NO': return '✓';
       case 'RATING': return '⭐';
+    }
+  };
+
+  const handleEditClick = (e: React.MouseEvent, question: Question, index: number) => {
+    e.stopPropagation(); // Prevent triggering onSelectQuestion
+    if (onEditQuestion) {
+      onEditQuestion(question, index);
     }
   };
 
@@ -67,13 +86,13 @@ const QuestionListPanel = ({
             No questions available for this case
           </div>
         ) : (
-          questions.map(question => (
+          questions.map((question, index) => (
             <div
               key={question.id}
-              className="p-3 sm:p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition group"
+              className="group p-3 sm:p-4 border rounded-lg cursor-pointer transition relative"
               onClick={() => onSelectQuestion(question)}
             >
-              {/* Top row: Icon and question type on left */}
+              {/* Top row: Icon and question type on left, edit button on right */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-lg sm:text-xl">
@@ -84,21 +103,43 @@ const QuestionListPanel = ({
                   </Badge>
                 </div>
 
-                {question.asked && (
-                  <Badge className="text-xs bg-green-100 text-green-700 border border-green-200">
-                    Asked
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {question.asked && (
+                    <Badge className="text-xs bg-green-100 text-green-700 border border-green-200">
+                      Asked
+                    </Badge>
+                  )}
+
+                  {onEditQuestion && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleEditClick(e, question, index)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
+                      title="Edit question"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-blue-600" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Question text */}
-              <p className="text-sm font-medium text-gray-900 group-hover:text-blue-600 break-words mb-2">
+              <p className="text-sm font-medium text-gray-900 break-words mb-2">
                 {question.question}
               </p>
 
-              {/* Tags - can wrap to multiple lines */}
-              <div className="flex flex-wrap gap-1">
-                {question.tags.map(tag => (
+              {/* Tags and percentage */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Percentage badge */}
+                {question.percentage && (
+                  <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700">
+                    {question.percentage}% relevant
+                  </Badge>
+                )}
+
+                {/* Tags */}
+                {question.tags && question.tags.length > 0 && question.tags.map(tag => (
                   <Badge
                     key={tag}
                     variant="secondary"

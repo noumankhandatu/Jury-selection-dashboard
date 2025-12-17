@@ -115,10 +115,8 @@ export function AddQuestionDialog({
 
     if (isEditMode && editingQuestion && onEditQuestion) {
       onEditQuestion(newQuestion, editingQuestion.index);
-      toast.success("Question updated successfully");
     } else {
       onAddQuestion(newQuestion);
-      toast.success("Question added successfully");
     }
     
     handleClose();

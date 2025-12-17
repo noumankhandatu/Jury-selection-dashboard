@@ -7,13 +7,16 @@ import { QuestionRowShimmer } from '@/components/shimmer/question-row';
 interface QuestionListPanelProps {
   selectedCaseId?: string;
   onSelectQuestion: (question: Question) => void;
+  questions:Question[],
+  setQuestions: React.Dispatch<React.SetStateAction<Question[]>>
 }
 
 const QuestionListPanel = ({
   selectedCaseId,
-  onSelectQuestion
+  onSelectQuestion,
+  setQuestions,
+  questions
 }: QuestionListPanelProps) => {
-  const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

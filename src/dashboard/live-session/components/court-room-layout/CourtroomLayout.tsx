@@ -10,16 +10,10 @@ import {
   getSessionScoresApi,
 } from "@/api/api";
 import QuestionAnswerPanel from './QuestionAnswerPanel';
-import SelectQuestionDialog from './QuestionListPanel';
+import QuestionListPanel from './QuestionListPanel';
 import JurorListPanel from './JurorListPanel';
 import { toast } from 'sonner';
-import QuestionListPanel from './QuestionListPanel';
-
-interface JurorResponse {
-  questionId: string;
-  response: string;
-  responseType: QuestionType;
-}
+import { AddQuestionDialog } from '@/dashboard/create-case/components/add-question-dialog';
 
 const CourtroomLayout = ({
   allJurors = [],
@@ -27,9 +21,10 @@ const CourtroomLayout = ({
   sessionId,
   onRefreshSessionData
 }: CourtroomLayoutProps) => {
-
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedJurorIds, setSelectedJurorIds] = useState<Set<string>>(new Set());
+  const [showAddQuestionDialog, setShowAddQuestionDialog] = useState(false);
+  const [questions, setQuestions] = useState<Question[]>([]); // Add state for questions
 
   // Answer states
   const [answer, setAnswer] = useState('');
@@ -38,32 +33,41 @@ const CourtroomLayout = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scoresByJurorId, setScoresByJurorId] =
     useState<Record<string, { overallScore?: number }>>({});
-  const [jurorResponses, setJurorResponses] = useState<Record<string, JurorResponse>>({});
+  const [jurorResponses, setJurorResponses] = useState<Record<string, any>>({});
 
+  /* -------------------- QUESTION MANAGEMENT -------------------- */
 
-  /* -------------------- HELPERS -------------------- */
+  // Handle adding a new question
+  const handleAddQuestion = async (question: Question) => {
+    try {
+      // TODO: Uncomment when API is ready
+      // const newQuestion = await addQuestionByCaseId(selectedCaseId, question);
+
+      // For now, add to local state with a temporary ID
+      const newQuestion = {
+        ...question,
+        id: `temp-${Date.now()}`,
+        caseId: selectedCaseId || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setQuestions(prev => [newQuestion, ...prev]);
+      setShowAddQuestionDialog(false);
+      toast.success('Question added successfully');
+
+    } catch (error) {
+      console.error('Failed to add question:', error);
+      toast.error('Failed to add question');
+    }
+  };
+
+  /* -------------------- HELPER FUNCTIONS -------------------- */
 
   const resetAnswerFields = () => {
     setAnswer('');
     setYesNoChoice('');
     setRating('');
-  };
-
-  /* -------------------- QUESTION -------------------- */
-
-  const handleSelectQuestion = async (question: Question) => {
-    setSelectedQuestion(question);
-    resetAnswerFields();
-
-    if (!sessionId || selectedJurorIds.size === 0) return;
-
-    await assignQuestionsToJurorsApi({
-      sessionId,
-      assignments: [{
-        questionId: question.id,
-        jurorIds: Array.from(selectedJurorIds),
-      }],
-    });
   };
 
   /* -------------------- JUROR MULTI SELECT -------------------- */
@@ -76,14 +80,13 @@ const CourtroomLayout = ({
       return newSet;
     });
 
-    //  Assign question to newly selected jurors if a question is selected
     if (selectedQuestion && sessionId) {
       try {
         await assignQuestionsToJurorsApi({
           sessionId,
           assignments: [{
             questionId: selectedQuestion.id,
-            jurorIds: Array.from(selectedJurorIds).concat(juror.id), // include newly toggled juror
+            jurorIds: Array.from(selectedJurorIds).concat(juror.id),
           }],
         });
       } catch (err) {
@@ -92,7 +95,6 @@ const CourtroomLayout = ({
     }
   };
 
-  // Add a function to clear selected question (go back to list)
   const handleClearQuestion = () => {
     setSelectedQuestion(null);
   };
@@ -107,7 +109,6 @@ const CourtroomLayout = ({
     if (selectedQuestion.questionType === 'TEXT') {
       if (!answer.trim()) return;
       responseValue = answer.trim();
-      responseType = 'TEXT';
     } else if (selectedQuestion.questionType === 'YES_NO') {
       if (!yesNoChoice) return;
       responseValue = yesNoChoice;
@@ -119,8 +120,11 @@ const CourtroomLayout = ({
     }
 
     setIsSubmitting(true);
+
     try {
-      // Save responses for all selected jurors
+      const responseIds: string[] = [];
+
+      // ✅ 1. Save responses (blocking)
       for (const jurorId of selectedJurorIds) {
         const saved = await saveJurorResponseApi({
           sessionId,
@@ -140,28 +144,43 @@ const CourtroomLayout = ({
           },
         }));
 
-        const responseId = saved?.response?.id;
-        if (responseId) {
-          await assessResponseApi(responseId);
+        if (saved?.response?.id) {
+          responseIds.push(saved.response.id);
         }
       }
 
-      const scores = await getSessionScoresApi(sessionId);
-      const mapped: Record<string, any> = {};
-      scores?.scores?.forEach((s: any) => {
-        if (s?.jurorId) mapped[s.jurorId] = { overallScore: s.overallScore };
-      });
-      setScoresByJurorId(mapped);
+      // ✅ 2. UI cleanup immediately (no waiting)
+      setSelectedJurorIds(new Set());
+      resetAnswerFields();
+      setIsSubmitting(false);
 
       if (onRefreshSessionData) onRefreshSessionData();
 
-      // Unselect jurors after submission
-      setSelectedJurorIds(new Set());
-      resetAnswerFields();
+      // ✅ 3. Background scoring (fire & forget)
+      (async () => {
+        try {
+          await Promise.all(
+            responseIds.map(id => assessResponseApi(id))
+          );
+
+          const scores = await getSessionScoresApi(sessionId);
+
+          const mapped: Record<string, any> = {};
+          scores?.scores?.forEach((s: any) => {
+            if (s?.jurorId) {
+              mapped[s.jurorId] = { overallScore: s.overallScore };
+            }
+          });
+
+          setScoresByJurorId(mapped);
+        } catch (err) {
+          console.error("Background scoring failed:", err);
+        }
+      })();
+
     } catch (err: any) {
       console.error("Failed to submit answers:", err.response);
-      toast.error(err?.response?.data?.error)
-    } finally {
+      toast.error(err?.response?.data?.error);
       setIsSubmitting(false);
     }
   };
@@ -199,7 +218,6 @@ const CourtroomLayout = ({
     }
   }, [selectedJurorIds, selectedQuestion, jurorResponses]);
 
-
   return (
     <div className="h-screen flex flex-col bg-slate-50">
       <div className="bg-white border-b px-6 py-4">
@@ -207,11 +225,11 @@ const CourtroomLayout = ({
           <div>
             <h2 className="text-xl font-bold">Live Session</h2>
             <p className="text-sm text-gray-600">
-              {selectedJurorIds.size} juror(s) selected
+              {selectedJurorIds.size} juror(s) selected • {questions.length} question(s) available
             </p>
           </div>
 
-          <Button>
+          <Button onClick={() => setShowAddQuestionDialog(true)}>
             <MessageSquare className="h-4 w-4 mr-2" />
             Add Question
           </Button>
@@ -247,11 +265,20 @@ const CourtroomLayout = ({
           ) : (
             <QuestionListPanel
               selectedCaseId={selectedCaseId}
-              onSelectQuestion={handleSelectQuestion}
+              onSelectQuestion={setSelectedQuestion}
+              questions={questions}
+              setQuestions={setQuestions}
             />
           )}
         </div>
       </div>
+
+      {/* Add Question Dialog */}
+      <AddQuestionDialog
+        isOpen={showAddQuestionDialog}
+        onClose={() => setShowAddQuestionDialog(false)}
+        onAddQuestion={handleAddQuestion}
+      />
     </div>
   );
 };

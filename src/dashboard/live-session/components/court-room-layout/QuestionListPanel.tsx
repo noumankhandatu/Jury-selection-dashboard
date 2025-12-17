@@ -7,7 +7,7 @@ import { QuestionRowShimmer } from '@/components/shimmer/question-row';
 interface QuestionListPanelProps {
   selectedCaseId?: string;
   onSelectQuestion: (question: Question) => void;
-  questions:Question[],
+  questions: Question[],
   setQuestions: React.Dispatch<React.SetStateAction<Question[]>>
 }
 
@@ -79,13 +79,16 @@ const QuestionListPanel = ({
                   <span className="text-lg sm:text-xl">
                     {getQuestionTypeIcon(question.questionType)}
                   </span>
-                  <Badge
-                    variant="outline"
-                    className="text-xs whitespace-nowrap"
-                  >
-                    {question.questionType.replace('_', ' ')}
+                  <Badge variant="outline" className="text-xs whitespace-nowrap">
+                    {question.questionType.replace("_", " ")}
                   </Badge>
                 </div>
+
+                {question.asked && (
+                  <Badge className="text-xs bg-green-100 text-green-700 border border-green-200">
+                    Asked
+                  </Badge>
+                )}
               </div>
 
               {/* Question text */}

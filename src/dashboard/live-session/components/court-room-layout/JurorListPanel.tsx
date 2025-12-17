@@ -141,12 +141,12 @@ const JurorListPanel = ({
                 {/* Juror Info */}
                 <div className="text-center mb-3">
                   <h3 className="font-semibold text-gray-800 text-sm truncate w-full">
-                    <span className='text-base'>#{juror.jurorNumber}</span> • {juror.name}
+                    <span className='text-base block'>#{juror.jurorNumber}</span> {juror.name}
                   </h3>
                   <div className="flex items-center justify-center gap-2">
                     {juror.age > 0 && (
                       <Badge variant="outline" className="text-xs font-normal">
-                        {juror.age}y
+                        {juror.age}
                       </Badge>
                     )}
                     {juror.occupation && (
@@ -158,18 +158,16 @@ const JurorListPanel = ({
                 </div>
 
                 {/* Overall Gauge */}
-                {typeof overallScore === 'number' && (
                   <div className="flex flex-col justify-center items-center w-full my-2">
                     <OverallGauge
-                      valuePercent={overallScore}
+                      valuePercent={overallScore || 0}
                       size="sm"
                       showLabel={false}
                     />
                     <div className="text-xs text-center -mt-1 text-gray-600 font-medium">
-                      {overallScore.toFixed(1)}%
+                      {(overallScore || 0).toFixed(1)}%
                     </div>
                   </div>
-                )}
 
                 {/* Panel Position Badge */}
                 {juror.panelPosition !== null && juror.panelPosition !== undefined && (

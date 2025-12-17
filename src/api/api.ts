@@ -85,6 +85,8 @@ export const createQuestionApi = async (
     question: string;
     questionType: string;
     options?: string[];
+    tags?: string[];
+    percentage?:number;
     isRequired?: boolean;
     order?: number;
   }
@@ -130,6 +132,8 @@ export const updateQuestionApi = async (
     question?: string;
     questionType?: string;
     options?: string[];
+    tags?: string[];
+    percentage?:number;
     isRequired?: boolean;
     order?: number;
   }

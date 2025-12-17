@@ -40,14 +40,13 @@ export function JurorMiniCard({
       effectiveBiasStatus === "high"
         ? "border-red-300"
         : effectiveBiasStatus === "moderate"
-        ? "border-yellow-300"
-        : "border-green-300";
+          ? "border-yellow-300"
+          : "border-green-300";
   }
   return (
     <Card
-      className={`relative h-full bg-white shadow-sm border ${borderColorClass} ${
-        isHighlighted ? "ring-2 ring-blue-500" : ""
-      } transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-opacity-80`}
+      className={`relative h-full bg-white shadow-sm border ${borderColorClass} ${isHighlighted ? "ring-2 ring-blue-500" : ""
+        } transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-opacity-80`}
     >
       <CardContent className="p-5">
         <div className="flex flex-col items-center text-center">
@@ -62,10 +61,10 @@ export function JurorMiniCard({
           </Avatar>
 
           <div className="font-semibold text-gray-900 truncate max-w-full">
-            {juror.name}
+            {displayId ? `#${displayId}` : null}
           </div>
           <div className="text-xs text-gray-600 mt-1">
-            {displayId ? `#${displayId}` : null}
+            {juror.name}
           </div>
 
           <div className="mt-3 flex flex-col items-center gap-1 w-full">

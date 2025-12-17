@@ -1,4 +1,3 @@
-//
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import TitleTag from "@/components/shared/tag/tag";

@@ -76,6 +76,17 @@ const CourtroomLayout = ({
     }
   };
 
+
+  const handleSelectAllJurors = () => {
+  const allIds = allJurors.map(j => j.id);
+  setSelectedJurorIds(new Set(allIds));
+};
+
+const handleUnselectAllJurors = () => {
+  setSelectedJurorIds(new Set());
+};
+
+
   // Handle editing a question
   const handleEditQuestion = async (updatedQuestion: Question, index: number) => {
     if (!editingQuestion) return;
@@ -144,20 +155,6 @@ const CourtroomLayout = ({
       else newSet.add(juror.id);
       return newSet;
     });
-
-    if (selectedQuestion && sessionId) {
-      try {
-        await assignQuestionsToJurorsApi({
-          sessionId,
-          assignments: [{
-            questionId: selectedQuestion.id,
-            jurorIds: Array.from(selectedJurorIds).concat(juror.id),
-          }],
-        });
-      } catch (err) {
-        console.error("Failed to assign question to jurors:", err);
-      }
-    }
   };
 
   const handleSelectQuestion = async (question: Question) => {
@@ -168,18 +165,6 @@ const CourtroomLayout = ({
     if (selectedJurorIds.size === 0) return;
 
     const jurorIds = Array.from(selectedJurorIds);
-
-    assignQuestionsToJurorsApi({
-      sessionId,
-      assignments: [
-        {
-          questionId: question.id,
-          jurorIds,
-        },
-      ],
-    }).catch(err => {
-      console.error("Failed to assign question on select:", err);
-    });
   };
 
   const handleClearQuestion = () => {
@@ -311,15 +296,15 @@ const CourtroomLayout = ({
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold">Live Session</h2>
-            <p className="text-sm text-gray-600">
-              {selectedJurorIds.size} juror(s) selected • {questions.length} question(s) available
-            </p>
           </div>
 
           <Button onClick={() => setShowAddQuestionDialog(true)}>
             <MessageSquare className="h-4 w-4 mr-2" />
             Add Question
           </Button>
+
+
+          
         </div>
       </div>
 
@@ -332,6 +317,8 @@ const CourtroomLayout = ({
           jurorResponses={jurorResponses}
           selectedQuestion={selectedQuestion}
           onJurorToggle={handleJurorToggle}
+          onSelectAllJurors={handleSelectAllJurors}
+  onClearAllJurors={handleUnselectAllJurors}
         />
 
         <div className="flex-1 overflow-hidden border-l">

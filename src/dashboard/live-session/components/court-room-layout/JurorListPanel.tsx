@@ -33,6 +33,8 @@ interface JurorListPanelProps {
   jurorResponses: Record<string, { questionId: string; response: string; responseType: string }>;
   selectedQuestion: Question | null;
   onJurorToggle: (juror: CaseJuror) => void;
+  onSelectAllJurors: () => void;
+onClearAllJurors: () => void;
 }
 
 const JurorListPanel = ({
@@ -43,6 +45,8 @@ const JurorListPanel = ({
   jurorResponses,
   selectedQuestion,
   onJurorToggle,
+  onSelectAllJurors,
+  onClearAllJurors,
 }: JurorListPanelProps) => {
   /* -------------------- NOTE STATE -------------------- */
   const [noteOpen, setNoteOpen] = useState(false);
@@ -96,21 +100,41 @@ const JurorListPanel = ({
   return (
     <div className="w-full md:w-[70%] border-r bg-white overflow-auto">
       {/* Header */}
+     
+
+
       <div className="p-4 border-b bg-gray-50">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800">Jurors</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              {sessionJurors.length} juror(s) • {selectedJurorIds.size} selected
-            </p>
-          </div>
-          {selectedJurorIds.size > 0 && (
-            <Badge className="bg-blue-100 text-blue-700">
-              {selectedJurorIds.size} selected
-            </Badge>
-          )}
-        </div>
-      </div>
+  <div className="flex items-center justify-between gap-3">
+    <div>
+      <h2 className="text-lg font-semibold text-gray-800">Jurors</h2>
+      <p className="text-sm text-gray-600 mt-1">
+        {sessionJurors.length} juror(s) • {selectedJurorIds.size} selected
+      </p>
+    </div>
+
+    <div className="flex items-center gap-2">
+      {selectedJurorIds.size < sessionJurors.length && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onSelectAllJurors}
+        >
+          Select All
+        </Button>
+      )}
+
+      {selectedJurorIds.size > 0 && (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onClearAllJurors}
+        >
+          Unselect All
+        </Button>
+      )}
+    </div>
+  </div>
+</div>
 
       {/* Cards */}
       <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -178,13 +202,15 @@ const JurorListPanel = ({
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
 
-              {/* Info */}
-              <div className="text-center mb-4">
-                <span className="block text-sm font-semibold">
-                  #{juror.jurorNumber}
-                </span>
-                <span className="text-sm">{juror.name}</span>
-              </div>
+             {/* Info */}
+<div className="text-center mb-4">
+  <span className="block text-2xl font-bold text-gray-900">
+    #{juror.jurorNumber}
+  </span>
+  <span className="text-[10px] text-gray-400">
+    {juror.name}
+  </span>
+</div>
 
               {/* Score */}
               <OverallGauge valuePercent={overallScore} size="sm" showLabel={false} />
@@ -192,13 +218,7 @@ const JurorListPanel = ({
                 {overallScore.toFixed(1)}%
               </div>
 
-              {/* Panel */}
-              {juror.panelPosition != null && (
-                <Badge variant="outline" className="mt-2 text-xs">
-                  <Hash className="h-3 w-3 mr-1" />
-                  Panel {juror.panelPosition}
-                </Badge>
-              )}
+              
             </div>
           );
         })}

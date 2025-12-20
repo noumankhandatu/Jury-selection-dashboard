@@ -10,32 +10,37 @@ interface JurorNote {
   note: string;
   user: string;
   createdAt: string;
+  updatedAt: string;
 }
 
-interface influentialQuestion {
-  question_text: string;
-  response: string;
+interface questionsAndAnswer {
+  questionId:string;
+  question: string;
+  questionType: string;
+  answer: string;
 }
 
 interface StrikeRecommendation {
   jurorId: string;
   jurorName: string;
   jurorNumber: string;
-  strikeRecommendation: "STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE" | "NONE";
-  strikeReason: string;
-  notes: JurorNote[];
-  influentialQuestions: influentialQuestion[];
+  recommendation: string;
+  reason: string;
+  jurorNotes: JurorNote[];
+  questionsAndAnswers: questionsAndAnswer[];
 }
 
 export interface StrikeRecommendationsResponse {
   message: string;
   sessionId: string;
+  recommendationsGenerated:number;
+  totalRecommendationsReturned:number;
   summary: {
-    cause: number;
-    peremptory: number;
-    none: number;
+    strikeForCause: number;
+    peremptoryStrike: number;
+    total: number;
   };
-  evaluations: StrikeRecommendation[];
+  results: StrikeRecommendation[];
 }
 
 const StrikeRecommendationsSection = ({
@@ -76,21 +81,21 @@ const StrikeRecommendationsSection = ({
   const summaryCards = [
     {
       label: "Strike for Cause",
-      value: strikeRecommendations.summary?.cause ?? 0,
+      value: strikeRecommendations.summary?.strikeForCause ?? 0,
       icon: TriangleAlert,
       color: "text-red-600",
       bg: "bg-red-100",
     },
     {
       label: "Peremptory Strikes",
-      value: strikeRecommendations.summary?.peremptory ?? 0,
+      value: strikeRecommendations.summary?.peremptoryStrike ?? 0,
       icon: Gavel,
       color: "text-yellow-600",
       bg: "bg-yellow-100",
     },
     {
-      label: "No Strike Needed",
-      value: strikeRecommendations.summary?.none ?? 0,
+      label: "Total",
+      value: strikeRecommendations.summary?.total ?? 0,
       icon: CheckCircle2,
       color: "text-green-600",
       bg: "bg-green-100",
@@ -124,8 +129,8 @@ const StrikeRecommendationsSection = ({
 
           {/* Evaluations */}
           <div className="space-y-4">
-            {strikeRecommendations.evaluations?.length > 0 ? (
-              strikeRecommendations.evaluations.map((evalItem) => (
+            {strikeRecommendations.results?.length > 0 ? (
+              strikeRecommendations.results.map((evalItem) => (
                 <Card key={evalItem.jurorId} className="border shadow-sm rounded-xl p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -138,27 +143,27 @@ const StrikeRecommendationsSection = ({
                         Recommendation:{" "}
                         <span
                           className={
-                            evalItem.strikeRecommendation === "STRIKE_FOR_CAUSE"
+                            evalItem.recommendation === "STRIKE_FOR_CAUSE"
                               ? "text-red-600 font-bold"
-                              : evalItem.strikeRecommendation === "PEREMPTORY_STRIKE"
+                              : evalItem.recommendation === "PEREMPTORY_STRIKE"
                               ? "text-yellow-700 font-bold"
                               : "text-green-700 font-bold"
                           }
                         >
-                          {evalItem.strikeRecommendation.replace(/_/g, " ")}
+                          {evalItem.recommendation.replace(/_/g, " ")}
                         </span>
                       </p>
 
-                      <p className="mt-2 text-gray-700 text-sm leading-relaxed"><strong>Strike Reason</strong>{evalItem.strikeReason}</p>
+                      <p className="mt-2 text-gray-700 text-sm leading-relaxed"><strong>Strike Reason</strong>{evalItem.reason}</p>
 
                       {/* Juror Notes */}
-                      {evalItem.notes.length > 0 && (
+                      {evalItem.jurorNotes.length > 0 && (
                         <div className="mt-3">
                           <p className="text-sm font-semibold flex items-center gap-2">
                             <StickyNote className="h-4 w-4" /> Notes:
                           </p>
                           <ul className="list-disc list-inside text-sm text-gray-700">
-                            {evalItem.notes.map((note) => (
+                            {evalItem.jurorNotes.map((note) => (
                               <li key={note.id}>
                                 <strong>{note.user}:</strong> {note.note}{" "}
                                 <span className="text-gray-400 text-xs">
@@ -171,12 +176,12 @@ const StrikeRecommendationsSection = ({
                       )}
 
                       {/* Influential Questions */}
-                      {evalItem.influentialQuestions.length > 0 && (
+                      {evalItem.questionsAndAnswers.length > 0 && (
                         <div className="mt-3">
                           <p className="text-sm font-semibold">Influential Questions:</p>
                           <ul className="list-disc list-inside text-sm text-gray-700">
-                            {evalItem.influentialQuestions.map((qId, idx) => (
-                              <li key={idx}>{qId.question_text} <strong> {qId.response}</strong></li>
+                            {evalItem.questionsAndAnswers.map((qId, idx) => (
+                              <li key={idx}>{qId.question} <strong> {qId.answer}</strong></li>
           
                             ))}
                           </ul>

@@ -26,6 +26,7 @@ const CourtroomLayout = ({
 }: CourtroomLayoutProps) => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedJurorIds, setSelectedJurorIds] = useState<Set<string>>(new Set());
+  const [waitingJurorIds, setWaitingJurorIds] = useState<Set<string>>(new Set());
   const [showAddQuestionDialog, setShowAddQuestionDialog] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editingQuestion, setEditingQuestion] = useState<{ question: Question; index: number } | null>(null);
@@ -191,6 +192,7 @@ const CourtroomLayout = ({
   };
   /* -------------------- SUBMIT ANSWER (MULTI) -------------------- */
 
+  // Update handleSubmitAnswer
   const handleSubmitAnswer = async () => {
     if (!sessionId || !selectedQuestion || selectedJurorIds.size === 0) return;
 
@@ -215,7 +217,7 @@ const CourtroomLayout = ({
     try {
       const responseIds: string[] = [];
 
-      // ✅ 1. Save responses (blocking)
+      //  1. Save responses (blocking)
       for (const jurorId of selectedJurorIds) {
         const saved = await saveJurorResponseApi({
           sessionId,
@@ -240,14 +242,18 @@ const CourtroomLayout = ({
         }
       }
 
-      // ✅ 2. UI cleanup immediately (no waiting)
+      // Add jurors to waiting set
+      setWaitingJurorIds(new Set(selectedJurorIds));
+
+      // 2. UI cleanup immediately (no waiting)
       setSelectedJurorIds(new Set());
       resetAnswerFields();
       setIsSubmitting(false);
+      setSelectedQuestion(null); // Auto-return to question list
 
       if (onRefreshSessionData) onRefreshSessionData();
 
-      // ✅ 3. Background scoring (fire & forget)
+      // 3. Background scoring (fire & forget)
       (async () => {
         try {
           await Promise.all(
@@ -264,8 +270,13 @@ const CourtroomLayout = ({
           });
 
           setScoresByJurorId(mapped);
+
+          // Clear waiting jurors after scoring completes
+          setWaitingJurorIds(new Set());
         } catch (err) {
           console.error("Background scoring failed:", err);
+          // Clear waiting state even on error
+          setWaitingJurorIds(new Set());
         }
       })();
 
@@ -285,7 +296,6 @@ const CourtroomLayout = ({
 
   useEffect(() => {
     if (!selectedQuestion || selectedJurorIds.size !== 1) return;
-
     const jurorId = Array.from(selectedJurorIds)[0];
     const responseKey = `${jurorId}-${selectedQuestion.id}`;
     const existingResponse = jurorResponses[responseKey];
@@ -332,6 +342,7 @@ const CourtroomLayout = ({
           scoresByJurorId={scoresByJurorId}
           jurorResponses={jurorResponses}
           selectedQuestion={selectedQuestion}
+          waitingJurorIds={waitingJurorIds}
           onJurorToggle={handleJurorToggle}
           onSelectAllJurors={handleSelectAllJurors}
           onClearAllJurors={handleUnselectAllJurors}
@@ -366,7 +377,7 @@ const CourtroomLayout = ({
       </div>
 
       {/* Add/Edit Question Dialog */}
-       <AddQuestionDialog
+      <AddQuestionDialog
         isOpen={showAddQuestionDialog}
         onClose={handleCloseDialog}
         onEditQuestion={handleEditQuestion}

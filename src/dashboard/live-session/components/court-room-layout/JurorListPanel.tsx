@@ -33,6 +33,7 @@ interface JurorListPanelProps {
     { questionId: string; response: string; responseType: string }
   >;
   selectedQuestion: Question | null;
+  waitingJurorIds: Set<string>;
   onJurorToggle: (juror: CaseJuror) => void;
   onSelectAllJurors: () => void;
   onClearAllJurors: () => void;
@@ -44,6 +45,7 @@ const JurorListPanel = ({
   selectedJurorIds,
   scoresByJurorId,
   jurorResponses,
+  waitingJurorIds,
   selectedQuestion,
   onJurorToggle,
   onSelectAllJurors,
@@ -137,6 +139,7 @@ const JurorListPanel = ({
       <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {sortedJurors.map(juror => {
           const isSelected = selectedJurorIds.has(juror.id);
+          const isWaiting = waitingJurorIds.has(juror.id);
           const overallScore = scoresByJurorId[juror.id]?.overallScore ?? 0;
 
           const responseKey = selectedQuestion
@@ -188,10 +191,17 @@ const JurorListPanel = ({
               )}
 
               {/* Avatar */}
-              <Avatar className="h-12 w-12 border-2 shadow-sm mb-2">
-                <AvatarImage src={generateAvatar(juror.name, juror.gender)} />
-                <AvatarFallback>{initials}</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-12 w-12 border-2 shadow-sm mb-2">
+                  <AvatarImage src={generateAvatar(juror.name, juror.gender)} />
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+              </div>
+              {isWaiting && (
+                <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-lg">
+                  <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
+                </div>
+              )}
 
               {/* Info */}
               <div className="text-center mb-3">

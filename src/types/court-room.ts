@@ -1,3 +1,4 @@
+import { CaseData } from "@/api/types";
 import { Question } from "./questions";
 
 export interface CaseJuror {
@@ -18,10 +19,28 @@ export interface CaseJuror {
 export interface CourtroomLayoutProps {
   allJurors?: CaseJuror[];
   selectedCaseId?: string;
+  selectedCase: any;
   sessionId?: string;
   onRefreshSessionData?: () => void;
 }
 
+// case
+export interface Case {
+  id: string;
+  number: string;
+  name: string;
+  type: string;
+  status: string;
+  createdDate: string;
+}
+
+// Update the AI case data interface
+export interface AICaseData {
+  caseName: string;
+  caseType: string;
+  description: string;
+  jurorTraits: string;
+}
 
 export interface QuestionAnswerPanelProps {
   selectedQuestion: Question | null;

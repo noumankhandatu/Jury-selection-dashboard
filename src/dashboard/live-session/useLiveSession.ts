@@ -20,6 +20,8 @@ export const useLiveSession = () => {
           status: "Active",
           createdDate: c.createdAt,
           questions: c.caseQuestions,
+          caseDescription: c.description,
+          jurorTraits: c.idealJurorTraits,
         }));
 
         setCases(transformedCases);

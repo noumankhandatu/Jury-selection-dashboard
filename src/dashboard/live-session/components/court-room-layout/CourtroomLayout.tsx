@@ -4,12 +4,12 @@ import { MessageSquare } from 'lucide-react';
 import { CaseJuror, CourtroomLayoutProps } from '@/types/court-room';
 import { Question, QuestionType } from '@/types/questions';
 import {
-  assignQuestionsToJurorsApi,
   saveJurorResponseApi,
   assessResponseApi,
   getSessionScoresApi,
   createQuestionApi,
   updateQuestionApi,
+  suggestAIQuestionsApi,
 } from "@/api/api";
 import QuestionAnswerPanel from './QuestionAnswerPanel';
 import QuestionListPanel from './QuestionListPanel';
@@ -19,6 +19,7 @@ import { AddQuestionDialog } from '@/dashboard/create-case/components/add-questi
 
 const CourtroomLayout = ({
   allJurors = [],
+  selectedCase,
   selectedCaseId,
   sessionId,
   onRefreshSessionData
@@ -68,7 +69,7 @@ const CourtroomLayout = ({
 
       setQuestions(prev => [newQuestion, ...prev]);
       setShowAddQuestionDialog(false);
-      toast.success('Question added successfully');
+      toast.success('Question(s) added successfully');
 
     } catch (error: any) {
       console.error('Failed to add question:', error);
@@ -78,13 +79,13 @@ const CourtroomLayout = ({
 
 
   const handleSelectAllJurors = () => {
-  const allIds = allJurors.map(j => j.id);
-  setSelectedJurorIds(new Set(allIds));
-};
+    const allIds = allJurors.map(j => j.id);
+    setSelectedJurorIds(new Set(allIds));
+  };
 
-const handleUnselectAllJurors = () => {
-  setSelectedJurorIds(new Set());
-};
+  const handleUnselectAllJurors = () => {
+    setSelectedJurorIds(new Set());
+  };
 
 
   // Handle editing a question
@@ -136,6 +137,24 @@ const handleUnselectAllJurors = () => {
   const handleCloseDialog = () => {
     setShowAddQuestionDialog(false);
     setEditingQuestion(null);
+  };
+
+  const generateQuestionsByAI = async (): Promise<string[]> => {
+    try {
+      const aiPayload = {
+        caseName: selectedCase.name,
+        caseType: selectedCase.type,
+        description: selectedCase.caseDescription,
+        jurorTraits: selectedCase.jurorTraits
+      };
+
+      const data = await suggestAIQuestionsApi(aiPayload);
+      return data.questions || [];
+    } catch (error) {
+      console.error("Failed to generate AI questions:", error);
+      toast.error("Failed to generate AI questions");
+      return [];
+    }
   };
 
   /* -------------------- HELPER FUNCTIONS -------------------- */
@@ -302,9 +321,6 @@ const handleUnselectAllJurors = () => {
             <MessageSquare className="h-4 w-4 mr-2" />
             Add Question
           </Button>
-
-
-          
         </div>
       </div>
 
@@ -318,7 +334,7 @@ const handleUnselectAllJurors = () => {
           selectedQuestion={selectedQuestion}
           onJurorToggle={handleJurorToggle}
           onSelectAllJurors={handleSelectAllJurors}
-  onClearAllJurors={handleUnselectAllJurors}
+          onClearAllJurors={handleUnselectAllJurors}
         />
 
         <div className="flex-1 overflow-hidden border-l">
@@ -350,12 +366,16 @@ const handleUnselectAllJurors = () => {
       </div>
 
       {/* Add/Edit Question Dialog */}
-      <AddQuestionDialog
+       <AddQuestionDialog
         isOpen={showAddQuestionDialog}
         onClose={handleCloseDialog}
-        onAddQuestion={handleAddQuestion}
         onEditQuestion={handleEditQuestion}
-        editingQuestion={editingQuestion}
+        onAddQuestion={handleAddQuestion}
+        useGenerateQuestionByAI={true} // Enable AI generation
+        generateQuestionsByAI={generateQuestionsByAI} // Pass AI function
+        selectedCase={selectedCase} // Pass full case object
+        caseDescription={selectedCase.caseDescription} // Optional
+        jurorTraits={selectedCase.jurorTraits} // Optional
       />
     </div>
   );

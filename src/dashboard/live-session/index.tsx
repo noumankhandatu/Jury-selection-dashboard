@@ -239,6 +239,7 @@ const LiveSession = () => {
                 <CourtroomLayout
                   allJurors={jurors}
                   selectedCaseId={selectedCase?.id}
+                  selectedCase={selectedCase}
                   sessionId={sessionId || undefined}
                   onRefreshSessionData={triggerSessionDataRefresh}
                 />

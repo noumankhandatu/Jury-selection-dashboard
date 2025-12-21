@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, RotateCcw } from 'lucide-react';
 import { CaseJuror, CourtroomLayoutProps } from '@/types/court-room';
 import { Question, QuestionType } from '@/types/questions';
 import {
@@ -39,6 +39,7 @@ const CourtroomLayout = ({
   const [scoresByJurorId, setScoresByJurorId] =
     useState<Record<string, { overallScore?: number }>>({});
   const [jurorResponses, setJurorResponses] = useState<Record<string, any>>({});
+  const [isLayoutFlipped, setIsLayoutFlipped] = useState(false);
 
   /* -------------------- QUESTION MANAGEMENT -------------------- */
 
@@ -214,6 +215,9 @@ const CourtroomLayout = ({
 
     setIsSubmitting(true);
 
+    // Set waiting state immediately when question is asked
+    setWaitingJurorIds(new Set(selectedJurorIds));
+
     try {
       const responseIds: string[] = [];
 
@@ -241,9 +245,6 @@ const CourtroomLayout = ({
           responseIds.push(saved.response.id);
         }
       }
-
-      // Add jurors to waiting set
-      setWaitingJurorIds(new Set(selectedJurorIds));
 
       // 2. UI cleanup immediately (no waiting)
       setSelectedJurorIds(new Set());
@@ -284,6 +285,8 @@ const CourtroomLayout = ({
       console.error("Failed to submit answers:", err.response);
       toast.error(err?.response?.data?.error);
       setIsSubmitting(false);
+      // Clear waiting state on error
+      setWaitingJurorIds(new Set());
     }
   };
 
@@ -323,8 +326,16 @@ const CourtroomLayout = ({
     <div className="h-screen flex flex-col bg-slate-50">
       <div className="bg-white border-b px-6 py-4">
         <div className="flex justify-between items-center">
-          <div>
+          <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold">Live Session</h2>
+            <button
+              onClick={() => setIsLayoutFlipped(!isLayoutFlipped)}
+              className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+              title="Flip layout (Judge's Bench)"
+              aria-label="Flip layout"
+            >
+              <RotateCcw className="h-5 w-5 text-gray-600" />
+            </button>
           </div>
 
           <Button onClick={() => setShowAddQuestionDialog(true)}>
@@ -346,6 +357,7 @@ const CourtroomLayout = ({
           onJurorToggle={handleJurorToggle}
           onSelectAllJurors={handleSelectAllJurors}
           onClearAllJurors={handleUnselectAllJurors}
+          isLayoutFlipped={isLayoutFlipped}
         />
 
         <div className="flex-1 overflow-hidden border-l">

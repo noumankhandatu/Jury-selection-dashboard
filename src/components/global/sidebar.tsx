@@ -21,6 +21,7 @@ import { motion } from "framer-motion";
 import { containerVariants, itemVariants } from "@/utils/fn";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useState, useEffect } from "react";
 
 interface SidebarProps {
   onClose: () => void;
@@ -34,6 +35,52 @@ export function Sidebar({ onClose }: SidebarProps) {
   const userRole = localStorage.getItem("userRole") || "MEMBER";
   const organizationName =
     localStorage.getItem("organizationName") || "Organization";
+  
+  // Check if there's an active session (with state to trigger re-renders)
+  const [hasActiveSession, setHasActiveSession] = useState(
+    () => localStorage.getItem("activeSession") === "true"
+  );
+  
+  // Listen for session status changes
+  useEffect(() => {
+    const checkActiveSession = () => {
+      setHasActiveSession(localStorage.getItem("activeSession") === "true");
+    };
+
+    // Check on mount
+    checkActiveSession();
+
+    // Listen for storage changes (other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "activeSession") {
+        checkActiveSession();
+      }
+    };
+
+    // Listen for custom event (same tab)
+    const handleSessionStatusChange = () => {
+      checkActiveSession();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("sessionStatusChange", handleSessionStatusChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("sessionStatusChange", handleSessionStatusChange);
+    };
+  }, []);
+  
+  // Handle navigation with session check
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // Allow navigation to live-session page even if session is active
+    if (hasActiveSession && href !== "/dashboard/live-session") {
+      e.preventDefault();
+      toast.error("Please complete the current session before navigating to other pages.");
+      return false;
+    }
+    return true;
+  };
 
   // Logout function
   const handleLogout = () => {
@@ -203,11 +250,19 @@ export function Sidebar({ onClose }: SidebarProps) {
             >
               <Link
                 to={route.href}
+                onClick={(e) => {
+                  if (!handleNavigation(e, route.href)) {
+                    e.preventDefault();
+                  }
+                }}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   route.active
                     ? "bg-white/10 backdrop-blur-sm text-white shadow-lg from-blue-500 to-blue-600"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                    : "text-white/70 hover:bg-white/10 hover:text-white",
+                  hasActiveSession && route.href !== "/dashboard/live-session"
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 )}
               >
                 <div

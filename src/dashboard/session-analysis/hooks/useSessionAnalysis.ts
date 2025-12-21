@@ -130,10 +130,71 @@ useEffect(() => {
         scores: [],
       } as any;
       setSessionDetail(session);
-    } catch {
-      setSessionStats(null);
-      setSessionDetail(null);
-      setBestJurors(null);
+    } catch (err: any) {
+      // Check if it's a token error (429) - don't break the page for token errors
+      const isTokenError = 
+        err?.response?.status === 429 || 
+        err?.response?.data?.error === "Insufficient AI tokens";
+      
+      if (isTokenError) {
+        // For token errors, keep existing data and just log the error
+        // The StrikeRecommendationsSection will handle token errors separately
+        console.warn("Token error in session statistics (non-critical):", err);
+        // Still try to set basic session detail from selectedSession data
+        const session: ApiSessionById = {
+          id: selectedSession.id,
+          name: selectedSession.name,
+          description: selectedSession.description || "",
+          status: selectedSession.status || "",
+          startTime: selectedSession.startTime || "",
+          endTime: selectedSession.endTime || null,
+          createdAt: selectedSession.createdAt || "",
+          updatedAt: selectedSession.updatedAt || "",
+          summary: selectedSession.summary,
+          caseId: "",
+          case: {
+            caseNumber: "",
+            caseName: "",
+            caseType: "",
+          },
+          assignments: [],
+          responses: [],
+          scores: [],
+        } as any;
+        setSessionDetail(session);
+      } else {
+        // For other errors, only clear data if it's a critical error (not 404, etc.)
+        const isCriticalError = err?.response?.status >= 500 || !err?.response?.status;
+        if (isCriticalError) {
+          console.error("Critical error loading session details:", err);
+          setSessionStats(null);
+          setSessionDetail(null);
+          setBestJurors(null);
+        } else {
+          // For non-critical errors (like 404), keep basic session info
+          const session: ApiSessionById = {
+            id: selectedSession.id,
+            name: selectedSession.name,
+            description: selectedSession.description || "",
+            status: selectedSession.status || "",
+            startTime: selectedSession.startTime || "",
+            endTime: selectedSession.endTime || null,
+            createdAt: selectedSession.createdAt || "",
+            updatedAt: selectedSession.updatedAt || "",
+            summary: selectedSession.summary,
+            caseId: "",
+            case: {
+              caseNumber: "",
+              caseName: "",
+              caseType: "",
+            },
+            assignments: [],
+            responses: [],
+            scores: [],
+          } as any;
+          setSessionDetail(session);
+        }
+      }
     }
   };
   fetchDetail();

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,19 +9,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  UserPlus,
-  Check,
-  StickyNote,
-} from "lucide-react";
+import { UserPlus, Check, NotebookPen, Gavel } from "lucide-react";
 import { CaseJuror } from "@/types/court-room";
 import { Question } from "@/types/questions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import OverallGauge from "@/components/shared/overall-gauge";
 import { generateAvatar } from "@/dashboard/manage-jurors/components/utils";
-import { addJurorNoteApi } from "@/api/api";
+import { addJurorNoteApi, getSessionScoresApi } from "@/api/api";
 import { toast } from "sonner";
 import JudgesBench from "../JudgesBench";
+import StrikeModal from "../StrikeModal";
 
 interface JurorListPanelProps {
   sessionId?: string;
@@ -37,6 +34,7 @@ interface JurorListPanelProps {
   onJurorToggle: (juror: CaseJuror) => void;
   onSelectAllJurors: () => void;
   onClearAllJurors: () => void;
+  isLayoutFlipped?: boolean;
 }
 
 const JurorListPanel = ({
@@ -50,12 +48,63 @@ const JurorListPanel = ({
   onJurorToggle,
   onSelectAllJurors,
   onClearAllJurors,
+  isLayoutFlipped = false,
 }: JurorListPanelProps) => {
   /* -------------------- NOTE STATE -------------------- */
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [activeJuror, setActiveJuror] = useState<CaseJuror | null>(null);
   const [savingNote, setSavingNote] = useState(false);
+
+  /* -------------------- STRIKE STATE -------------------- */
+  const [strikeOpen, setStrikeOpen] = useState(false);
+  const [strikesByJurorId, setStrikesByJurorId] = useState<
+    Record<
+      string,
+      {
+        strikeRecommendation: "STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE" | null;
+        strikeReason?: string | null;
+      }
+    >
+  >({});
+
+  /* -------------------- FETCH STRIKES -------------------- */
+  useEffect(() => {
+    const fetchStrikes = async () => {
+      if (!sessionId) return;
+
+      try {
+        const scores = await getSessionScoresApi(sessionId);
+        const strikes: Record<
+          string,
+          {
+            strikeRecommendation:
+              | "STRIKE_FOR_CAUSE"
+              | "PEREMPTORY_STRIKE"
+              | null;
+            strikeReason?: string | null;
+          }
+        > = {};
+
+        if (Array.isArray(scores?.scores)) {
+          scores.scores.forEach((score: any) => {
+            if (score.jurorId) {
+              strikes[score.jurorId] = {
+                strikeRecommendation: score.strikeRecommendation || null,
+                strikeReason: score.strikeReason || null,
+              };
+            }
+          });
+        }
+
+        setStrikesByJurorId(strikes);
+      } catch (error) {
+        console.error("Error fetching strikes:", error);
+      }
+    };
+
+    fetchStrikes();
+  }, [sessionId]);
 
   /* -------------------- SORTED JURORS -------------------- */
   const sortedJurors = useMemo(() => {
@@ -69,6 +118,43 @@ const JurorListPanel = ({
     setActiveJuror(juror);
     setNoteText("");
     setNoteOpen(true);
+  };
+
+  const openStrikeDialog = (juror: CaseJuror, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveJuror(juror);
+    setStrikeOpen(true);
+  };
+
+  const handleStrikeUpdated = async () => {
+    // Refresh strikes after update
+    if (!sessionId) return;
+
+    try {
+      const scores = await getSessionScoresApi(sessionId);
+      const strikes: Record<
+        string,
+        {
+          strikeRecommendation: "STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE" | null;
+          strikeReason?: string | null;
+        }
+      > = {};
+
+      if (Array.isArray(scores?.scores)) {
+        scores.scores.forEach((score: any) => {
+          if (score.jurorId) {
+            strikes[score.jurorId] = {
+              strikeRecommendation: score.strikeRecommendation || null,
+              strikeReason: score.strikeReason || null,
+            };
+          }
+        });
+      }
+
+      setStrikesByJurorId(strikes);
+    } catch (error) {
+      console.error("Error refreshing strikes:", error);
+    }
   };
 
   const handleSaveNote = async () => {
@@ -97,7 +183,9 @@ const JurorListPanel = ({
       <div className="w-full md:w-[70%] border-r bg-white overflow-auto">
         <div className="flex flex-col items-center justify-center h-full text-gray-500 p-6">
           <UserPlus className="h-16 w-16 mb-4 text-gray-300" />
-          <p className="text-lg font-medium text-gray-400">No jurors available</p>
+          <p className="text-lg font-medium text-gray-400">
+            No jurors available
+          </p>
           <p className="text-sm text-gray-400 mt-2">
             Add jurors to get started
           </p>
@@ -135,9 +223,12 @@ const JurorListPanel = ({
         </div>
       </div>
 
+      {/* Judge's Bench - Render first if layout is flipped */}
+      {isLayoutFlipped && <JudgesBench />}
+
       {/* Cards Grid – 6 per row */}
       <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-        {sortedJurors.map(juror => {
+        {sortedJurors.map((juror) => {
           const isSelected = selectedJurorIds.has(juror.id);
           const isWaiting = waitingJurorIds.has(juror.id);
           const overallScore = scoresByJurorId[juror.id]?.overallScore ?? 0;
@@ -150,18 +241,26 @@ const JurorListPanel = ({
             ? jurorResponses[responseKey]?.response
             : undefined;
 
+          // Check if juror is struck
+          const isStruck = !!strikesByJurorId[juror.id]?.strikeRecommendation;
+
           let cardBorder = "border-gray-300";
 
-          if (isSelected) cardBorder = "border-blue-500";
+          // If struck, prioritize red glow border
+          if (isStruck) {
+            cardBorder = "border-red-500";
+          } else if (isSelected) {
+            cardBorder = "border-blue-500";
+          }
 
-          if (selectedQuestion?.questionType === "YES_NO") {
+          if (selectedQuestion?.questionType === "YES_NO" && !isStruck) {
             if (response === "yes") cardBorder = "border-green-500";
             if (response === "no") cardBorder = "border-red-500";
           }
 
           const initials = juror.name
             .split(" ")
-            .map(n => n[0])
+            .map((n) => n[0])
             .join("")
             .slice(0, 2)
             .toUpperCase();
@@ -172,15 +271,47 @@ const JurorListPanel = ({
               onClick={() => onJurorToggle(juror)}
               className={`relative flex flex-col items-center p-3 rounded-xl border cursor-pointer transition
                 ${cardBorder}
-                ${isSelected ? "bg-blue-50 shadow-md" : "bg-white hover:shadow-md"}
+                ${
+                  isSelected && !isStruck
+                    ? "bg-blue-50 shadow-[2px_0px_7px_#434]"
+                    : isStruck
+                    ? "bg-white shadow-[0_0_15px_rgba(239,68,68,0.5)] ring-2 ring-red-400 ring-opacity-50"
+                    : "bg-white shadow-[2px_0px_7px_#434] hover:shadow-[4px_0px_10px_#434]"
+                }
               `}
             >
-              {/* Note Button */}
+              {/* Note Button - Top left edge of card */}
               <button
-                onClick={e => openNoteDialog(juror, e)}
-                className="absolute top-2 left-2 p-1 rounded-full bg-white border shadow hover:bg-gray-50"
+                onClick={(e) => openNoteDialog(juror, e)}
+                className="absolute top-2 left-2 p-1 rounded-full bg-white border shadow hover:bg-gray-50 z-10"
+                title="Add note"
               >
-                <StickyNote className="h-3 w-3 text-gray-600" />
+                <NotebookPen className="h-3 w-3 text-gray-600" />
+              </button>
+
+              {/* Strike Button - Top right edge of card */}
+              <button
+                onClick={(e) => openStrikeDialog(juror, e)}
+                className={`absolute top-2 right-2 p-1 rounded-full bg-white border shadow hover:bg-gray-50 z-10 ${
+                  strikesByJurorId[juror.id]?.strikeRecommendation
+                    ? strikesByJurorId[juror.id].strikeRecommendation ===
+                      "STRIKE_FOR_CAUSE"
+                      ? "border-red-500 bg-red-50"
+                      : "border-amber-500 bg-amber-50"
+                    : ""
+                }`}
+                title="Strike recommendation"
+              >
+                <Gavel
+                  className={`h-3 w-3 ${
+                    strikesByJurorId[juror.id]?.strikeRecommendation
+                      ? strikesByJurorId[juror.id].strikeRecommendation ===
+                        "STRIKE_FOR_CAUSE"
+                        ? "text-red-600"
+                        : "text-amber-600"
+                      : "text-red-600"
+                  }`}
+                />
               </button>
 
               {/* Selected Badge */}
@@ -191,17 +322,17 @@ const JurorListPanel = ({
               )}
 
               {/* Avatar */}
-              <div className="relative">
-                <Avatar className="h-12 w-12 border-2 shadow-sm mb-2">
+              <div className="mb-2 relative">
+                <Avatar className="h-12 w-12 border-2 shadow-sm">
                   <AvatarImage src={generateAvatar(juror.name, juror.gender)} />
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
+                {isWaiting && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse shadow-lg z-20">
+                    <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
+                  </div>
+                )}
               </div>
-              {isWaiting && (
-                <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-lg">
-                  <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
-                </div>
-              )}
 
               {/* Info */}
               <div className="text-center mb-3">
@@ -219,14 +350,15 @@ const JurorListPanel = ({
                 size="sm"
                 showLabel={false}
               />
-              <div className="text-[10px] text-gray-600 -mt-2">
+              <div className="text-sm font-bold text-gray-600 -mt-2">
                 {overallScore.toFixed(1)}%
               </div>
             </div>
           );
         })}
       </div>
-      <JudgesBench />
+      {/* Judge's Bench - Render last if layout is not flipped */}
+      {!isLayoutFlipped && <JudgesBench />}
 
       {/* Note Dialog */}
       <Dialog open={noteOpen} onOpenChange={setNoteOpen}>
@@ -237,7 +369,7 @@ const JurorListPanel = ({
 
           <Textarea
             value={noteText}
-            onChange={e => setNoteText(e.target.value)}
+            onChange={(e) => setNoteText(e.target.value)}
             placeholder="Write your note here..."
             rows={4}
           />
@@ -255,6 +387,20 @@ const JurorListPanel = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Strike Modal */}
+      {activeJuror && sessionId && (
+        <StrikeModal
+          open={strikeOpen}
+          onClose={() => setStrikeOpen(false)}
+          jurorName={activeJuror.name}
+          jurorNumber={activeJuror.jurorNumber}
+          sessionId={sessionId}
+          jurorId={activeJuror.id}
+          currentStrike={strikesByJurorId[activeJuror.id]}
+          onStrikeUpdated={handleStrikeUpdated}
+        />
+      )}
     </div>
   );
 };

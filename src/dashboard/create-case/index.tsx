@@ -86,11 +86,11 @@ export default function CreateCasePage() {
       setQuestions([]);
 
       // Navigate to manage jurors page with the new case ID
-      // if (caseId) {
-      //   navigate(`/dashboard/manage-jurors?caseId=${caseId}`);
-      // } else {
-      //   navigate("/dashboard/manage-jurors");
-      // }
+      if (caseId) {
+        navigate(`/dashboard/manage-jurors?caseId=${caseId}`);
+      } else {
+        navigate("/dashboard/manage-jurors");
+      }
     } catch (error) {
       console.error("❌ Failed to create case:", error);
       toast.error("Failed to create case. Please try again.");

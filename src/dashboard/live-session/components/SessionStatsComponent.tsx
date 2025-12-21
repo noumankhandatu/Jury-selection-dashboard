@@ -101,7 +101,7 @@ const SessionStatusComponent = ({ sessionId, sessionStatus, onStatusChange }: Se
 
   return (
     <div className="flex flex-col gap-2">
-      <Select
+      {/* <Select
         value={sessionStatus?.status || ""}
         onValueChange={handleStatusChange}
         disabled={!sessionId}
@@ -129,7 +129,7 @@ const SessionStatusComponent = ({ sessionId, sessionStatus, onStatusChange }: Se
             </span>
           </SelectItem>
         </SelectContent>
-      </Select>
+      </Select> */}
       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
         <div className={`w-3 h-3 rounded-full ${styling.dotColor}`} />
         <Badge variant={styling.badgeVariant} className={styling.badgeClass}>

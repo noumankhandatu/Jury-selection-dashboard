@@ -199,8 +199,15 @@ export async function exportSessionReport({
         strikeRecommendations.results.forEach((rec: any, idx: number) => {
           ensureSpace(140);
 
+          // Format juror identifier: prioritize panelPosition, then jurorNumber
+          const jurorIdentifier = rec.panelPosition !== null && rec.panelPosition !== undefined
+            ? `Panel #${rec.panelPosition}`
+            : rec.jurorNumber
+            ? `#${rec.jurorNumber}`
+            : "—";
+          
           text(
-            `${idx + 1}. ${rec.jurorName || "Unknown Juror"} (${rec.jurorNumber || "—"})`,
+            `${idx + 1}. ${rec.jurorName || "Unknown Juror"} (${jurorIdentifier})`,
             marginX,
             true
           );
@@ -238,14 +245,26 @@ export async function exportSessionReport({
             Array.isArray(rec.questionsAndAnswers) &&
             rec.questionsAndAnswers.length > 0
           ) {
-            ensureSpace(40);
+            ensureSpace(60);
             text("Questions & Answers:", marginX + 10, true);
-            rec.questionsAndAnswers.forEach((qa: any) => {
+            rec.questionsAndAnswers.forEach((qa: any, qaIdx: number) => {
+              // Question number and question text
               wrapText(
-                `- ${qa.question} (Answer: ${qa.answer})`,
+                `${qaIdx + 1}. ${qa.question}`,
+                marginX + 20,
+                pageWidth - marginX * 2,
+                true // bold
+              );
+              // Answer on next line
+              wrapText(
+                `   Answer: ${qa.answer}`,
                 marginX + 20,
                 pageWidth - marginX * 2
               );
+              // Add spacing between Q&A pairs
+              if (qaIdx < rec.questionsAndAnswers.length - 1) {
+                y += 8;
+              }
             });
           }
 

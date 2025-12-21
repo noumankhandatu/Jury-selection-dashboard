@@ -8,18 +8,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { LucideIcon } from "lucide-react";
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  description: string;
+  description: string | React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   variant?: "default" | "destructive";
   isLoading?: boolean;
-  Children?: React.ReactNode
+  Children?: React.ReactNode;
+  icon?: LucideIcon;
+  iconClassName?: string;
 }
 
 const ConfirmationDialog = ({
@@ -32,27 +35,43 @@ const ConfirmationDialog = ({
   cancelText = "Cancel",
   variant = "default",
   isLoading = false,
-  Children = undefined
+  Children = undefined,
+  icon: Icon,
+  iconClassName = ""
 }: ConfirmationDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-2xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {description}
-            {Children}
-          </AlertDialogDescription>
+          <div className="flex items-center gap-4 mb-2">
+            {Icon && (
+              <div className={`flex-shrink-0 ${iconClassName || "text-[#5156be]"}`}>
+                <Icon className="h-8 w-8" />
+              </div>
+            )}
+            <AlertDialogTitle className="text-2xl font-bold">{title}</AlertDialogTitle>
+          </div>
+          {typeof description === 'string' ? (
+            <AlertDialogDescription className="text-base leading-relaxed pt-2">
+              {description}
+              {Children}
+            </AlertDialogDescription>
+          ) : (
+            <div className="text-base leading-relaxed pt-2 text-muted-foreground">
+              {description}
+              {Children}
+            </div>
+          )}
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{cancelText}</AlertDialogCancel>
+        <AlertDialogFooter className="mt-6">
+          <AlertDialogCancel disabled={isLoading} className="px-6 py-2">{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
               onConfirm();
             }}
             disabled={isLoading}
-            className={variant === "destructive" ? "bg-red-600 hover:bg-red-700" : ""}
+            className={variant === "destructive" ? "bg-red-600 hover:bg-red-700 px-6 py-2" : "px-6 py-2"}
           >
             {isLoading ? "Processing..." : confirmText}
           </AlertDialogAction>

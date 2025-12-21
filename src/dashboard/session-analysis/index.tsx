@@ -94,6 +94,13 @@ const [strikeRecommendations, setStrikeRecommendations] =
           isLoading={isLoading}
           error={error}
         />
+        {selectedSession && (
+          <StrikeRecommendationsSection
+            sessionId={selectedSession.id}
+            sessionStatus={selectedSession.status || sessionDetail?.status}
+            onDataLoaded={setStrikeRecommendations}
+          />
+        )}
         {selectedCase && selectedSession && (
           <div className="space-y-6">
             <SessionOverview
@@ -118,12 +125,6 @@ const [strikeRecommendations, setStrikeRecommendations] =
           </div>
         )}
       </motion.div>
-      {selectedSession && (
-  <StrikeRecommendationsSection
-  sessionId={selectedSession.id}
-  onDataLoaded={setStrikeRecommendations}
-/>
-)}
 
 
     </div>

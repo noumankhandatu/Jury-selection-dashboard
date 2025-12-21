@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import ConfirmationDialog from "@/components/ui/confirmation-dialog";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import { PlayCircle } from "lucide-react";
 
 interface SessionStatus {
   status: 'active' | 'pending' | 'completed';
@@ -42,6 +43,14 @@ const LiveSession = () => {
 
   const handleSessionStatusUpdate = (status: SessionStatus) => {
     setSessionStatus(status);
+    // Update localStorage based on session status
+    if (status.status === 'active') {
+      localStorage.setItem('activeSession', 'true');
+      window.dispatchEvent(new CustomEvent('sessionStatusChange', { detail: { activeSession: true } }));
+    } else if (status.status === 'completed' || status.status === 'pending') {
+      localStorage.removeItem('activeSession');
+      window.dispatchEvent(new CustomEvent('sessionStatusChange', { detail: { activeSession: false } }));
+    }
   };
 
   const handleStartSessionConfirm = async () => {
@@ -92,6 +101,10 @@ const LiveSession = () => {
 
       handleSessionCreated(sessionId, sessionStatus);
       triggerSessionDataRefresh();
+      
+      // Store active session status in localStorage and dispatch event
+      localStorage.setItem('activeSession', 'true');
+      window.dispatchEvent(new CustomEvent('sessionStatusChange', { detail: { activeSession: true } }));
 
     } catch (error: any) {
       console.error("Error starting session:", error);
@@ -149,6 +162,10 @@ const LiveSession = () => {
       const newStatus: SessionStatus = { status: 'completed' };
       setSessionStatus(newStatus);
       triggerSessionDataRefresh();
+      
+      // Clear active session status from localStorage and dispatch event
+      localStorage.removeItem('activeSession');
+      window.dispatchEvent(new CustomEvent('sessionStatusChange', { detail: { activeSession: false } }));
 
     } catch (error: any) {
       console.error("Error ending session:", error);
@@ -253,9 +270,18 @@ const LiveSession = () => {
           onClose={() => !isProcessing && setShowStartConfirm(false)}
           onConfirm={handleStartSessionConfirm}
           title="Start Live Session"
-          description="Are you sure you want to start the live session? Once started, jurors will be able to join and participate."
+          description={
+            <div className="space-y-3">
+              <p>Are you sure you want to start the live session? Once started, jurors will be able to join and participate.</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                <p className="font-medium">✨ One-Time Session</p>
+                <p className="mt-1">This is a unique, one-time session designed to capture authentic juror responses. Once started, this session will run once and cannot be restarted, ensuring the integrity and authenticity of your data collection.</p>
+              </div>
+            </div>
+          }
           confirmText="Start Session"
           isLoading={isProcessing}
+          icon={PlayCircle}
         />
 
         <ConfirmationDialog

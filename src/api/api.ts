@@ -381,6 +381,29 @@ export const getJurorsByStrikeTypeApi = async (
   }
 };
 
+/**
+ * Update juror strike recommendation manually
+ */
+export const updateJurorStrikeApi = async (
+  sessionId: string,
+  jurorId: string,
+  strikeData: {
+    strikeRecommendation: "STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE" | null;
+    strikeReason?: string;
+  }
+) => {
+  try {
+    const response = await BaseUrl.put(
+      `/scores/session/${sessionId}/juror/${jurorId}/strike`,
+      strikeData
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating juror strike:", error);
+    throw error;
+  }
+};
+
 // Get detailed assessment for a specific response
 export const getResponseAssessmentApi = async (responseId: string) => {
   try {

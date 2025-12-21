@@ -8,6 +8,46 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Check for active session and auto-close sidebar
+  useEffect(() => {
+    const checkActiveSession = () => {
+      const activeSession = localStorage.getItem('activeSession') === 'true';
+      if (activeSession) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    checkActiveSession();
+    
+    // Listen for storage changes (when session starts/ends in other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'activeSession') {
+        if (e.newValue === 'true') {
+          setIsSidebarOpen(false);
+        } else {
+          setIsSidebarOpen(true);
+        }
+      }
+    };
+
+    // Listen for custom event (when session starts/ends in same tab)
+    const handleSessionStatusChange = (e: CustomEvent) => {
+      if (e.detail?.activeSession === true) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('sessionStatusChange', handleSessionStatusChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sessionStatusChange', handleSessionStatusChange as EventListener);
+    };
+  }, []);
+
   // Detect screen width and close sidebar on mobile by default
   useEffect(() => {
     const checkMobile = () => {

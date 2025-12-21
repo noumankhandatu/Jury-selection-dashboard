@@ -1,54 +1,23 @@
-import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Question, QuestionType } from '@/types/questions';
-import { getCaseQuestionsApi } from '@/api/api';
 import { QuestionRowShimmer } from '@/components/shimmer/question-row';
 import { Pencil } from 'lucide-react';
 
 interface QuestionListPanelProps {
-  selectedCaseId?: string;
   onSelectQuestion: (question: Question) => void;
   onEditQuestion?: (question: Question, index: number) => void;
   questions: Question[];
-  setQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
+  isQuestionLoading: boolean;
 }
 
 const QuestionListPanel = ({
-  selectedCaseId,
   onSelectQuestion,
   onEditQuestion,
-  setQuestions,
-  questions
+  questions,
+  isQuestionLoading,
 }: QuestionListPanelProps) => {
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (selectedCaseId) {
-      fetchQuestions();
-    }
-  }, [selectedCaseId]);
-
-  const fetchQuestions = async () => {
-    if (!selectedCaseId) return;
-    try {
-      setLoading(true);
-      const response = await getCaseQuestionsApi(selectedCaseId);
-
-      // Convert percentage from 10-100 to 1-10 for display
-      const questionsWithConvertedPercentage = (response.questions || []).map((q: Question) => ({
-        ...q,
-        tags: q.tags || [],
-        percentage: Math.round((q.percentage || 50) / 10)
-      }));
-
-      setQuestions(questionsWithConvertedPercentage);
-    } catch (error) {
-      console.error("Failed to fetch questions:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getQuestionTypeIcon = (type: QuestionType) => {
     switch (type) {
@@ -75,7 +44,7 @@ const QuestionListPanel = ({
       </div>
 
       <div className="flex-1 overflow-auto p-3 sm:p-4 space-y-3">
-        {loading ? (
+        {isQuestionLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <QuestionRowShimmer key={i} />

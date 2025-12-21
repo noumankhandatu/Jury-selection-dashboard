@@ -10,6 +10,7 @@ import {
   createQuestionApi,
   updateQuestionApi,
   suggestAIQuestionsApi,
+  getCaseQuestionsApi,
 } from "@/api/api";
 import QuestionAnswerPanel from './QuestionAnswerPanel';
 import QuestionListPanel from './QuestionListPanel';
@@ -30,6 +31,8 @@ const CourtroomLayout = ({
   const [showAddQuestionDialog, setShowAddQuestionDialog] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editingQuestion, setEditingQuestion] = useState<{ question: Question; index: number } | null>(null);
+  const [isQuestionLoading, setIsQuestionLoading] = useState(false);
+
 
   // Answer states
   const [answer, setAnswer] = useState('');
@@ -317,7 +320,33 @@ const CourtroomLayout = ({
     } else {
       resetAnswerFields();
     }
-  }, [selectedJurorIds, selectedQuestion, jurorResponses]);
+  }, [selectedJurorIds, jurorResponses]);
+
+  useEffect(() => {
+    if (selectedCaseId) {
+      (async () => {
+        if (!selectedCaseId) return;
+        try {
+          setIsQuestionLoading(true);
+          const response = await getCaseQuestionsApi(selectedCaseId);
+
+          // Convert percentage from 10-100 to 1-10 for display
+          const questionsWithConvertedPercentage = (response.questions || []).map((q: Question) => ({
+            ...q,
+            tags: q.tags || [],
+            percentage: Math.round((q.percentage || 50) / 10)
+          }));
+
+          setQuestions(questionsWithConvertedPercentage);
+        } catch (error) {
+          console.error("Failed to fetch questions:", error);
+        } finally {
+          setIsQuestionLoading(false);
+        }
+      })();
+    }
+  }, [selectedCaseId]);
+
 
   return (
     <div className="h-screen flex flex-col bg-slate-50">
@@ -366,10 +395,9 @@ const CourtroomLayout = ({
             />
           ) : (
             <QuestionListPanel
-              selectedCaseId={selectedCaseId}
               onSelectQuestion={handleSelectQuestion}
               questions={questions}
-              setQuestions={setQuestions}
+              isQuestionLoading={isQuestionLoading}
               onEditQuestion={handleOpenEditQuestion}
             />
           )}

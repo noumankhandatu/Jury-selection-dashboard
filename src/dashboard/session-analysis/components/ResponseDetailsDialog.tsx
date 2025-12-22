@@ -61,8 +61,8 @@ export function ResponseDetailsDialog({
       } catch (e: any) {
         setJurorDetailError(
           e?.response?.data?.message ||
-          e?.message ||
-          "Failed to load juror analysis"
+            e?.message ||
+            "Failed to load juror analysis"
         );
       } finally {
         setJurorDetailLoading(false);
@@ -89,7 +89,10 @@ export function ResponseDetailsDialog({
             <div className="flex items-center gap-4 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
               <Avatar className="h-12 w-12 ring-2 ring-blue-100">
                 <AvatarImage
-                  src={generateAvatar(jurorDetail?.score?.juror?.name || "", jurorDetail?.score?.juror?.gender)}
+                  src={generateAvatar(
+                    jurorDetail?.score?.juror?.name || "",
+                    jurorDetail?.score?.juror?.gender
+                  )}
                   alt={jurorDetail?.score?.juror?.name}
                 />
                 <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
@@ -100,7 +103,9 @@ export function ResponseDetailsDialog({
                 <span className="block text-sm font-semibold">
                   #{jurorDetail?.score?.juror?.jurorNumber}
                 </span>
-                <span className="text-sm ml-1">{jurorDetail?.score?.juror?.name || "—"}</span>
+                <span className="text-sm ml-1">
+                  {jurorDetail?.score?.juror?.name || "—"}
+                </span>
               </div>
             </div>
 
@@ -130,7 +135,9 @@ export function ResponseDetailsDialog({
                     </div>
                   </div>
                   <div className="rounded-lg border border-violet-100 bg-violet-50 p-3 text-center">
-                    <div className="text-violet-700 text-sm">Suitability Rank</div>
+                    <div className="text-violet-700 text-sm">
+                      Suitability Rank
+                    </div>
                     <div className="mt-1 text-lg font-bold text-violet-700">
                       {jurorDetail.score.suitabilityRank?.toFixed(2) ?? "—"}
                     </div>
@@ -138,19 +145,22 @@ export function ResponseDetailsDialog({
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
                     <div className="text-slate-700 text-sm">Questions</div>
                     <div className="mt-1 text-lg font-bold text-slate-800">
-                      {jurorDetail?.scoreAnalysis?.totalQuestions?.toFixed(2) ?? "—"}
+                      {jurorDetail?.scoreAnalysis?.totalQuestions?.toFixed(2) ??
+                        "—"}
                     </div>
                   </div>
                   <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-center">
                     <div className="text-emerald-700 text-sm">High</div>
                     <div className="mt-1 text-lg font-bold text-emerald-700">
-                      {jurorDetail?.scoreAnalysis?.highScores?.toFixed(2) ?? "—"}
+                      {jurorDetail?.scoreAnalysis?.highScores?.toFixed(2) ??
+                        "—"}
                     </div>
                   </div>
                   <div className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-center">
                     <div className="text-amber-700 text-sm">Medium</div>
                     <div className="mt-1 text-lg font-bold text-amber-700">
-                      {jurorDetail?.scoreAnalysis?.mediumScores?.toFixed(2) ?? "—"}
+                      {jurorDetail?.scoreAnalysis?.mediumScores?.toFixed(2) ??
+                        "—"}
                     </div>
                   </div>
                   <div className="rounded-lg border border-rose-100 bg-rose-50 p-3 text-center">
@@ -162,7 +172,8 @@ export function ResponseDetailsDialog({
                   <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-center">
                     <div className="text-indigo-700 text-sm">Avg Score</div>
                     <div className="mt-1 text-lg font-bold text-indigo-700">
-                      {jurorDetail?.scoreAnalysis?.averageScore?.toFixed(2) ?? "—"}
+                      {jurorDetail?.scoreAnalysis?.averageScore?.toFixed(2) ??
+                        "—"}
                     </div>
                   </div>
                 </div>
@@ -271,27 +282,37 @@ export function ResponseDetailsDialog({
 
             {/* Bias Analysis */}
             {Array.isArray(jurorDetail?.biasAnalysis) && (
-              <div className="rounded-xl border border-amber-100 bg-white p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-sm font-semibold mb-2">
-                  <Scale className="h-4 w-4 text-amber-600" /> Bias Analysis
+              <div className="rounded-xl border border-amber-100 bg-white shadow-sm">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-amber-50">
+                  <Scale className="h-4 w-4 text-amber-600" />
+                  <span className="text-base font-semibold text-slate-900">
+                    Bias Analysis
+                  </span>
                 </div>
                 {jurorDetail.biasAnalysis.length > 0 ? (
-                  <div className="space-y-2">
+                  <ul className="divide-y divide-amber-50">
                     {jurorDetail.biasAnalysis.map((b: any, idx: number) => (
-                      <div key={idx} className="text-sm text-slate-800">
+                      <li key={idx} className="px-4 py-3 space-y-1">
                         {b.question && (
-                          <div className="text-sm text-muted-foreground mb-1">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
                             {b.question}
-                          </div>
+                          </p>
                         )}
                         {b.biasAnalysis && (
-                          <div className="text-base">{b.biasAnalysis}</div>
+                          <p className="text-sm text-slate-800 leading-relaxed">
+                            {b.biasAnalysis}
+                          </p>
                         )}
-                      </div>
+                        {!b.biasAnalysis && !b.question && (
+                          <p className="text-sm text-muted-foreground">
+                            No details provided.
+                          </p>
+                        )}
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 ) : (
-                  <div className="text-sm text-muted-foreground">
+                  <div className="px-4 py-3 text-sm text-muted-foreground">
                     No bias analysis listed.
                   </div>
                 )}

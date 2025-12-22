@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import TitleTag from "@/components/shared/tag/tag";
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
-import { exportSessionReport } from "./utils/exportReport";
+import { exportSessionReportHTML } from "./utils/exportReportHTML";
 import { itemVariants } from "@/utils/fn";
 import { Selectors } from "./components/Selectors";
 import { useSessionAnalysis } from "./hooks/useSessionAnalysis";
@@ -77,7 +77,7 @@ const [strikeRecommendations, setStrikeRecommendations] =
             <Button
               className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md hover:shadow-lg hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 border-0"
               onClick={() =>
-                exportSessionReport({ session: sessionDetail, sessionStats,strikeRecommendations })
+                exportSessionReportHTML({ session: sessionDetail, sessionStats,strikeRecommendations })
               }
             >
               <FileDown className="h-4 w-4 mr-2" /> Export PDF
@@ -94,13 +94,6 @@ const [strikeRecommendations, setStrikeRecommendations] =
           isLoading={isLoading}
           error={error}
         />
-        {selectedSession && (
-          <StrikeRecommendationsSection
-            sessionId={selectedSession.id}
-            sessionStatus={selectedSession.status || sessionDetail?.status}
-            onDataLoaded={setStrikeRecommendations}
-          />
-        )}
         {selectedCase && selectedSession && (
           <div className="space-y-6">
             <SessionOverview
@@ -115,7 +108,13 @@ const [strikeRecommendations, setStrikeRecommendations] =
                 if (bucket === "high") return fetchBestJurors(80);
               }}
             />
-
+            {selectedSession && (
+              <StrikeRecommendationsSection
+                sessionId={selectedSession.id}
+                sessionStatus={selectedSession.status || sessionDetail?.status}
+                onDataLoaded={setStrikeRecommendations}
+              />
+            )}
             <JurorResponses
               session={sessionDetail}
               sessionStats={sessionStats}

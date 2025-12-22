@@ -83,8 +83,9 @@ const mapBestJurorToDisplay = (
     workPhone: j.workPhone ?? "",
     employmentDuration: j.employmentDuration ?? "",
     children: j.children ?? "",
-    panelPosition: j.panelPosition ?? null,
-    jurorNumber: j.jurorNumber ?? "",
+    // Prefer values from the parent item in case the API flattens them
+    panelPosition: item?.panelPosition ?? j.panelPosition ?? "",
+    jurorNumber: item?.jurorNumber ?? j.jurorNumber ?? "",
     criminalCase: j.criminalCase ?? "",
     accidentalInjury: j.accidentalInjury ?? "",
     civilJury: j.civilJury ?? "",

@@ -5,6 +5,7 @@ import {
   getSessionsByCaseApi,
   getSessionStatisticsApi,
   getBestJurorsApi,
+  generateStrikeRecommendationsApi,
 } from "@/api/api";
 import type { Case as UISelectCase } from "@/components/shared/select-case";
 import type { SessionItem } from "@/components/shared/select-session";
@@ -82,6 +83,7 @@ export const useSessionAnalysis = () => {
           endTime: s.endTime,
           createdAt: s.createdAt,
           updatedAt: s.updatedAt,
+          summary: s.summary,
           _count: s._count,
         }));
         setSessions(transformed);
@@ -92,45 +94,111 @@ export const useSessionAnalysis = () => {
     fetchSessions();
   }, [selectedCase?.id]);
 
-  useEffect(() => {
-    const fetchDetail = async () => {
-      if (!selectedSession?.id) {
-        setSessionDetail(null);
-        setSelectedResponseId("");
-        return;
-      }
-      try {
-        const stats = await getSessionStatisticsApi(selectedSession.id);
-        setSessionStats(stats as ApiSessionStatisticsResponse);
-        // Provide minimal sessionDetail for existing consumers
+useEffect(() => {
+  const fetchDetail = async () => {
+    if (!selectedSession?.id) {
+      setSessionDetail(null);
+      setSelectedResponseId("");
+      return;
+    }
+    try {
+      const stats = await getSessionStatisticsApi(selectedSession.id);
+      setSessionStats(stats as ApiSessionStatisticsResponse);
+      
+      // Get summary from selectedSession (which comes from sessions list)
+      const sessionSummary = selectedSession.summary;
+      
+      // Provide minimal sessionDetail for existing consumers
+      const session: ApiSessionById = {
+        id: stats?.session?.id || selectedSession.id,
+        name: stats?.session?.name || selectedSession.name,
+        description: "",
+        status: selectedSession.status || "",
+        startTime: selectedSession.startTime || "",
+        endTime: selectedSession.endTime || null,
+        createdAt: selectedSession.createdAt || "",
+        updatedAt: selectedSession.updatedAt || "",
+        summary: sessionSummary, // ADDED SUMMARY HERE
+        caseId: stats?.session?.case?.id || "",
+        case: {
+          caseNumber: stats?.session?.case?.caseNumber || "",
+          caseName: stats?.session?.case?.caseName || "",
+          caseType: stats?.session?.case?.caseType || "",
+        },
+        assignments: [],
+        responses: [],
+        scores: [],
+      } as any;
+      setSessionDetail(session);
+    } catch (err: any) {
+      // Check if it's a token error (429) - don't break the page for token errors
+      const isTokenError = 
+        err?.response?.status === 429 || 
+        err?.response?.data?.error === "Insufficient AI tokens";
+      
+      if (isTokenError) {
+        // For token errors, keep existing data and just log the error
+        // The StrikeRecommendationsSection will handle token errors separately
+        console.warn("Token error in session statistics (non-critical):", err);
+        // Still try to set basic session detail from selectedSession data
         const session: ApiSessionById = {
-          id: stats?.session?.id,
-          name: stats?.session?.name,
-          description: "",
-          status: "",
-          startTime: "",
-          endTime: null,
-          createdAt: "",
-          updatedAt: "",
-          caseId: stats?.session?.case?.id || "",
+          id: selectedSession.id,
+          name: selectedSession.name,
+          description: selectedSession.description || "",
+          status: selectedSession.status || "",
+          startTime: selectedSession.startTime || "",
+          endTime: selectedSession.endTime || null,
+          createdAt: selectedSession.createdAt || "",
+          updatedAt: selectedSession.updatedAt || "",
+          summary: selectedSession.summary,
+          caseId: "",
           case: {
-            caseNumber: stats?.session?.case?.caseNumber || "",
-            caseName: stats?.session?.case?.caseName || "",
-            caseType: stats?.session?.case?.caseType || "",
+            caseNumber: "",
+            caseName: "",
+            caseType: "",
           },
           assignments: [],
           responses: [],
           scores: [],
         } as any;
         setSessionDetail(session);
-      } catch {
-        setSessionStats(null);
-        setSessionDetail(null);
-        setBestJurors(null);
+      } else {
+        // For other errors, only clear data if it's a critical error (not 404, etc.)
+        const isCriticalError = err?.response?.status >= 500 || !err?.response?.status;
+        if (isCriticalError) {
+          console.error("Critical error loading session details:", err);
+          setSessionStats(null);
+          setSessionDetail(null);
+          setBestJurors(null);
+        } else {
+          // For non-critical errors (like 404), keep basic session info
+          const session: ApiSessionById = {
+            id: selectedSession.id,
+            name: selectedSession.name,
+            description: selectedSession.description || "",
+            status: selectedSession.status || "",
+            startTime: selectedSession.startTime || "",
+            endTime: selectedSession.endTime || null,
+            createdAt: selectedSession.createdAt || "",
+            updatedAt: selectedSession.updatedAt || "",
+            summary: selectedSession.summary,
+            caseId: "",
+            case: {
+              caseNumber: "",
+              caseName: "",
+              caseType: "",
+            },
+            assignments: [],
+            responses: [],
+            scores: [],
+          } as any;
+          setSessionDetail(session);
+        }
       }
-    };
-    fetchDetail();
-  }, [selectedSession?.id]);
+    }
+  };
+  fetchDetail();
+}, [selectedSession?.id]);
 
   // assessment fetching removed as it's unused in UI
 

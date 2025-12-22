@@ -48,8 +48,9 @@ const mapBestJurorToDisplay = (
     workPhone: j.workPhone ?? "",
     employmentDuration: j.employmentDuration ?? "",
     children: j.children ?? "",
-    panelPosition: j.panelPosition ?? "",
-    jurorNumber: j.jurorNumber ?? "",
+    // Prefer panelPosition/jurorNumber from the bestJuror entry itself (in case the API flattens these)
+    panelPosition: item?.panelPosition ?? j.panelPosition ?? "",
+    jurorNumber: item?.jurorNumber ?? j.jurorNumber ?? "",
     criminalCase: j.criminalCase ?? "",
     accidentalInjury: j.accidentalInjury ?? "",
     civilJury: j.civilJury ?? "",
@@ -84,13 +85,19 @@ export const BestJurorsGrid = ({
       <CardContent className="p-4">
         {bestJurors.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {bestJurors.map((bj: any) => {
+            {bestJurors
+              .filter((bj: any) => {
+                // Filter out struck jurors from Top Jurors - they should only appear in strike categories
+                return !(bj.strikeRecommendation === "STRIKE_FOR_CAUSE" || bj.strikeRecommendation === "PEREMPTORY_STRIKE");
+              })
+              .map((bj: any) => {
               const mapped = mapBestJurorToDisplay(bj, session);
               return (
                 <JurorMiniCard
                   key={mapped.id}
                   juror={mapped.juror}
                   score={typeof mapped.score === "number" ? mapped.score : null}
+                  strikeRecommendation={bj.strikeRecommendation || null}
                   onDetails={() => {
                     // TODO: Navigate to juror details or open modal
                     console.log("View details for juror:", mapped.juror.id);

@@ -67,6 +67,17 @@ export const getCaseJurorsApi = async (caseId: string) => {
   }
 };
 
+// Add this to your API functions file (e.g., api.ts)
+export const postSessionSummaryApi = async (sessionId: string, summary: string) => {
+  try {
+    const response = await BaseUrl.put(`/sessions/${sessionId}/summary`, { summary });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error posting session summary:", error);
+    throw error;
+  }
+};
+
 // Create a new question for a case
 export const createQuestionApi = async (
   caseId: string,
@@ -74,6 +85,8 @@ export const createQuestionApi = async (
     question: string;
     questionType: string;
     options?: string[];
+    tags?: string[];
+    percentage?:number;
     isRequired?: boolean;
     order?: number;
   }
@@ -119,6 +132,8 @@ export const updateQuestionApi = async (
     question?: string;
     questionType?: string;
     options?: string[];
+    tags?: string[];
+    percentage?:number;
     isRequired?: boolean;
     order?: number;
   }
@@ -197,6 +212,23 @@ export const assignQuestionsToJurorsApi = async (payload: {
     throw error;
   }
 };
+
+
+// Add Juror NoteApi
+export const addJurorNoteApi = async (payload: {
+  sessionId: string;
+  jurorId: string;
+  note: string;
+}) => {
+  try {
+    const response = await BaseUrl.post("/juror-notes", payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error adding juror note:", error);
+    throw error;
+  }
+};
+
 
 // Save a juror response
 export const saveJurorResponseApi = async (payload: {
@@ -345,6 +377,29 @@ export const getJurorsByStrikeTypeApi = async (
     return response.data;
   } catch (error: any) {
     console.error("Error fetching jurors by strike type:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update juror strike recommendation manually
+ */
+export const updateJurorStrikeApi = async (
+  sessionId: string,
+  jurorId: string,
+  strikeData: {
+    strikeRecommendation: "STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE" | null;
+    strikeReason?: string;
+  }
+) => {
+  try {
+    const response = await BaseUrl.put(
+      `/scores/session/${sessionId}/juror/${jurorId}/strike`,
+      strikeData
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating juror strike:", error);
     throw error;
   }
 };

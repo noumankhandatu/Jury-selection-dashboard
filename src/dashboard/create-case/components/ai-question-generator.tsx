@@ -1,13 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, CheckSquare, Square, Plus } from "lucide-react";
+import { Sparkles, Loader2, CheckSquare, Square, Plus, Tag, Percent, Type } from "lucide-react";
 import { toast } from "sonner";
 import { generateAIQuestionsApi } from "@/api/api";
+import { Question, QuestionType } from "../../../types/questions";
 
 interface AIQuestionGeneratorProps {
   caseData: {
@@ -16,7 +15,7 @@ interface AIQuestionGeneratorProps {
     description: string;
     jurorTraits: string;
   };
-  onAddQuestions: (questions: string[]) => void;
+  onAddQuestions: (questions: Question[]) => void;
 }
 
 export default function AIQuestionGenerator({
@@ -24,7 +23,7 @@ export default function AIQuestionGenerator({
   onAddQuestions,
 }: AIQuestionGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<Question[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<Set<number>>(
     new Set()
   );
@@ -71,54 +70,6 @@ export default function AIQuestionGenerator({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _parseQuestionsFromResponse = (content: string): string[] => {
-    try {
-      // Try to parse JSON response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsedData = JSON.parse(jsonMatch[0]);
-        if (parsedData && Array.isArray(parsedData.questions)) {
-          return parsedData.questions
-            .filter(
-              (q: any) => q && typeof q === "string" && q.trim().length > 0
-            )
-            .map((q: string) => q.trim());
-        }
-      }
-    } catch (parseError) {
-      console.error("JSON parsing failed:", parseError);
-    }
-
-    // Fallback: extract questions manually
-    const lines = content.split(/[\n\r]+/);
-    const questions: string[] = [];
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-
-      // Skip empty lines and headers
-      if (!trimmedLine || trimmedLine.length < 10) continue;
-
-      // Remove numbering and clean up
-      const cleanedLine = trimmedLine
-        .replace(/^\d+\.\s*/, "") // Remove "1. " style numbering
-        .replace(/^[-*]\s*/, "") // Remove "- " or "* " bullets
-        .replace(/^["']|["']$/g, "") // Remove surrounding quotes
-        .trim();
-
-      // Check if it looks like a question
-      if (
-        cleanedLine.length > 10 &&
-        (cleanedLine.includes("?") || cleanedLine.toLowerCase().includes("you"))
-      ) {
-        questions.push(cleanedLine);
-      }
-    }
-
-    return questions.slice(0, 10); // Limit to 10 questions
-  };
-
   const toggleQuestionSelection = (index: number) => {
     const newSelected = new Set(selectedQuestions);
     if (newSelected.has(index)) {
@@ -148,6 +99,15 @@ export default function AIQuestionGenerator({
       toast.success(`Added ${questionsToAdd.length} questions to your case!`);
       setSuggestedQuestions([]);
       setSelectedQuestions(new Set());
+    }
+  };
+
+  const getQuestionTypeDisplay = (type: QuestionType) => {
+    switch (type) {
+      case 'YES_NO': return 'Yes/No';
+      case 'RATING': return 'Rating';
+      case 'TEXT': return 'Text';
+      default: return type;
     }
   };
 
@@ -184,8 +144,7 @@ export default function AIQuestionGenerator({
               )}
             </Button>
             <p className="text-sm text-purple-600 mt-2">
-              AI will generate relevant voir dire questions based on your case
-              details
+              AI will generate relevant voir dire questions based on your case details
             </p>
           </div>
         ) : (
@@ -235,11 +194,11 @@ export default function AIQuestionGenerator({
               </div>
             </div>
 
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-3 max-h-96 overflow-y-auto">
               {suggestedQuestions.map((question, index) => (
                 <div
                   key={index}
-                  className={`flex items-start space-x-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer ${
+                  className={`flex items-start space-x-3 p-4 rounded-lg border transition-all duration-200 cursor-pointer ${
                     selectedQuestions.has(index)
                       ? "bg-purple-100 border-purple-300 shadow-sm"
                       : "bg-white border-purple-200 hover:border-purple-300 hover:bg-purple-50"
@@ -249,12 +208,56 @@ export default function AIQuestionGenerator({
                   <Checkbox
                     checked={selectedQuestions.has(index)}
                     onChange={() => toggleQuestionSelection(index)}
-                    className="mt-1"
+                    className="mt-0.5"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      {question}
+                    <p className="text-sm font-medium text-gray-800 leading-relaxed mb-2">
+                      {question.question}
                     </p>
+                    
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Question Type */}
+                      <div className="flex items-center space-x-1">
+                        <Type className="h-3 w-3 text-gray-400" />
+                        <span className="text-xs text-gray-600">
+                          {getQuestionTypeDisplay(question.questionType)}
+                        </span>
+                      </div>
+                      
+                      {/* Percentage */}
+                      <div className="flex items-center space-x-1">
+                        <Percent className="h-3 w-3 text-gray-400" />
+                        <span className="text-xs font-medium text-gray-700">
+                          {question.percentage}% relevant
+                        </span>
+                      </div>
+                      
+                      {/* Tags */}
+                      {question.tags && question.tags.length > 0 && (
+                        <div className="flex items-center space-x-1">
+                          <Tag className="h-3 w-3 text-gray-400" />
+                          <div className="flex flex-wrap gap-1">
+                            {question.tags.slice(0, 3).map((tag, tagIndex) => (
+                              <Badge
+                                key={tagIndex}
+                                variant="outline"
+                                className="text-xs bg-gray-50 border-gray-200 text-gray-700"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                            {question.tags.length > 3 && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-gray-50 border-gray-200 text-gray-700"
+                              >
+                                +{question.tags.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

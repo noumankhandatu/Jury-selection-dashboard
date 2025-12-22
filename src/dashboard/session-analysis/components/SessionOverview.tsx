@@ -29,9 +29,9 @@ import { generateAvatar } from "@/dashboard/manage-jurors/components/utils";
 import { BiasGauge } from "@/components/shared/bias-gauge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { generateStrikeRecommendationsApi, getJurorsByStrikeTypeApi } from "@/api/api";
+import { getJurorsByStrikeTypeApi } from "@/api/api";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, Scale, X } from "lucide-react";
+import { AlertCircle, Scale, X } from "lucide-react";
 // no Badge used here
 import {
   Table,
@@ -83,8 +83,9 @@ const mapBestJurorToDisplay = (
     workPhone: j.workPhone ?? "",
     employmentDuration: j.employmentDuration ?? "",
     children: j.children ?? "",
-    panelPosition: j.panelPosition ?? "",
-    jurorNumber: j.jurorNumber ?? "",
+    // Prefer values from the parent item in case the API flattens them
+    panelPosition: item?.panelPosition ?? j.panelPosition ?? "",
+    jurorNumber: item?.jurorNumber ?? j.jurorNumber ?? "",
     criminalCase: j.criminalCase ?? "",
     accidentalInjury: j.accidentalInjury ?? "",
     civilJury: j.civilJury ?? "",
@@ -117,7 +118,6 @@ export function SessionOverview({
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [selectedStrikeType, setSelectedStrikeType] = useState<"STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE" | null>(null);
-  const [isGeneratingStrikes, setIsGeneratingStrikes] = useState(false);
   const [strikeJurors, setStrikeJurors] = useState<any[] | null>(null);
   const [strikeCounts, setStrikeCounts] = useState<{ strikeForCause: number; peremptoryStrike: number } | null>(null);
   
@@ -281,56 +281,8 @@ export function SessionOverview({
           {/* Strike Categories - Show when "low" bucket is selected */}
           {selectedBucket === "low" && (
             <div className="mt-6 space-y-4">
-              <div className="flex items-center justify-between">
+              <div>
                 <h3 className="text-lg font-semibold text-gray-900">Strike Categories</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={async () => {
-                    if (!effectiveSessionId) return;
-                    setIsGeneratingStrikes(true);
-                    try {
-                      const result = await generateStrikeRecommendationsApi(effectiveSessionId);
-                      
-                      // Update counts from response
-                      if (result.summary) {
-                        setStrikeCounts({
-                          strikeForCause: result.summary.strikeForCause,
-                          peremptoryStrike: result.summary.peremptoryStrike
-                        });
-                      } else if (result.existingRecommendations) {
-                        setStrikeCounts({
-                          strikeForCause: result.existingRecommendations.strikeForCause,
-                          peremptoryStrike: result.existingRecommendations.peremptoryStrike
-                        });
-                      }
-                      
-                      if (result.recommendationsGenerated > 0) {
-                        toast.success(`Generated strike recommendations for ${result.recommendationsGenerated} juror(s)`);
-                      } else {
-                        toast.info(result.message || "All low-scoring jurors already have recommendations. Click on a category to view them.");
-                      }
-                    } catch (error: any) {
-                      toast.error(error?.response?.data?.error || "Failed to generate strike recommendations");
-                    } finally {
-                      setIsGeneratingStrikes(false);
-                    }
-                  }}
-                  disabled={isGeneratingStrikes}
-                  className="h-9"
-                >
-                  {isGeneratingStrikes ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="h-4 w-4 mr-2" />
-                      Generate Strike Recommendations
-                    </>
-                  )}
-                </Button>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -492,7 +444,7 @@ export function SessionOverview({
                               <TableHead className="text-slate-700 font-semibold">
                                 <div className="flex items-center gap-2">
                                   <Hash className="h-4 w-4 text-indigo-600" />{" "}
-                                  Juror ID
+                                  Panel Position
                                 </div>
                               </TableHead>
                               <TableHead className="text-right text-slate-700 font-semibold">
@@ -552,8 +504,11 @@ export function SessionOverview({
                                   <TableCell className="text-slate-700">
                                     <div className="flex items-center gap-2">
                                       <Hash className="h-4 w-4 text-indigo-500" />
-                                      {mapped.juror.jurorNumber ||
-                                        mapped.juror.id}
+                                      {mapped.juror.panelPosition !== null && mapped.juror.panelPosition !== undefined
+                                        ? `#${mapped.juror.panelPosition}`
+                                        : mapped.juror.jurorNumber
+                                        ? `#${mapped.juror.jurorNumber}`
+                                        : mapped.juror.id}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right">
@@ -614,6 +569,7 @@ export function SessionOverview({
                                 ? mapped.score
                                 : null
                             }
+                            strikeRecommendation={bj.strikeRecommendation || null}
                             onDetails={() => {
                               setActiveResponse({
                                 id: mapped.id,
@@ -680,6 +636,12 @@ export function SessionOverview({
                   : bestJurors || [];
 
                 const filtered = jurorsToDisplay.filter((bj: any) => {
+                  // Filter out struck jurors from Top Jurors (high/mid buckets)
+                  // They should only appear in the "low" bucket
+                  if (selectedBucket !== "low" && (bj.strikeRecommendation === "STRIKE_FOR_CAUSE" || bj.strikeRecommendation === "PEREMPTORY_STRIKE")) {
+                    return false;
+                  }
+                  
                   const mapped = mapBestJurorToDisplay(bj, session);
                   const q = search.trim().toLowerCase();
                   if (!q) return true;
@@ -704,7 +666,7 @@ export function SessionOverview({
                             <TableHead className="text-slate-700 font-semibold">
                               <div className="flex items-center gap-2">
                                 <Hash className="h-4 w-4 text-indigo-600" />{" "}
-                                Juror ID
+                                Panel Position
                               </div>
                             </TableHead>
                             <TableHead className="text-right text-slate-700 font-semibold">
@@ -764,8 +726,11 @@ export function SessionOverview({
                                 <TableCell className="text-slate-700">
                                   <div className="flex items-center gap-2">
                                     <Hash className="h-4 w-4 text-indigo-500" />
-                                    {mapped.juror.jurorNumber ||
-                                      mapped.juror.id}
+                                    {mapped.juror.panelPosition !== null && mapped.juror.panelPosition !== undefined
+                                      ? `#${mapped.juror.panelPosition}`
+                                      : mapped.juror.jurorNumber
+                                      ? `#${mapped.juror.jurorNumber}`
+                                      : mapped.juror.id}
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -826,6 +791,7 @@ export function SessionOverview({
                               ? mapped.score
                               : null
                           }
+                          strikeRecommendation={bj.strikeRecommendation || null}
                           onDetails={() => {
                             setActiveResponse({
                               id: mapped.id,

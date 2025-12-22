@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState } from "react";
-import { FileText, Plus, Edit, Trash2, X, Save } from "lucide-react";
+import { FileText, Plus, Edit, Trash2, X, Save, Type, Percent, Tag as TagIcon, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { getCaseQuestionsApi, createQuestionApi, updateQuestionApi, deleteQuestionApi } from "@/api/api";
 
@@ -19,12 +20,22 @@ interface Case {
   jurorTraits: string;
 }
 
+type QuestionType = 'YES_NO' | 'TEXT' | 'RATING';
+
 interface Question {
   id: string;
+  asked?: string;
   question: string;
-  questionType: string;
-  order: number;
+  tags: string[];
+  percentage: number;
+  questionType: QuestionType;
 }
+
+const DEFAULT_TAGS = [
+  "bias", "experience", "background", "knowledge",
+  "attitude", "relationship", "presumption_of_innocence",
+  "prejudice", "expertise", "conflict", "familiarity"
+];
 
 interface EditCaseDialogProps {
   isOpen: boolean;
@@ -46,11 +57,23 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [newQuestion, setNewQuestion] = useState({
     question: "",
-    questionType: "TEXT",
+    questionType: "TEXT" as QuestionType,
+    tags: [] as string[],
+    percentage: 5,
   });
+
+  const getQuestionTypeDisplay = (type: QuestionType) => {
+    switch (type) {
+      case 'YES_NO': return 'Yes/No';
+      case 'RATING': return 'Rating';
+      case 'TEXT': return 'Text';
+      default: return type;
+    }
+  };
 
   useEffect(() => {
     if (isOpen && editingCase) {
@@ -64,7 +87,12 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
     setLoadingQuestions(true);
     try {
       const response = await getCaseQuestionsApi(editingCase.id);
-      setQuestions(response.questions || []);
+      // Convert percentage from 0-100 to 1-10 for display
+      const questionsWithConvertedPercentage = (response.questions || []).map((q: Question) => ({
+        ...q,
+        percentage: Math.round(q.percentage / 10)
+      }));
+      setQuestions(questionsWithConvertedPercentage);
     } catch (error) {
       console.error("Failed to fetch questions:", error);
       setQuestions([]);
@@ -77,12 +105,16 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
     if (!editingCase || !newQuestion.question.trim()) return;
 
     try {
+      // Convert percentage from 1-10 to 10-100 for API
       await createQuestionApi(editingCase.id, {
         question: newQuestion.question.trim(),
-        questionType: "TEXT",
+        questionType: newQuestion.questionType,
+        tags: newQuestion.tags,
+        percentage: newQuestion.percentage * 10,
+        order: questions.length + 1,
       });
 
-      setNewQuestion({ question: "", questionType: "TEXT" });
+      setNewQuestion({ question: "", questionType: "TEXT", tags: [], percentage: 5 });
       setIsAddingQuestion(false);
       fetchQuestions();
     } catch (error) {
@@ -94,11 +126,18 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
     if (!editingCase || !editingQuestion || !editingQuestion.question.trim()) return;
 
     try {
+      const currentIndex = questions.findIndex(q => q.id === editingQuestion.id);
+
+      // Convert percentage from 1-10 to 10-100 for API
       await updateQuestionApi(editingQuestion.id, {
         question: editingQuestion.question.trim(),
-        questionType: "TEXT",
+        questionType: editingQuestion.questionType,
+        tags: editingQuestion.tags,
+        percentage: editingQuestion.percentage * 10,
+        order: currentIndex + 1,
       });
 
+      setEditingQuestionId(null);
       setEditingQuestion(null);
       fetchQuestions();
     } catch (error) {
@@ -111,10 +150,20 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
 
     try {
       await deleteQuestionApi(questionId);
-      await fetchQuestions(); // Refresh questions
+      await fetchQuestions();
     } catch (error) {
       console.error("Failed to delete question:", error);
     }
+  };
+
+  const startEditQuestion = (question: Question) => {
+    setEditingQuestionId(question.id);
+    setEditingQuestion({ ...question });
+  };
+
+  const cancelEditQuestion = () => {
+    setEditingQuestionId(null);
+    setEditingQuestion(null);
   };
 
   if (!editingCase) return null;
@@ -140,30 +189,77 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
               </Button>
             </div>
 
-            {/* Add Question Form */}
+            {/* Add Question Form - Shows at top */}
             {isAddingQuestion && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="space-y-4 p-4 border rounded-lg bg-muted/50"
+                className="space-y-3 p-3 border rounded-lg bg-white shadow-sm"
               >
-                <div className="space-y-2">
-                  <Label htmlFor="question">Question</Label>
-                  <Input
-                    id="question"
-                    placeholder="Enter your question..."
-                    value={newQuestion.question}
-                    onChange={(e) => setNewQuestion((prev) => ({ ...prev, question: e.target.value }))}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button onClick={handleAddQuestion} disabled={!newQuestion.question.trim()}>
-                    Add Question
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">New Question</Label>
+                  <Button variant="ghost" size="sm" onClick={() => setIsAddingQuestion(false)}>
+                    <X className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" onClick={() => setIsAddingQuestion(false)}>
+                </div>
+                <Input
+                  placeholder="Question text..."
+                  value={newQuestion.question}
+                  onChange={(e) => setNewQuestion((prev) => ({ ...prev, question: e.target.value }))}
+                  className="text-sm"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Type</Label>
+                    <select
+                      className="w-full px-2 py-1.5 text-sm border rounded-md"
+                      value={newQuestion.questionType}
+                      onChange={(e) => setNewQuestion((prev) => ({ ...prev, questionType: e.target.value as QuestionType }))}
+                    >
+                      <option value="TEXT">Text</option>
+                      <option value="YES_NO">Yes/No</option>
+                      <option value="RATING">Rating</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Relevance (1-10)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={newQuestion.percentage}
+                      onChange={(e) => setNewQuestion((prev) => ({ ...prev, percentage: parseInt(e.target.value) || 1 }))}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Tags</Label>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {DEFAULT_TAGS.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() =>
+                          setNewQuestion((prev) => ({
+                            ...prev,
+                            tags: prev.tags.includes(tag) ? prev.tags.filter((t) => t !== tag) : [...prev.tags, tag],
+                          }))
+                        }
+                        className={`px-2 py-0.5 text-xs rounded-full ${newQuestion.tags.includes(tag) ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+                          }`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleAddQuestion} disabled={!newQuestion.question.trim()}>
+                    Add
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setIsAddingQuestion(false)}>
                     Cancel
                   </Button>
                 </div>
@@ -172,62 +268,183 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
 
             {/* Questions List */}
             {loadingQuestions ? (
-              <div className="text-center py-8 text-gray-500">Loading questions...</div>
-            ) : questions.length > 0 ? (
-              <div className="space-y-3">
-                {questions.map((question, index) => (
-                  <div key={question.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium">
-                        {index + 1}. {question.question}
-                      </p>
-                    </div>
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="p-3 border rounded-lg bg-white animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setEditingQuestion(question)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDeleteQuestion(question.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="h-3 bg-gray-200 rounded w-16"></div>
+                      <div className="h-3 bg-gray-200 rounded w-20"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24"></div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            ) : questions.length > 0 ? (
+              <div className="space-y-2">
+                {questions.map((question, index) => (
+                  <div key={question.id}>
+                    {editingQuestionId === question.id ? (
+                      // Edit Form in place
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="space-y-3 p-3 border rounded-lg bg-blue-50 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold">Edit Question</Label>
+                          <Button variant="ghost" size="sm" onClick={cancelEditQuestion}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Input
+                          placeholder="Question text..."
+                          value={editingQuestion?.question || ""}
+                          onChange={(e) => setEditingQuestion((prev) => (prev ? { ...prev, question: e.target.value } : null))}
+                          className="text-sm"
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Type</Label>
+                            <select
+                              className="w-full px-2 py-1.5 text-sm border rounded-md"
+                              value={editingQuestion?.questionType || "TEXT"}
+                              onChange={(e) => setEditingQuestion((prev) => (prev ? { ...prev, questionType: e.target.value as QuestionType } : null))}
+                            >
+                              <option value="TEXT">Text</option>
+                              <option value="YES_NO">Yes/No</option>
+                              <option value="RATING">Rating</option>
+                            </select>
+                          </div>
+                          <div>
+                            <Label className="text-xs">Relevance (1-10)</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="10"
+                              value={editingQuestion?.percentage || 1}
+                              onChange={(e) => setEditingQuestion((prev) => (prev ? { ...prev, percentage: parseInt(e.target.value) || 1 } : null))}
+                              className="text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Tags</Label>
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {DEFAULT_TAGS.map((tag) => (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() =>
+                                  setEditingQuestion((prev) =>
+                                    prev
+                                      ? {
+                                        ...prev,
+                                        tags: prev.tags.includes(tag) ? prev.tags.filter((t) => t !== tag) : [...prev.tags, tag],
+                                      }
+                                      : null
+                                  )
+                                }
+                                className={`px-2 py-0.5 text-xs rounded-full ${editingQuestion?.tags.includes(tag) ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"
+                                  }`}
+                              >
+                                {tag}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleUpdateQuestion} disabled={!editingQuestion?.question.trim()}>
+                            Update
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={cancelEditQuestion}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      // Display Question
+                      <div className="group flex items-start justify-between p-3 border rounded-lg bg-white hover:shadow-sm transition-shadow">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 leading-relaxed mb-3">
+                            {question.question}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Question Type */}
+                            <div className="flex items-center space-x-1">
+                              <Type className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-600">
+                                {getQuestionTypeDisplay(question.questionType)}
+                              </span>
+                            </div>
+
+                            {/* Percentage */}
+                            <div className="flex items-center space-x-1">
+                              <Percent className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs font-medium text-gray-700">
+                                {question.percentage * 10}% relevant
+                              </span>
+                            </div>
+
+                            {/* Tags */}
+                            {question.tags && question.tags.length > 0 && (
+                              <div className="flex items-center space-x-1">
+                                <TagIcon className="h-3 w-3 text-gray-400" />
+                                <div className="flex flex-wrap gap-1">
+                                  {question.tags.slice(0, 3).map((tag, tagIndex) => (
+                                    <Badge
+                                      key={tagIndex}
+                                      variant="outline"
+                                      className="text-xs bg-gray-50 border-gray-200 text-gray-700"
+                                    >
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                  {question.tags.length > 3 && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs bg-gray-50 border-gray-200 text-gray-700"
+                                    >
+                                      +{question.tags.length - 3} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditQuestion(question)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Edit question"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteQuestion(question.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Delete question"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                <p>No questions available</p>
-                <p className="text-sm text-gray-400 mt-1">Click "Add Question" to get started</p>
+                <p className="text-sm">No questions available</p>
+                <p className="text-xs text-gray-400 mt-1">Click "Add Question" to get started</p>
               </div>
-            )}
-
-            {/* Edit Question Form */}
-            {editingQuestion && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-4 p-4 border rounded-lg bg-muted/50"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="edit-question">Question</Label>
-                  <Input
-                    id="edit-question"
-                    placeholder="Enter your question..."
-                    value={editingQuestion.question}
-                    onChange={(e) => setEditingQuestion((prev) => (prev ? { ...prev, question: e.target.value } : null))}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button onClick={handleUpdateQuestion} disabled={!editingQuestion.question.trim()}>
-                    Update Question
-                  </Button>
-                  <Button variant="outline" onClick={() => setEditingQuestion(null)}>
-                    Cancel
-                  </Button>
-                </div>
-              </motion.div>
             )}
           </div>
         </motion.div>

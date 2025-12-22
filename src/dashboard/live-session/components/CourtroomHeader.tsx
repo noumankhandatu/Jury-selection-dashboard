@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { FaRotateLeft } from "react-icons/fa6";
 import { useState } from "react";
-import AddQuestionModal from "./AddQuestionModal";
+import { AddQuestionDialog } from "@/dashboard/create-case/components/add-question-dialog";
+import { Question } from "@/types/questions";
 
 interface CourtroomHeaderProps {
   selectedCaseId?: string;
@@ -9,7 +10,7 @@ interface CourtroomHeaderProps {
   allJurors?: any[];
   onAskMultipleJurors: () => void;
   onToggleBenchPosition: () => void;
-  onQuestionsAdded?: () => void;
+  onQuestionsAdded?: (questions: Question[]) => void;
 }
 
 const CourtroomHeader = ({
@@ -20,7 +21,35 @@ const CourtroomHeader = ({
   onToggleBenchPosition,
   onQuestionsAdded,
 }: CourtroomHeaderProps) => {
-  const [isAddQuestionModalOpen, setIsAddQuestionModalOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [editingQuestion, setEditingQuestion] = useState<{
+    question: Question;
+    index: number;
+  } | null>(null);
+
+  const handleAddQuestion = (question: Question) => {
+    const newQuestions = [...questions, question];
+    setQuestions(newQuestions);
+    onQuestionsAdded?.(newQuestions);
+  };
+
+  const handleEditQuestion = (editedQuestion: Question, index: number) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[index] = editedQuestion;
+    setQuestions(updatedQuestions);
+    onQuestionsAdded?.(updatedQuestions);
+  };
+
+  const handleOpenDialog = () => {
+    setEditingQuestion(null); // Reset editing state when opening for new question
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingQuestion(null); // Clear editing state when closing
+  };
 
   // Calculate dynamic values
   const totalJurors = allJurors.length;
@@ -42,7 +71,7 @@ const CourtroomHeader = ({
       <div className="flex items-center gap-2">
         <Button
           variant="default"
-          onClick={() => setIsAddQuestionModalOpen(true)}
+          onClick={handleOpenDialog}
           className="text-sm"
           disabled={!selectedCaseId}
         >
@@ -66,12 +95,12 @@ const CourtroomHeader = ({
         </button>
       </div>
 
-      <AddQuestionModal
-        isOpen={isAddQuestionModalOpen}
-        onOpenChange={setIsAddQuestionModalOpen}
-        selectedCaseId={selectedCaseId}
-        selectedCase={selectedCase}
-        onQuestionsAdded={onQuestionsAdded}
+      <AddQuestionDialog
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        onAddQuestion={handleAddQuestion}
+        onEditQuestion={handleEditQuestion}
+        editingQuestion={editingQuestion}
       />
     </div>
   );

@@ -44,7 +44,7 @@ const toDisplayJuror = (item: any, session: any): Juror => {
     workPhone: j.workPhone ?? "",
     employmentDuration: j.employmentDuration ?? "",
     children: j.children ?? "",
-    panelPosition: j.panelPosition ?? "",
+    panelPosition: j.panelPosition ?? null,
     jurorNumber: j.jurorNumber ?? "",
     criminalCase: j.criminalCase ?? "",
     accidentalInjury: j.accidentalInjury ?? "",
@@ -107,11 +107,13 @@ export const JurorResponses = ({
           id: tj.juror?.id,
           name: tj.juror?.name,
           jurorNumber: tj.juror?.jurorNumber,
+          panelPosition: tj.juror?.panelPosition, // Include panelPosition
         },
         question: undefined,
         responseText: undefined,
         // Put score under suitabilityScore so existing UI picks it up
         assessment: { suitabilityScore: tj.overallScore },
+        strikeRecommendation: tj.strikeRecommendation || null,
       }));
     }
 
@@ -165,6 +167,7 @@ export const JurorResponses = ({
                     key={item.id}
                     juror={juror}
                     score={typeof score === "number" ? score : null}
+                    strikeRecommendation={item.strikeRecommendation || null}
                     isHighlighted={selectedResponseId === item.id}
                     onDetails={() => {
                       if (item.kind === "response") {

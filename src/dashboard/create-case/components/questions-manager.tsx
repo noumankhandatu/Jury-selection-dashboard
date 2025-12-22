@@ -1,22 +1,23 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type React from "react";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, FileUp, Loader2, Plus, Trash2, FileText, X, HelpCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Brain, FileUp, Loader2, Plus, Trash2, FileText, X, HelpCircle, Tag, Percent, Type, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { AddQuestionDialog } from "./add-question-dialog";
 import { extractQuestionsFromPDFApi } from "@/api/api";
+import { Question, QuestionType } from "../../../types/questions";
+import { AddQuestionDialog } from "./add-question-dialog";
 
 interface QuestionsManagerProps {
-  questions: string[];
-  onQuestionsChange: (questions: string[]) => void;
+  questions: Question[];
+  onQuestionsChange: (questions: Question[]) => void;
 }
 
 export default function QuestionsManager({ questions, onQuestionsChange }: QuestionsManagerProps) {
   const [isAddQuestionDialogOpen, setIsAddQuestionDialogOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<{ question: Question; index: number } | null>(null);
   const [isProcessingPDF, setIsProcessingPDF] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -65,7 +66,7 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
       setCurrentStep(`Processing ${images.length} page(s) with AI...`);
       toast.info(`Processing ${images.length} page(s) from PDF...`);
 
-      let allExtractedQuestions: string[] = [];
+      let allExtractedQuestions: Question[] = [];
 
       // Process each page
       for (let i = 0; i < images.length; i++) {
@@ -74,26 +75,22 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
 
         const imageBase64 = images[i];
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const _prompt = `
-        Extract all jury selection questions from this page of a PDF document.
-        
-        Return only a JSON object with this exact format:
-        {"questions": ["question 1", "question 2", "question 3"]}
-        
-        Rules:
-        - Extract complete questions only
-        - Remove numbering and formatting
-        - Each question should be a standalone string
-        - If no questions found on this page, return {"questions": []}
-        `;
-
         try {
           // Call backend API with token tracking
           const data = await extractQuestionsFromPDFApi(imageBase64, i + 1);
           
           if (data.questions && Array.isArray(data.questions)) {
-            allExtractedQuestions = [...allExtractedQuestions, ...data.questions];
+            // Validate and transform questions
+            const validatedQuestions = data.questions
+              .filter((q: any) => q && typeof q.question === "string" && q.question.trim().length > 5)
+              .map((q: any) => ({
+                question: q.question.trim(),
+                tags: Array.isArray(q.tags) ? q.tags.slice(0, 3) : [],
+                percentage: typeof q.percentage === 'number' ? Math.min(100, Math.max(0, q.percentage)) : 75,
+                questionType: (q.type || 'YES_NO') as QuestionType
+              }));
+            
+            allExtractedQuestions = [...allExtractedQuestions, ...validatedQuestions];
           }
         } catch (pageError: any) {
           console.error(`Error processing page ${i + 1}:`, pageError);
@@ -110,13 +107,18 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
 
       setCurrentStep("Finalizing results...");
 
-      // Remove duplicates and validate
-      const uniqueQuestions = [...new Set(allExtractedQuestions)];
-      const validQuestions = uniqueQuestions.filter((q) => q && typeof q === "string" && q.trim().length > 5);
+      // Remove duplicates based on question text
+      const uniqueQuestions = allExtractedQuestions.reduce((acc: Question[], current) => {
+        const exists = acc.find(q => q.question === current.question);
+        if (!exists) {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
 
-      if (validQuestions.length > 0) {
-        onQuestionsChange([...questions, ...validQuestions]);
-        toast.success(`Successfully extracted ${validQuestions.length} questions from PDF!`);
+      if (uniqueQuestions.length > 0) {
+        onQuestionsChange([...questions, ...uniqueQuestions]);
+        toast.success(`Successfully extracted ${uniqueQuestions.length} questions from PDF!`);
       } else {
         toast.warning("No questions found in the PDF. Please check the document or add questions manually.");
       }
@@ -211,63 +213,13 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
     });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _extractQuestionsFromText = (text: string): string[] => {
-    const questions: string[] = [];
-
-    try {
-      // Try to parse JSON response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsedData = JSON.parse(jsonMatch[0]);
-        if (parsedData && Array.isArray(parsedData.questions)) {
-          return parsedData.questions.filter((q: any) => q && typeof q === "string" && q.trim().length > 0).map((q: string) => q.trim());
-        }
-      }
-    } catch (parseError) {
-      console.error("JSON parsing failed:", parseError);
+  const getQuestionTypeDisplay = (type: QuestionType) => {
+    switch (type) {
+      case 'YES_NO': return 'Yes/No';
+      case 'RATING': return 'Rating';
+      case 'TEXT': return 'Text';
+      default: return type;
     }
-
-    // Fallback: extract questions manually
-    if (text && typeof text === "string") {
-      const lines = text.split(/[\n\r]+/);
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-
-        if (!line || typeof line !== "string") {
-          continue;
-        }
-
-        const trimmedLine = line.trim();
-
-        if (trimmedLine.length < 5) {
-          continue;
-        }
-
-        // Check for question patterns
-        const hasQuestionMark = trimmedLine.includes("?");
-        const startsWithQuestion =
-          trimmedLine.startsWith("Have you") ||
-          trimmedLine.startsWith("Do you") ||
-          trimmedLine.startsWith("Are you") ||
-          trimmedLine.startsWith("Would you") ||
-          trimmedLine.startsWith("Can you") ||
-          trimmedLine.startsWith("Will you") ||
-          trimmedLine.startsWith("have you") ||
-          trimmedLine.startsWith("do you") ||
-          trimmedLine.startsWith("are you") ||
-          trimmedLine.startsWith("would you") ||
-          trimmedLine.startsWith("can you") ||
-          trimmedLine.startsWith("will you");
-
-        if (hasQuestionMark || startsWithQuestion) {
-          questions.push(trimmedLine);
-        }
-      }
-    }
-
-    return questions;
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -298,11 +250,30 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
     onQuestionsChange(questions.filter((_, i) => i !== index));
   };
 
+  const handleEditQuestion = (index: number) => {
+    setEditingQuestion({
+      question: questions[index],
+      index: index
+    });
+  };
+
+  const handleUpdateQuestion = (updatedQuestion: Question, index: number) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[index] = updatedQuestion;
+    onQuestionsChange(updatedQuestions);
+    setEditingQuestion(null);
+  };
+
   const removeUploadedFile = () => {
     setUploadedFile(null);
     if (pdfInputRef.current) {
       pdfInputRef.current.value = "";
     }
+  };
+
+  const handleAddQuestion = (question: Question) => {
+    onQuestionsChange([...questions, question]);
+    setIsAddQuestionDialogOpen(false);
   };
 
   return (
@@ -312,7 +283,10 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
           <Brain className="h-4 w-4" />
           <span>Case Questions</span>
         </Label>
-        <Button onClick={() => setIsAddQuestionDialogOpen(true)} className="bg-blue-500 hover:bg-blue-600 text-white">
+        <Button 
+          onClick={() => setIsAddQuestionDialogOpen(true)} 
+          className="bg-blue-500 hover:bg-blue-600 text-white"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Question
         </Button>
@@ -439,10 +413,10 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
       </Card>
 
       {/* Questions List */}
-      {questions.length > 0 && (
+      {questions?.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-700">{questions.length} questions loaded</p>
+            <p className="text-sm font-medium text-gray-700">{questions?.length} questions loaded</p>
             <Button
               variant="outline"
               size="sm"
@@ -453,26 +427,97 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
               Clear All
             </Button>
           </div>
-          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
             {questions.map((question, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                <p className="text-sm text-gray-700">{question}</p>
-                <Button variant="ghost" size="sm" onClick={() => removeQuestion(index)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              <Card key={index} className="border-gray-200 hover:border-blue-300 transition-colors group">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 leading-relaxed mb-3">
+                        {question.question}
+                      </p>
+                      
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Question Type */}
+                        <div className="flex items-center space-x-1">
+                          <Type className="h-3 w-3 text-gray-400" />
+                          <span className="text-xs text-gray-600">
+                            {getQuestionTypeDisplay(question.questionType)}
+                          </span>
+                        </div>
+                        
+                        {/* Percentage */}
+                        <div className="flex items-center space-x-1">
+                          <Percent className="h-3 w-3 text-gray-400" />
+                          <span className="text-xs font-medium text-gray-700">
+                            {question.percentage}% relevant
+                          </span>
+                        </div>
+                        
+                        {/* Tags */}
+                        {question.tags && question.tags.length > 0 && (
+                          <div className="flex items-center space-x-1">
+                            <Tag className="h-3 w-3 text-gray-400" />
+                            <div className="flex flex-wrap gap-1">
+                              {question.tags.slice(0, 3).map((tag, tagIndex) => (
+                                <Badge
+                                  key={tagIndex}
+                                  variant="outline"
+                                  className="text-xs bg-gray-50 border-gray-200 text-gray-700"
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {question.tags.length > 3 && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-gray-50 border-gray-200 text-gray-700"
+                                >
+                                  +{question.tags.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1 ml-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleEditQuestion(index)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Edit question"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => removeQuestion(index)} 
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Delete question"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       )}
 
       <AddQuestionDialog
-        isOpen={isAddQuestionDialogOpen}
-        onClose={() => setIsAddQuestionDialogOpen(false)}
-        onAddQuestion={(question) => {
-          onQuestionsChange([...questions, question]);
+        isOpen={isAddQuestionDialogOpen || !!editingQuestion}
+        onClose={() => {
           setIsAddQuestionDialogOpen(false);
+          setEditingQuestion(null);
         }}
+        onAddQuestion={handleAddQuestion}
+        onEditQuestion={handleUpdateQuestion}
+        editingQuestion={editingQuestion}
       />
     </div>
   );

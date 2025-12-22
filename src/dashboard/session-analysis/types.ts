@@ -24,6 +24,7 @@ export interface ApiSession {
   updatedAt: string;
   caseId: string;
   _count?: ApiSessionCount;
+  summary?: string;
 }
 
 export interface ApiSessionById extends ApiSession {

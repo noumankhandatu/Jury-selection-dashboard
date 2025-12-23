@@ -57,6 +57,21 @@ const mapBestJurorToDisplay = (
     else if (scoreVal < 80) bias = "moderate";
     else bias = "low";
   }
+
+  const rawPanelPosition = item?.panelPosition ?? j.panelPosition;
+  const normalizedPanelPosition =
+    rawPanelPosition === null || rawPanelPosition === undefined || rawPanelPosition === ""
+      ? null
+      : Number.isNaN(Number(rawPanelPosition))
+        ? null
+        : Number(rawPanelPosition);
+
+  const rawGender = j.gender ?? null;
+  const lowerGender =
+    rawGender && typeof rawGender === "string" ? rawGender.toLowerCase() : null;
+  const normalizedGender: Juror["gender"] =
+    lowerGender === "male" || lowerGender === "female" ? lowerGender : null;
+
   const juror: Juror = {
     id: String(j.id ?? item.id ?? ""),
     name: j.name ?? "Unknown Juror",
@@ -74,7 +89,7 @@ const mapBestJurorToDisplay = (
     isStrikedOut: Boolean(j.isStrikedOut),
     dateOfBirth: j.dateOfBirth ?? "",
     race: j.race ?? "",
-    gender: j.gender ?? "",
+    gender: normalizedGender,
     employer: j.employer ?? "",
     maritalStatus: j.maritalStatus ?? "",
     citizenship: j.citizenship ?? "",
@@ -84,7 +99,7 @@ const mapBestJurorToDisplay = (
     employmentDuration: j.employmentDuration ?? "",
     children: j.children ?? "",
     // Prefer values from the parent item in case the API flattens them
-    panelPosition: item?.panelPosition ?? j.panelPosition ?? "",
+    panelPosition: normalizedPanelPosition,
     jurorNumber: item?.jurorNumber ?? j.jurorNumber ?? "",
     criminalCase: j.criminalCase ?? "",
     accidentalInjury: j.accidentalInjury ?? "",
@@ -630,18 +645,17 @@ export function SessionOverview({
               </div>
 
               {(() => {
-                // Use strikeJurors if viewing strike categories, otherwise use bestJurors
-                const jurorsToDisplay = selectedBucket === "low" && selectedStrikeType && strikeJurors
-                  ? strikeJurors
-                  : bestJurors || [];
+                const jurorsToDisplay = bestJurors || [];
 
                 const filtered = jurorsToDisplay.filter((bj: any) => {
                   // Filter out struck jurors from Top Jurors (high/mid buckets)
-                  // They should only appear in the "low" bucket
-                  if (selectedBucket !== "low" && (bj.strikeRecommendation === "STRIKE_FOR_CAUSE" || bj.strikeRecommendation === "PEREMPTORY_STRIKE")) {
+                  if (
+                    bj.strikeRecommendation === "STRIKE_FOR_CAUSE" ||
+                    bj.strikeRecommendation === "PEREMPTORY_STRIKE"
+                  ) {
                     return false;
                   }
-                  
+
                   const mapped = mapBestJurorToDisplay(bj, session);
                   const q = search.trim().toLowerCase();
                   if (!q) return true;

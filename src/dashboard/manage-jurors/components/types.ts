@@ -35,6 +35,7 @@ export interface Juror {
   criminalJury: string;
   spouse: string;
   mailingAddress: string;
+  submitted?: boolean;
 }
 
 export interface CaseSelectorProps {

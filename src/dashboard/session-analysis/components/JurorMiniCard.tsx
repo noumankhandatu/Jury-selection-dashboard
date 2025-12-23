@@ -24,9 +24,8 @@ export function JurorMiniCard({
 }: JurorMiniCardProps) {
   const effectiveBiasStatus = juror.isStrikedOut ? "high" : juror.biasStatus;
   // Prioritize panelPosition, then jurorNumber, then id
-  const displayId = juror.panelPosition !== null && juror.panelPosition !== undefined 
-    ? juror.panelPosition 
-    : juror.jurorNumber || juror.id;
+  const hasPanelPosition = juror.panelPosition !== null && juror.panelPosition !== undefined;
+  const displayId = hasPanelPosition ? juror.panelPosition : juror.jurorNumber || juror.id;
   const isStruck = !!strikeRecommendation;
 
   // Determine border color from suitability score (preferred) or bias status
@@ -72,11 +71,7 @@ export function JurorMiniCard({
           </Avatar>
 
           <div className="font-semibold text-gray-900 truncate max-w-full">
-            {juror.panelPosition !== null && juror.panelPosition !== undefined && juror.panelPosition !== ""
-              ? `#${juror.panelPosition}`
-              : displayId
-              ? `#${displayId}`
-              : null}
+            {hasPanelPosition ? `#${juror.panelPosition}` : displayId ? `#${displayId}` : null}
           </div>
           <div className="text-xs text-gray-600 mt-1">
             {juror.name}

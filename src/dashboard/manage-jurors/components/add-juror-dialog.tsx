@@ -55,7 +55,7 @@ export function AddJurorDialog({
     caseId: selectedCase?.id || "",
     dateOfBirth: "",
     race: "",
-    gender: "",
+    gender: null,
     employer: "",
     maritalStatus: "",
     citizenship: "Yes",
@@ -64,7 +64,7 @@ export function AddJurorDialog({
     workPhone: "",
     employmentDuration: "",
     children: "",
-    panelPosition: "",
+    panelPosition: null,
     jurorNumber: `M-${Math.floor(1000 + Math.random() * 9000)}`,
     criminalCase: "No",
     accidentalInjury: "No",
@@ -200,19 +200,21 @@ export function AddJurorDialog({
                 <div className="space-y-2">
                   <Label htmlFor="gender">Gender</Label>
                   <Select
-                    value={newJuror.gender || ""}
-                    onValueChange={(value) =>
-                      handleInputChange("gender", value)
-                    }
+                    value={newJuror.gender ?? ""}
+                    onValueChange={(value) => {
+                      const normalized: Juror["gender"] =
+                        value === "male" || value === "female" ? value : null;
+                      handleInputChange("gender", normalized);
+                    }}
                   >
                     <SelectTrigger id="gender">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Non-binary">Non-binary</SelectItem>
-                      <SelectItem value="Prefer not to say">
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="non-binary">Non-binary</SelectItem>
+                      <SelectItem value="prefer not to say">
                         Prefer not to say
                       </SelectItem>
                     </SelectContent>
@@ -493,10 +495,12 @@ export function AddJurorDialog({
                   <Label htmlFor="panelPosition">Panel Position</Label>
                   <Input
                     id="panelPosition"
-                    value={newJuror.panelPosition || ""}
-                    onChange={(e) =>
-                      handleInputChange("panelPosition", e.target.value)
-                    }
+                    value={newJuror.panelPosition ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      const parsed = raw === "" ? null : Number.parseInt(raw, 10);
+                      handleInputChange("panelPosition", Number.isNaN(parsed) ? null : parsed);
+                    }}
                     placeholder="Lead Juror"
                   />
                 </div>

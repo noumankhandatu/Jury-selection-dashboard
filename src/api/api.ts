@@ -1027,3 +1027,64 @@ export const getProfileImagesApi = async () => {
     throw error;
   }
 };
+
+// ============================================
+// TOKEN PACKS APIs (Extra Token Purchases)
+// ============================================
+
+/**
+ * Get available token packs for purchase
+ */
+export const getTokenPacksApi = async () => {
+  try {
+    const response = await BaseUrl.get("/token-packs");
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching token packs:", error);
+    throw error;
+  }
+};
+
+/**
+ * Create checkout session for token pack purchase
+ */
+export const createTokenPackCheckoutApi = async (payload: {
+  packId: string;
+  organizationId: string;
+}) => {
+  try {
+    const response = await BaseUrl.post("/token-packs/checkout", payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error creating token pack checkout:", error);
+    throw error;
+  }
+};
+
+/**
+ * Verify token pack purchase after Stripe checkout
+ */
+export const verifyTokenPackPurchaseApi = async (sessionId: string) => {
+  try {
+    const response = await BaseUrl.get("/token-packs/verify", {
+      params: { sessionId },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error verifying token pack purchase:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get token pack purchase history for organization
+ */
+export const getTokenPackHistoryApi = async (organizationId: string) => {
+  try {
+    const response = await BaseUrl.get(`/token-packs/history/${organizationId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching token pack history:", error);
+    throw error;
+  }
+};

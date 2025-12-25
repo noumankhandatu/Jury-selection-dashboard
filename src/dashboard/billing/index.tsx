@@ -29,6 +29,10 @@ import {
   reactivateSubscriptionApi,
   createCheckoutSessionApi,
   cancelSubscriptionApi,
+  getTokenPacksApi,
+  createTokenPackCheckoutApi,
+  getTokenPackHistoryApi,
+  verifyTokenPackPurchaseApi,
 } from "@/api/api";
 import {
   CreditCard,
@@ -45,8 +49,34 @@ import {
   XCircle,
   Clock,
   Zap,
+  Coins,
+  ShoppingCart,
+  History,
+  Check,
 } from "lucide-react";
 import TitleTag from "@/components/shared/tag/tag";
+import { useTokenPack } from "@/contexts/TokenPackContext";
+
+interface TokenPack {
+  id: string;
+  name: string;
+  tokens: number;
+  tokensFormatted: string;
+  price: number;
+  priceFormatted: string;
+}
+
+interface TokenPackPurchase {
+  id: string;
+  packId: string;
+  packName: string;
+  tokens: number;
+  tokensFormatted: string;
+  price: number;
+  priceFormatted: string;
+  status: string;
+  createdAt: string;
+}
 
 interface Subscription {
   id: string;
@@ -83,6 +113,15 @@ export default function BillingPage() {
   const [tokenUsage, setTokenUsage] = useState<any>(null);
   const [tokenLoading, setTokenLoading] = useState(true);
 
+  // Token Packs state
+  const [tokenPacks, setTokenPacks] = useState<TokenPack[]>([]);
+  const [tokenPacksLoading, setTokenPacksLoading] = useState(true);
+  const [purchaseHistory, setPurchaseHistory] = useState<TokenPackPurchase[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [purchasingPackId, setPurchasingPackId] = useState<string | null>(null);
+
+  const { openBuyTokensModal } = useTokenPack();
+
   const organizationId = localStorage.getItem("organizationId");
   const organizationName = localStorage.getItem("organizationName");
 
@@ -90,16 +129,39 @@ export default function BillingPage() {
     if (organizationId) {
       fetchSubscription(true); // Show loading on initial load
       fetchTokenUsage();
+      fetchTokenPacks();
+      fetchPurchaseHistory();
     }
 
-    // Check if returning from Stripe portal
+    // Check if returning from Stripe portal or token pack purchase
     const urlParams = new URLSearchParams(window.location.search);
     const fromStripe = urlParams.get("from") === "stripe";
-    
+    const tokenPackSessionId = urlParams.get("token_pack_session");
+
+    // Handle token pack purchase verification
+    if (tokenPackSessionId) {
+      // Remove the query parameter from URL
+      window.history.replaceState({}, "", window.location.pathname);
+
+      // Verify the purchase
+      verifyTokenPackPurchaseApi(tokenPackSessionId)
+        .then((response) => {
+          if (response.success) {
+            toast.success("Token pack purchased successfully! Your tokens have been added.");
+            fetchTokenUsage();
+            fetchPurchaseHistory();
+          }
+        })
+        .catch((error) => {
+          console.error("Error verifying token pack purchase:", error);
+          toast.error("Failed to verify token pack purchase");
+        });
+    }
+
     if (fromStripe) {
       // Remove the query parameter from URL
       window.history.replaceState({}, "", window.location.pathname);
-      
+
       // Force refresh subscription data
       setTimeout(() => {
         fetchSubscription(false); // Don't show loading spinner to prevent blinking
@@ -165,6 +227,59 @@ export default function BillingPage() {
       }
     } finally {
       setTokenLoading(false);
+    }
+  };
+
+  const fetchTokenPacks = async () => {
+    try {
+      setTokenPacksLoading(true);
+      const response = await getTokenPacksApi();
+      setTokenPacks(response.packs || []);
+    } catch (error: any) {
+      console.error("Error fetching token packs:", error);
+    } finally {
+      setTokenPacksLoading(false);
+    }
+  };
+
+  const fetchPurchaseHistory = async () => {
+    if (!organizationId) return;
+    try {
+      setHistoryLoading(true);
+      const response = await getTokenPackHistoryApi(organizationId);
+      setPurchaseHistory(response.purchases || []);
+    } catch (error: any) {
+      console.error("Error fetching purchase history:", error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handlePurchaseTokenPack = async (packId: string) => {
+    if (!organizationId) {
+      toast.error("Organization not found");
+      return;
+    }
+
+    try {
+      setPurchasingPackId(packId);
+      const response = await createTokenPackCheckoutApi({
+        packId,
+        organizationId,
+      });
+
+      if (response.url) {
+        window.location.href = response.url;
+      } else {
+        toast.error("Failed to create checkout session");
+      }
+    } catch (error: any) {
+      console.error("Error creating checkout:", error);
+      const errorMsg =
+        error?.response?.data?.message || "Failed to start checkout";
+      toast.error(errorMsg);
+    } finally {
+      setPurchasingPackId(null);
     }
   };
 
@@ -471,7 +586,7 @@ export default function BillingPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="subscription" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-6">
             <TabsTrigger
               value="subscription"
               className="flex items-center gap-2"
@@ -485,6 +600,13 @@ export default function BillingPage() {
             >
               <Sparkles className="w-4 h-4" />
               Token Usage
+            </TabsTrigger>
+            <TabsTrigger
+              value="token-packs"
+              className="flex items-center gap-2"
+            >
+              <Coins className="w-4 h-4" />
+              Buy Tokens
             </TabsTrigger>
           </TabsList>
 
@@ -1491,6 +1613,189 @@ export default function BillingPage() {
             </CardContent>
           </Card>
         )}
+          </TabsContent>
+
+          {/* Token Packs Tab */}
+          <TabsContent value="token-packs" className="space-y-6 mt-0">
+            {/* Available Token Packs */}
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 mb-2">
+                      <ShoppingCart className="w-5 h-5 text-amber-600" />
+                      Available Token Packs
+                    </CardTitle>
+                    <CardDescription>
+                      Purchase additional tokens that never expire
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => openBuyTokensModal()}
+                    variant="outline"
+                    className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                  >
+                    <Coins className="w-4 h-4 mr-2" />
+                    Quick Buy
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {tokenPacksLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {tokenPacks.map((pack) => {
+                      const isPurchasing = purchasingPackId === pack.id;
+                      const pricePerK = (pack.price / (pack.tokens / 1000)).toFixed(2);
+
+                      return (
+                        <div
+                          key={pack.id}
+                          className="border border-gray-200 rounded-lg p-5 transition-all hover:shadow-md hover:border-amber-300 bg-white"
+                        >
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                                  <Zap className="w-5 h-5 text-amber-600" />
+                                </div>
+                                <span className="text-xl font-bold text-gray-900">
+                                  {pack.tokensFormatted}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-2xl font-bold text-gray-900">
+                                {pack.priceFormatted}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                ${pricePerK} per 1K tokens
+                              </p>
+                            </div>
+
+                            <p className="text-sm text-gray-600">{pack.name}</p>
+
+                            <Button
+                              onClick={() => handlePurchaseTokenPack(pack.id)}
+                              disabled={!!purchasingPackId}
+                              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                            >
+                              {isPurchasing ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="w-4 h-4 mr-2" />
+                                  Buy Now
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Info Section */}
+                <div className="mt-6 pt-6 border-t">
+                  <div className="flex items-start gap-3 text-sm text-gray-600">
+                    <Coins className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" />
+                    <div>
+                      <p className="font-medium text-gray-900 mb-1">How Token Packs Work</p>
+                      <ul className="space-y-1 text-gray-600">
+                        <li>• Purchased tokens never expire</li>
+                        <li>• Used after your monthly subscription tokens are depleted</li>
+                        <li>• Secure checkout via Stripe</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Purchase History */}
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-gray-600" />
+                  Purchase History
+                </CardTitle>
+                <CardDescription>
+                  Your token pack purchase history
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {historyLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                  </div>
+                ) : purchaseHistory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <History className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-gray-500">No purchases yet</p>
+                    <p className="text-sm text-gray-400">
+                      Your token pack purchases will appear here
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {purchaseHistory.map((purchase) => (
+                      <div
+                        key={purchase.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                            <Zap className="w-5 h-5 text-amber-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {purchase.packName}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(purchase.createdAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">
+                            {purchase.priceFormatted}
+                          </p>
+                          <Badge
+                            className={
+                              purchase.status === "completed"
+                                ? "bg-green-100 text-green-700 border-0"
+                                : purchase.status === "pending"
+                                ? "bg-yellow-100 text-yellow-700 border-0"
+                                : "bg-red-100 text-red-700 border-0"
+                            }
+                          >
+                            {purchase.status === "completed"
+                              ? "Completed"
+                              : purchase.status === "pending"
+                              ? "Pending"
+                              : "Failed"}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

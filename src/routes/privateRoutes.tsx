@@ -14,6 +14,7 @@ import CreateOrganizationPage from "@/pages/create-organization";
 import SubscriptionSelectPage from "@/pages/subscription/select";
 import SubscriptionSuccessPage from "@/pages/subscription/success";
 import SubscriptionCanceledPage from "@/pages/subscription/canceled";
+import TokenPurchaseSuccessPage from "@/pages/tokens/purchase-success";
 import TeamManagementPage from "@/dashboard/team-management";
 import BillingPage from "@/dashboard/billing";
 import AcceptInvitationPage from "@/pages/accept-invitation";
@@ -138,6 +139,12 @@ const PrivateRoutes = () => {
         <Route
           path="/subscription/canceled"
           element={<SubscriptionCanceledPage />}
+        />
+
+        {/* Token Purchase Success Route */}
+        <Route
+          path="/tokens/purchase-success"
+          element={<TokenPurchaseSuccessPage />}
         />
 
         {/* SaaS Team Routes - Protected by OrganizationGuard (OWNER & ADMIN only) */}

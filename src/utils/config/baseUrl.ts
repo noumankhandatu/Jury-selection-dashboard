@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
+import { isInsufficientTokensError, extractTokenErrorData, emitTokenError } from "../tokenErrorEvents";
 
 const BASEURL = import.meta.env.VITE_BASEURL;
 
@@ -33,6 +34,15 @@ BaseUrl.interceptors.response.use(
   (error) => {
     if (error.response) {
       console.error("❌ API Error Response:", error.response);
+
+      // Check for insufficient tokens error
+      if (isInsufficientTokensError(error)) {
+        const tokenErrorData = extractTokenErrorData(error);
+        if (tokenErrorData) {
+          console.warn("⚠️ Insufficient AI tokens - triggering buy tokens modal");
+          emitTokenError(tokenErrorData);
+        }
+      }
 
       if (error.response.status === 401) {
         console.warn("🚫 Unauthorized: Token may be expired or invalid.");

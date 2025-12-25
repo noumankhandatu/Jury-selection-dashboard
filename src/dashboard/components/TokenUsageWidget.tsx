@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sparkles, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
+import { Sparkles, TrendingUp, Calendar, AlertCircle, Coins } from 'lucide-react';
 import { getTokenUsageApi } from '@/api/api';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useTokenPack } from '@/contexts/TokenPackContext';
 
 interface TokenUsage {
   organization: {
@@ -47,6 +48,7 @@ export default function TokenUsageWidget() {
   const [usage, setUsage] = useState<TokenUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { openBuyTokensModal } = useTokenPack();
 
   useEffect(() => {
     fetchTokenUsage();
@@ -197,8 +199,16 @@ export default function TokenUsageWidget() {
                   Almost Out of Tokens!
                 </p>
                 <p className="text-xs text-red-700 mt-1">
-                  You've used {percentage.toFixed(0)}% of your AI tokens. Upgrade your plan or wait until reset.
+                  You've used {percentage.toFixed(0)}% of your AI tokens. Buy more tokens to continue using AI features.
                 </p>
+                <Button
+                  size="sm"
+                  onClick={() => openBuyTokensModal()}
+                  className="mt-2 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <Coins className="h-4 w-4 mr-1" />
+                  Buy More Tokens
+                </Button>
               </div>
             </div>
           </div>
@@ -213,8 +223,17 @@ export default function TokenUsageWidget() {
                   Running Low on Tokens
                 </p>
                 <p className="text-xs text-yellow-700 mt-1">
-                  You've used {percentage.toFixed(0)}% of your AI tokens. Consider upgrading for more.
+                  You've used {percentage.toFixed(0)}% of your AI tokens. Consider buying more tokens.
                 </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openBuyTokensModal()}
+                  className="mt-2 border-yellow-400 text-yellow-800 hover:bg-yellow-100"
+                >
+                  <Coins className="h-4 w-4 mr-1" />
+                  Buy More Tokens
+                </Button>
               </div>
             </div>
           </div>
@@ -270,23 +289,37 @@ export default function TokenUsageWidget() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/dashboard/billing')}
-            className="flex-1"
-          >
-            Manage Plan
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/dashboard/token-usage')}
-            className="flex-1"
-          >
-            View Details
-          </Button>
+        <div className="flex flex-col gap-2 pt-2">
+          {/* Buy Tokens - Only show if not already showing warning buttons */}
+          {!isLow && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => openBuyTokensModal()}
+              className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              <Coins className="h-4 w-4 mr-1" />
+              Buy More Tokens
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/dashboard/billing')}
+              className="flex-1"
+            >
+              Manage Plan
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/dashboard/token-usage')}
+              className="flex-1"
+            >
+              View Details
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

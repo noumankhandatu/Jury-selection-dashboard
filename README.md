@@ -2,8 +2,6 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Dan5py/react-vite-ui/blob/main/LICENSE)
 
-A React + Vite template powered by shadcn/ui.
-
 > [!NOTE]
 > This template uses Tailwind v3, if you want to use Tailwind v4, check the [tw4 branch](https://github.com/dan5py/react-vite-shadcn-ui/tree/tw4).
 

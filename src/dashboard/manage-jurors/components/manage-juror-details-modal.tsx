@@ -5,6 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FileText, Calendar, Briefcase, GraduationCap, MapPin, User, Mail, Phone, Home, Building, Heart, Users, Flag, Car, Wrench, BookOpen, Shield, Edit, Save, X, Loader2 } from "lucide-react";
 import type { Juror } from "./types";
@@ -78,26 +85,42 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose, onUpdate }: Ma
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white mx-4">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar bg-white mx-4 [&>button]:hover:bg-gray-100 [&>button]:hover:scale-110 [&>button]:transition-all [&>button]:duration-200 [&>button]:rounded-md [&>button]:p-1.5">
+        <DialogHeader className="pr-16">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-3">
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               Juror Profile Details
             </DialogTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               {!isEditing ? (
-                <Button onClick={handleEdit} variant="outline" size="sm">
+                <Button 
+                  onClick={handleEdit} 
+                  variant="outline" 
+                  size="sm"
+                  className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 hover:text-blue-800 font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
               ) : (
                 <>
-                  <Button onClick={handleCancel} variant="outline" size="sm" disabled={isSaving}>
+                  <Button 
+                    onClick={handleCancel} 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={isSaving}
+                    className="border-gray-200 bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
+                  >
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                  <Button onClick={handleSave} size="sm" disabled={isSaving}>
+                  <Button 
+                    onClick={handleSave} 
+                    size="sm" 
+                    disabled={isSaving}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100"
+                  >
                     {isSaving ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -173,11 +196,18 @@ export function ManageJurorDetailsModal({ juror, isOpen, onClose, onUpdate }: Ma
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-700">Gender</p>
                     {isEditing ? (
-                      <Input
+                      <Select
                         value={editedJuror.gender || ""}
-                        onChange={(e) => handleFieldChange("gender", e.target.value)}
-                        className="text-base mt-1"
-                      />
+                        onValueChange={(value) => handleFieldChange("gender", value)}
+                      >
+                        <SelectTrigger className="text-base mt-1">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <p className="text-base">{displayValue("gender")}</p>
                     )}

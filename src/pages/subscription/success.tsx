@@ -97,21 +97,129 @@ export default function SubscriptionSuccessPage() {
         >
           <Card className="w-full max-w-md border-none shadow-2xl bg-white/90 backdrop-blur-sm">
             <CardContent className="pt-12 pb-12 text-center">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="mx-auto mb-6"
+              <div className="relative mx-auto mb-6 w-24 h-24 flex items-center justify-center">
+                {/* Animated Ripple Rings */}
+                {[0, 1, 2].map((index) => (
+                  <motion.div
+                    key={index}
+                    className="absolute inset-0 rounded-full border-2 border-blue-400/30"
+                    initial={{ scale: 0.8, opacity: 0.8 }}
+                    animate={{
+                      scale: [0.8, 1.4, 1.6],
+                      opacity: [0.8, 0.4, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      delay: index * 0.6,
+                      ease: "easeOut",
+                    }}
+                  />
+                ))}
+
+                {/* Pulsing Main Circle */}
+                <motion.div
+                  animate={{
+                    scale: [1, 1.1, 1],
+                    boxShadow: [
+                      "0 0 0 0 rgba(59, 130, 246, 0.4)",
+                      "0 0 0 10px rgba(59, 130, 246, 0)",
+                      "0 0 0 0 rgba(59, 130, 246, 0)",
+                    ],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="w-20 h-20 bg-gradient-to-br from-blue-500 via-indigo-500 to-indigo-600 rounded-full flex items-center justify-center shadow-xl relative overflow-hidden"
+                >
+                  {/* Shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    animate={{
+                      x: ["-100%", "100%"],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  />
+
+                  {/* Rotating Loader Icon */}
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="relative z-10"
+                  >
+                    <Loader2 className="w-10 h-10 text-white" />
+                  </motion.div>
+                </motion.div>
+
+                {/* Floating Sparkles */}
+                {[0, 1, 2, 3].map((index) => (
+                  <motion.div
+                    key={`sparkle-${index}`}
+                    className="absolute w-2 h-2 bg-blue-400 rounded-full"
+                    initial={{
+                      x: 0,
+                      y: 0,
+                      opacity: 0,
+                    }}
+                    animate={{
+                      x: [
+                        0,
+                        Math.cos((index * Math.PI) / 2) * 40,
+                        Math.cos((index * Math.PI) / 2) * 50,
+                      ],
+                      y: [
+                        0,
+                        Math.sin((index * Math.PI) / 2) * 40,
+                        Math.sin((index * Math.PI) / 2) * 50,
+                      ],
+                      opacity: [0, 1, 0],
+                      scale: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      delay: index * 0.3,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
+              </div>
+
+              <motion.h2
+                animate={{
+                  opacity: [0.7, 1, 0.7],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2"
               >
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-xl">
-                  <Loader2 className="w-10 h-10 text-white" />
-                </div>
-              </motion.div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
                 Activating Your Subscription...
-              </h2>
-              <p className="text-gray-600">
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0.6 }}
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="text-gray-600"
+              >
                 Please wait while we set up your account
-              </p>
+              </motion.p>
             </CardContent>
           </Card>
         </motion.div>

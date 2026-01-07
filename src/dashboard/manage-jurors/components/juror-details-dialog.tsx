@@ -106,7 +106,7 @@ export function JurorDetailsDialog({ juror, isOpen, onClose, sessionId }: JurorD
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white mx-4" onClick={(e) => e.stopPropagation()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar bg-white mx-4" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-3">

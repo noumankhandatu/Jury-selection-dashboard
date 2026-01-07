@@ -77,4 +77,59 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Global scrollbar styling for html and body */
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb {
+    background: #4f46e5; /* indigo-600 */
+    border-radius: 1px;
+  }
+
+  html::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover {
+    background: #4338ca; /* indigo-700 */
+  }
+
+  /* Firefox scrollbar for html and body */
+  html,
+  body {
+    scrollbar-width: thin;
+    scrollbar-color: #4f46e5 transparent; /* indigo-600 */
+  }
+}
+
+@layer utilities {
+  /* Custom thin scrollbar with theme color */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #4f46e5; /* indigo-600 */
+    border-radius: 1px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #4338ca; /* indigo-700 */
+  }
+
+  /* Firefox scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #4f46e5 transparent; /* indigo-600 */
+  }
 }

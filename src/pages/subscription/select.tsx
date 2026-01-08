@@ -98,7 +98,8 @@ export default function SubscriptionSelectPage() {
       icon: Briefcase,
       popular: false,
       features: [
-        "Up to 1 team member (plus owner)",
+        "Owner only (no team members)",
+        "3M AI tokens/month",
         "Unlimited cases",
         "Unlimited jurors",
         "AI-powered jury assessment",
@@ -117,6 +118,7 @@ export default function SubscriptionSelectPage() {
       popular: true,
       features: [
         "Up to 4 team members (plus owner)",
+        "15M AI tokens/month",
         "Unlimited cases",
         "Unlimited jurors",
         "AI-powered jury assessment",

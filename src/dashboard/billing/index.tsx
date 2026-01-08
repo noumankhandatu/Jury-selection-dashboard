@@ -499,10 +499,13 @@ export default function BillingPage() {
         name: "Standard Plan",
         price: 29,
         features: [
-          "Up to 1 team member (plus owner)",
-          "1,000,000 AI tokens/month",
+          "Owner only (no team members)",
+          "3M AI tokens/month",
           "Unlimited cases",
-          "AI assessments",
+          "Unlimited jurors",
+          "AI-powered jury assessment",
+          "Live Q&A sessions",
+          "Session analytics",
           "Email notifications",
         ],
       },
@@ -511,10 +514,15 @@ export default function BillingPage() {
         price: 79,
         features: [
           "Up to 4 team members (plus owner)",
-          "2,000,000 AI tokens/month",
+          "15M AI tokens/month",
           "Unlimited cases",
-          "AI assessments",
+          "Unlimited jurors",
+          "AI-powered jury assessment",
+          "Live Q&A sessions",
+          "Session analytics",
           "Team collaboration",
+          "Activity logs & audit trails",
+          "Email & push notifications",
           "Priority support",
         ],
       },
@@ -1147,8 +1155,7 @@ export default function BillingPage() {
                                 Upgrade to Business Plan
                               </h4>
                               <p className="text-sm text-purple-800 mb-3">
-                                Get 2x more tokens (2,000,000/month), up to 5 team
-                                members, and priority support
+                                Get 5x more tokens (15M/month), up to 4 team members (plus owner), and priority support
                               </p>
                               <p className="text-lg font-bold text-purple-900">
                                 $79<span className="text-sm text-gray-600">/month</span>
@@ -1494,7 +1501,7 @@ export default function BillingPage() {
                             You've used {tokenUsage.tokens.usagePercentage}% of
                             your AI tokens.
                         {subscription?.plan === "STANDARD" 
-                              ? " Upgrade to Business plan for 2x more tokens (2,000,000/month)."
+                              ? " Upgrade to Business plan for 5x more tokens (15M/month)."
                               : " Your tokens will reset on " +
                                 new Date(
                                   tokenUsage.tokens.resetDate

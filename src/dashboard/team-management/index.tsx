@@ -43,12 +43,14 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  TrendingUp,
 } from "lucide-react";
 import {
   getOrganizationMembersApi,
   inviteTeamMemberApi,
   removeTeamMemberApi,
   getAllInvitationsApi,
+  getSubscriptionApi,
 } from "@/api/api";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -83,6 +85,13 @@ interface Invitation {
   };
 }
 
+interface Subscription {
+  teamMemberLimit: number;
+  currentMemberCount: number;
+  canAddMembers: boolean;
+  plan: "STANDARD" | "BUSINESS";
+}
+
 export default function TeamManagementPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -99,6 +108,7 @@ export default function TeamManagementPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
   const [activeTab, setActiveTab] = useState("members");
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
 
   const organizationId = localStorage.getItem("organizationId");
   const userRole = localStorage.getItem("userRole");
@@ -108,8 +118,29 @@ export default function TeamManagementPage() {
     if (organizationId) {
       fetchMembers();
       fetchInvitations();
+      fetchSubscription();
     }
   }, [organizationId]);
+
+  // Reset active tab to "members" if invitations tab becomes unavailable
+  useEffect(() => {
+    const canAdd = subscription 
+      ? subscription.teamMemberLimit > 0 && subscription.canAddMembers
+      : false;
+    if (!canAdd && activeTab === "invitations") {
+      setActiveTab("members");
+    }
+  }, [subscription, activeTab]);
+
+  const fetchSubscription = async () => {
+    try {
+      const response = await getSubscriptionApi(organizationId!);
+      setSubscription(response.subscription);
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      // Don't show error toast - subscription might not exist yet
+    }
+  };
 
   const fetchMembers = async () => {
     try {
@@ -263,6 +294,11 @@ export default function TeamManagementPage() {
 
   // Count team members excluding OWNER role
   const teamMembersCount = members.filter((m) => m.role !== "OWNER").length;
+  
+  // Check if user can add more team members based on subscription plan
+  const canAddTeamMembers = subscription 
+    ? subscription.teamMemberLimit > 0 && subscription.canAddMembers
+    : false; // Default to false if subscription not loaded yet
 
   if (loading) {
     return (
@@ -286,6 +322,14 @@ export default function TeamManagementPage() {
             <p className="text-gray-600 text-lg">
               Manage your organization's team members and their roles
             </p>
+            {subscription && subscription.plan === "STANDARD" && (
+              <div className="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 inline-block">
+                <p className="text-sm text-yellow-800">
+                  <AlertCircle className="w-4 h-4 inline mr-1" />
+                  Your Standard plan allows only the owner. <a href="/dashboard/billing" className="font-semibold underline hover:text-yellow-900">Upgrade to Business</a> to add team members.
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <div className="bg-white/80 backdrop-blur-sm rounded-lg px-6 py-3 border border-gray-200 shadow-sm">
@@ -296,8 +340,13 @@ export default function TeamManagementPage() {
                 <div>
                   <div className="text-xs text-gray-600 uppercase tracking-wide font-semibold">Team Size</div>
                   <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                    {teamMembersCount} members
+                    {subscription 
+                      ? `${teamMembersCount}/${subscription.teamMemberLimit} members`
+                      : `${teamMembersCount} members`}
                   </div>
+                  {subscription && subscription.plan === "STANDARD" && (
+                    <div className="text-xs text-gray-500 mt-0.5">Owner only plan</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -306,15 +355,17 @@ export default function TeamManagementPage() {
 
         {/* Tabs for Members and Invitations */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm">
+          <TabsList className={`grid w-full max-w-md ${canAddTeamMembers ? 'grid-cols-2' : 'grid-cols-1'} bg-white/80 backdrop-blur-sm border border-gray-200 shadow-sm`}>
             <TabsTrigger value="members" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white">
               <Users className="w-4 h-4 mr-2" />
               Members ({teamMembersCount})
             </TabsTrigger>
-            <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white">
-              <Mail className="w-4 h-4 mr-2" />
-              Invitations ({invitationCounts.total})
-            </TabsTrigger>
+            {canAddTeamMembers && (
+              <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white">
+                <Mail className="w-4 h-4 mr-2" />
+                Invitations ({invitationCounts.total})
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Members Tab */}
@@ -328,7 +379,8 @@ export default function TeamManagementPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      Team Members ({teamMembersCount})
+                      Team Members ({teamMembersCount}
+                      {subscription ? `/${subscription.teamMemberLimit}` : ""})
                       {members.length > teamMembersCount && (
                         <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                           <Crown className="w-3 h-3 mr-1" />
@@ -432,15 +484,32 @@ export default function TeamManagementPage() {
                         <Users className="w-12 h-12 text-blue-400 opacity-50" />
                       </div>
                       <h3 className="text-xl font-semibold text-gray-700 mb-2">No team members yet</h3>
-                      <p className="text-gray-500 mb-6">Start building your team by inviting members</p>
-                      {canInvite && (
-                        <Button
-                          onClick={() => setActiveTab("invitations")}
-                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                        >
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Invite Your First Member
-                        </Button>
+                      {!canAddTeamMembers && subscription?.plan === "STANDARD" ? (
+                        <>
+                          <p className="text-gray-500 mb-4">
+                            Your Standard plan allows only the owner (you). Upgrade to Business plan to add team members.
+                          </p>
+                          <Button
+                            onClick={() => window.location.href = "/dashboard/billing"}
+                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                          >
+                            <TrendingUp className="w-4 h-4 mr-2" />
+                            Upgrade to Business Plan
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-gray-500 mb-6">Start building your team by inviting members</p>
+                          {canInvite && canAddTeamMembers && (
+                            <Button
+                              onClick={() => setActiveTab("invitations")}
+                              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                            >
+                              <UserPlus className="w-4 h-4 mr-2" />
+                              Invite Your First Member
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -448,8 +517,8 @@ export default function TeamManagementPage() {
               </CardContent>
             </Card>
 
-            {/* Invite Member */}
-            {canInvite && (
+            {/* Invite Member - Only show if subscription allows team members */}
+            {canInvite && canAddTeamMembers && (
               <Card className="border-none shadow-xl bg-gradient-to-br from-blue-50/50 to-indigo-50/50 backdrop-blur-sm border-2 border-blue-100">
                 <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
                   <CardTitle className="flex items-center gap-2 text-white">
@@ -460,6 +529,11 @@ export default function TeamManagementPage() {
                   </CardTitle>
                   <CardDescription className="text-blue-100">
                     Send an invitation to add a new member to your organization
+                    {subscription && (
+                      <span className="block mt-1 text-xs">
+                        {subscription.currentMemberCount} of {subscription.teamMemberLimit} team members used
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -544,8 +618,9 @@ export default function TeamManagementPage() {
             )}
           </TabsContent>
 
-          {/* Invitations Tab */}
-          <TabsContent value="invitations" className="space-y-6 mt-6">
+          {/* Invitations Tab - Only show if team members can be added */}
+          {canAddTeamMembers && (
+            <TabsContent value="invitations" className="space-y-6 mt-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card className="border-none shadow-lg bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -690,15 +765,32 @@ export default function TeamManagementPage() {
                         <Mail className="w-12 h-12 text-indigo-400 opacity-50" />
                       </div>
                       <h3 className="text-xl font-semibold text-gray-700 mb-2">No invitations yet</h3>
-                      <p className="text-gray-500 mb-6">Start inviting team members to collaborate</p>
-                      {canInvite && (
-                        <Button
-                          onClick={() => setActiveTab("members")}
-                          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                        >
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Send Your First Invitation
-                        </Button>
+                      {!canAddTeamMembers && subscription?.plan === "STANDARD" ? (
+                        <>
+                          <p className="text-gray-500 mb-4">
+                            Your Standard plan doesn't allow team members. Upgrade to Business plan to invite team members.
+                          </p>
+                          <Button
+                            onClick={() => window.location.href = "/dashboard/billing"}
+                            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                          >
+                            <TrendingUp className="w-4 h-4 mr-2" />
+                            Upgrade to Business Plan
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-gray-500 mb-6">Start inviting team members to collaborate</p>
+                          {canInvite && canAddTeamMembers && (
+                            <Button
+                              onClick={() => setActiveTab("members")}
+                              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                            >
+                              <UserPlus className="w-4 h-4 mr-2" />
+                              Send Your First Invitation
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -706,6 +798,7 @@ export default function TeamManagementPage() {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
         </Tabs>
 
         {/* Remove Confirmation Dialog */}

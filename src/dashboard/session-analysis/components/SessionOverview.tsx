@@ -1312,20 +1312,22 @@ export function SessionOverview({
         />
       )}
       <Dialog open={isBoardModalOpen} onOpenChange={setIsBoardModalOpen}>
-        <DialogContent className="max-w-6xl">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Courtroom Grid</DialogTitle>
           </DialogHeader>
-          <SessionCourtroomGrid
-            jurors={allBoardJurors}
-            onStrike={(jurorInfo) => {
-              openStrikeModal({
-                id: jurorInfo.id,
-                name: jurorInfo.name,
-                jurorNumber: jurorInfo.jurorNumber,
-              });
-            }}
-          />
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <SessionCourtroomGrid
+              jurors={allBoardJurors}
+              onStrike={(jurorInfo) => {
+                openStrikeModal({
+                  id: jurorInfo.id,
+                  name: jurorInfo.name,
+                  jurorNumber: jurorInfo.jurorNumber,
+                });
+              }}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

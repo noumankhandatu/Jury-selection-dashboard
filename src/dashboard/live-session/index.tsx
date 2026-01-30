@@ -5,7 +5,13 @@ import { itemVariants } from "@/utils/fn";
 import { useLiveSession } from "./useLiveSession";
 import LiveSessionData from "./components/live-session-data";
 import CourtroomLayout from "./components/court-room-layout/CourtroomLayout";
-import { getCaseJurorsApi, createSessionApi, updateSessionStatusApi, postSessionSummaryApi } from "@/api/api";
+import {
+  getCaseJurorsApi,
+  createSessionApi,
+  updateSessionStatusApi,
+  postSessionSummaryApi,
+  generateSessionOverviewApi,
+} from "@/api/api";
 import { CaseJuror } from "./components/JurorCard";
 import { useEffect, useState } from "react";
 import ConfirmationDialog from "@/components/ui/confirmation-dialog";
@@ -142,19 +148,44 @@ const LiveSession = () => {
       const endTime = new Date().toISOString();
 
       // 1. First, end the session
-      await updateSessionStatusApi(sessionId, 'COMPLETED', undefined, endTime);
+      await updateSessionStatusApi(sessionId, "COMPLETED", undefined, endTime);
 
-      // 2. Send summary to summary API if summary exist
-      if (summary.trim()) {
+      // 2. Build and persist summary (manual + AI overview)
+      const trimmedSummary = summary.trim();
+      let finalSummary: string | null = null;
+
+      try {
+        // Try to generate a combined Case + Session overview summary using AI
+        const overview = await generateSessionOverviewApi(
+          sessionId,
+          trimmedSummary || undefined
+        );
+        finalSummary = overview;
+      } catch (overviewError: any) {
+        console.warn(
+          "Failed to generate session overview summary, falling back to manual summary:",
+          overviewError
+        );
+        // Fallback to manual summary if provided
+        if (trimmedSummary) {
+          finalSummary = trimmedSummary;
+        }
+      }
+
+      if (finalSummary) {
         try {
-          await postSessionSummaryApi(sessionId, summary.trim());
+          await postSessionSummaryApi(sessionId, finalSummary);
           toast.success("Session ended with summary saved!");
         } catch (summaryError: any) {
           // Log but don't fail the entire session end process
-          console.warn("Failed to save summary, but session ended:", summaryError);
+          console.warn(
+            "Failed to save summary, but session ended:",
+            summaryError
+          );
           toast.success("Session ended (summary may not have been saved)");
         }
       } else {
+        // No summary available (AI + manual both missing)
         toast.success("Session ended successfully!");
       }
 

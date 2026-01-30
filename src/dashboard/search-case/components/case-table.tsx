@@ -1,4 +1,4 @@
-import { Scale, Calendar, ListChecks, Eye, Edit } from "lucide-react";
+import { Scale, Calendar, ListChecks, Eye, Edit, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +20,10 @@ interface CaseTableProps {
   cases: Case[];
   onViewCase: (case_: Case) => void;
   onEditCase: (case_: Case) => void;
+  onViewSessionSummary: (case_: Case) => void;
 }
 
-export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTableProps) {
+export default function CaseTable({ cases, onViewCase, onEditCase, onViewSessionSummary }: CaseTableProps) {
   return (
     <Card className="border-none shadow-lg hover:shadow-xl transition-all duration-300 ">
       <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
@@ -95,6 +96,7 @@ export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTablePr
                             size="sm"
                             onClick={() => onViewCase(case_)}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="View Case"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -103,17 +105,19 @@ export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTablePr
                             size="sm"
                             onClick={() => onEditCase(case_)}
                             className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                            title="Edit Case"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          {/* <Button
+                          <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => onDeleteCase(case_.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => onViewSessionSummary(case_)}
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                            title="View Session Summary"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button> */}
+                            <FileText className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </motion.tr>

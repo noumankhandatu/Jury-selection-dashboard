@@ -7,7 +7,15 @@ import CaseTable from "./components/case-table";
 import ViewCaseDialog from "./components/view-case-dialog";
 import EditCaseDialog from "./components/edit-case-dialog";
 import { itemVariants } from "@/utils/fn";
-import { getCasesApi } from "@/api/api";
+import { getCasesApi, getSessionsByCaseApi } from "@/api/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface Case {
   id: string;
@@ -27,6 +35,10 @@ export default function SearchCasePage() {
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isSessionSummaryDialogOpen, setIsSessionSummaryDialogOpen] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<string | null>(null);
+  const [sessionSummaryCase, setSessionSummaryCase] = useState<Case | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [editingCase, setEditingCase] = useState<Case | null>(null);
   const [editFormData, setEditFormData] = useState({
     number: "",
@@ -91,6 +103,37 @@ export default function SearchCasePage() {
     setIsEditDialogOpen(true);
   };
 
+  const handleViewSessionSummary = async (case_: Case) => {
+    setIsLoadingSummary(true);
+    setSessionSummaryCase(case_);
+    setIsSessionSummaryDialogOpen(true);
+    
+    try {
+      const response = await getSessionsByCaseApi(case_.id);
+      const sessions = response?.sessions || [];
+      
+      // Get the most recent session with a summary
+      const sessionWithSummary = sessions
+        .filter((s: any) => s.summary)
+        .sort((a: any, b: any) => 
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        )[0];
+      
+      if (sessionWithSummary?.summary) {
+        setSessionSummary(sessionWithSummary.summary);
+      } else {
+        setSessionSummary(null);
+        toast.info("No session summary available for this case yet.");
+      }
+    } catch (error: any) {
+      console.error("Error fetching session summary:", error);
+      setSessionSummary(null);
+      toast.error("Failed to load session summary");
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
+
   const handleEditFormDataChange = (field: string, value: string) => {
     setEditFormData((prev) => ({
       ...prev,
@@ -150,7 +193,12 @@ export default function SearchCasePage() {
 
         <SearchPanel searchTerm={searchTerm} onSearch={handleSearch} />
 
-        <CaseTable cases={currentCases} onViewCase={handleViewCase} onEditCase={handleEditCase} />
+        <CaseTable 
+          cases={currentCases} 
+          onViewCase={handleViewCase} 
+          onEditCase={handleEditCase}
+          onViewSessionSummary={handleViewSessionSummary}
+        />
 
         {renderPagination()}
 
@@ -164,6 +212,45 @@ export default function SearchCasePage() {
           onEditFormDataChange={handleEditFormDataChange}
           onSave={handleSaveEdit}
         />
+
+        {/* Session Summary Dialog */}
+        <Dialog open={isSessionSummaryDialogOpen} onOpenChange={setIsSessionSummaryDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-purple-600" />
+                Session Summary
+              </DialogTitle>
+              <DialogDescription>
+                {sessionSummaryCase?.name || "Case Session Summary"}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              {isLoadingSummary ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  <span className="ml-3 text-gray-600">Loading session summary...</span>
+                </div>
+              ) : sessionSummary ? (
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    {sessionSummary}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-muted-foreground italic">
+                    No session summary available for this case yet.
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Complete a live session to generate a summary.
+                  </p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </div>
   );

@@ -78,6 +78,23 @@ export const postSessionSummaryApi = async (sessionId: string, summary: string) 
   }
 };
 
+// Generate a combined case + session overview summary using AI
+export const generateSessionOverviewApi = async (
+  sessionId: string,
+  summary?: string
+) => {
+  try {
+    const response = await BaseUrl.post("/ai/session-overview", {
+      sessionId,
+      summary,
+    });
+    return response.data.overviewSummary as string;
+  } catch (error: any) {
+    console.error("Error generating session overview summary:", error);
+    throw error;
+  }
+};
+
 // Create a new question for a case
 export const createQuestionApi = async (
   caseId: string,

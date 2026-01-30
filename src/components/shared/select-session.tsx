@@ -3,8 +3,19 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { ChevronDown, Timer } from "lucide-react";
 import CardHeaderTag from "@/components/shared/card-header";
 import { itemVariants } from "@/utils/fn";
@@ -53,7 +64,9 @@ export function SelectSession({
   };
 
   return (
-    <Card className={`bg-white/80 backdrop-blur-md shadow-xl rounded-2xl overflow-hidden ${className}`}>
+    <Card
+      className={`bg-white/80 backdrop-blur-md shadow-xl rounded-2xl overflow-hidden ${className}`}
+    >
       <CardHeaderTag title={title} description={description} Icon={Timer} />
       <CardContent className="p-4 sm:p-6">
         <div className="space-y-4">
@@ -71,14 +84,19 @@ export function SelectSession({
                 {selectedSession ? (
                   <span className="truncate">{selectedSession.name}</span>
                 ) : (
-                  <span className="text-muted-foreground">Search by session name...</span>
+                  <span className="text-muted-foreground">
+                    Search by session name...
+                  </span>
                 )}
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[400px] p-0" align="start">
               <Command>
-                <CommandInput placeholder="Search sessions..." className="h-9 px-3" />
+                <CommandInput
+                  placeholder="Search sessions..."
+                  className="h-9 px-3"
+                />
                 <CommandList>
                   <CommandEmpty>No sessions found.</CommandEmpty>
                   <CommandGroup>
@@ -90,14 +108,19 @@ export function SelectSession({
                         className="flex flex-col items-start py-3 px-4 data-[selected=true]:bg-blue-50"
                       >
                         <div className="flex items-center justify-between w-full">
-                          <span className="font-medium truncate max-w-[300px]">{s.name}</span>
+                          <span className="font-medium truncate max-w-[300px]">
+                            {s.name}
+                          </span>
                         </div>
                         {s.startTime && (
-                          <span className="text-xs text-muted-foreground">Starts {new Date(s.startTime).toLocaleString()}</span>
+                          <span className="text-xs text-muted-foreground">
+                            Starts {new Date(s.startTime).toLocaleString()}
+                          </span>
                         )}
                         {s._count && (
                           <span className="text-xs text-muted-foreground">
-                            {s._count.assignments ?? 0} assignments • {s._count.responses ?? 0} responses
+                            {s._count.assignments ?? 0} assignments •{" "}
+                            {s._count.responses ?? 0} responses
                           </span>
                         )}
                       </CommandItem>
@@ -115,14 +138,27 @@ export function SelectSession({
               <CardContent className="p-4 sm:p-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg truncate max-w-[300px]">{selectedSession.name}</h3>
+                    <h3 className="font-semibold text-lg truncate max-w-[300px]">
+                      {selectedSession.name}
+                    </h3>
                   </div>
                   <div className="flex flex-wrap gap-2 sm:gap-4 text-sm text-muted-foreground">
-                    {selectedSession.startTime && <span>Start: {new Date(selectedSession.startTime).toLocaleString()}</span>}
-                    {selectedSession.endTime && <span>End: {new Date(selectedSession.endTime).toLocaleString()}</span>}
+                    {selectedSession.startTime && (
+                      <span>
+                        Start:{" "}
+                        {new Date(selectedSession.startTime).toLocaleString()}
+                      </span>
+                    )}
+                    {selectedSession.endTime && (
+                      <span>
+                        End:{" "}
+                        {new Date(selectedSession.endTime).toLocaleString()}
+                      </span>
+                    )}
                     {selectedSession._count && (
                       <span>
-                        Assignments: {selectedSession._count.assignments ?? 0} • Responses: {selectedSession._count.responses ?? 0}
+                        Assignments: {selectedSession._count.assignments ?? 0} •
+                        Responses: {selectedSession._count.responses ?? 0}
                       </span>
                     )}
                   </div>
@@ -135,5 +171,3 @@ export function SelectSession({
     </Card>
   );
 }
-
-

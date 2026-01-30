@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, FileUp, Loader2, Plus, Trash2, FileText, X, HelpCircle, Tag, Percent, Type, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { extractQuestionsFromPDFApi } from "@/api/api";
+import { convertPDFToImages } from "@/utils/convertPdfToImages";
 import { Question, QuestionType } from "../../../types/questions";
 import { AddQuestionDialog } from "./add-question-dialog";
 
@@ -139,78 +140,6 @@ export default function QuestionsManager({ questions, onQuestionsChange }: Quest
       setCurrentStep("");
       setProcessingProgress({ current: 0, total: 0 });
     }
-  };
-
-  const convertPDFToImages = async (file: File): Promise<string[]> => {
-    return new Promise((resolve, reject) => {
-      const fileReader = new FileReader();
-
-      fileReader.onload = async function () {
-        try {
-          // Use a consistent version of PDF.js
-          const script: any = document.createElement("script");
-          script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-
-          script.onload = async () => {
-            try {
-              // Access PDF.js from global window object
-              const pdfjsLib = (window as any).pdfjsLib;
-
-              // Set worker source to match the main library version
-              pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-              const typedArray = new Uint8Array(this.result as ArrayBuffer);
-              const pdf = await pdfjsLib.getDocument(typedArray).promise;
-
-              const images: string[] = [];
-
-              // Convert each page to image
-              for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                const page = await pdf.getPage(pageNum);
-                const viewport = page.getViewport({ scale: 2.0 });
-
-                const canvas = document.createElement("canvas");
-                const context = canvas.getContext("2d");
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                if (context) {
-                  await page.render({
-                    canvasContext: context,
-                    viewport: viewport,
-                  }).promise;
-
-                  // Convert canvas to base64
-                  const imageBase64 = canvas.toDataURL("image/png").split(",")[1];
-                  images.push(imageBase64);
-                }
-              }
-
-              resolve(images);
-            } catch (error) {
-              console.error("Error processing PDF:", error);
-              reject(error);
-            }
-          };
-
-          script.onerror = () => reject(new Error("Failed to load PDF.js library"));
-
-          // Only add script if it's not already loaded
-          if (!(window as any).pdfjsLib) {
-            document.head.appendChild(script);
-          } else {
-            // If already loaded, use it directly
-            script.onload();
-          }
-        } catch (error) {
-          console.error("Error setting up PDF.js:", error);
-          reject(error);
-        }
-      };
-
-      fileReader.onerror = () => reject(new Error("Failed to read PDF file"));
-      fileReader.readAsArrayBuffer(file);
-    });
   };
 
   const getQuestionTypeDisplay = (type: QuestionType) => {

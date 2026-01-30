@@ -43,7 +43,6 @@ export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTablePr
                   <TableHead className="w-[120px]">Case Number</TableHead>
                   <TableHead className="w-[200px]">Case Name</TableHead>
                   <TableHead className="w-[100px]">Type</TableHead>
-                  <TableHead className="w-[100px]">Status</TableHead>
                   <TableHead className="w-[150px]">Created Date</TableHead>
                   <TableHead className="w-[120px]">Questions</TableHead>
                   <TableHead className="w-[120px]">Actions</TableHead>
@@ -71,20 +70,6 @@ export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTablePr
                           }
                         >
                           {case_.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            case_.status === "Active"
-                              ? "bg-green-100 text-green-700 border-green-200"
-                              : case_.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-                              : "bg-gray-100 text-gray-700 border-gray-200"
-                          }
-                        >
-                          {case_.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -135,7 +120,7 @@ export default function CaseTable({ cases, onViewCase, onEditCase }: CaseTablePr
                   ))}
                   {cases.length === 0 && (
                     <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                         No cases available
                       </TableCell>
                     </motion.tr>

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Juror } from "@/dashboard/manage-jurors/components/types";
 import { generateAvatar } from "@/dashboard/manage-jurors/components/utils";
 import { BiasGauge } from "@/components/shared/bias-gauge";
-import { Eye, Gavel, XCircle } from "lucide-react";
+import { Eye, Gavel, Hash, XCircle } from "lucide-react";
 
 interface JurorMiniCardProps {
   juror: Juror;
@@ -13,6 +13,8 @@ interface JurorMiniCardProps {
   isHighlighted?: boolean;
   onDetails: () => void;
   strikeRecommendation?: "STRIKE_FOR_CAUSE" | "PEREMPTORY_STRIKE" | null;
+  onStrike?: () => void;
+  sessionId?: string;
 }
 
 export function JurorMiniCard({
@@ -21,6 +23,8 @@ export function JurorMiniCard({
   isHighlighted = false,
   onDetails,
   strikeRecommendation,
+  onStrike,
+  sessionId,
 }: JurorMiniCardProps) {
   const effectiveBiasStatus = juror.isStrikedOut ? "high" : juror.biasStatus;
   // Prioritize panelPosition, then jurorNumber, then id
@@ -58,6 +62,20 @@ export function JurorMiniCard({
       className={`relative h-full bg-white shadow-sm border ${borderColorClass} ${isHighlighted ? "ring-2 ring-blue-500" : ""
         } transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-opacity-80`}
     >
+      {/* Strike Button - Top right corner for unstruck jurors */}
+      {!isStruck && onStrike && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onStrike();
+          }}
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-white border border-gray-300 shadow-md hover:bg-gray-50 hover:border-red-400 z-10 transition-colors"
+          title="Strike juror"
+        >
+          <Gavel className="h-4 w-4 text-red-600" />
+        </button>
+      )}
+      
       <CardContent className="p-5">
         <div className="flex flex-col items-center text-center">
           <Avatar className="h-16 w-16 mb-3">
@@ -70,8 +88,20 @@ export function JurorMiniCard({
             </AvatarFallback>
           </Avatar>
 
-          <div className="font-semibold text-gray-900 truncate max-w-full">
-            {hasPanelPosition ? `#${juror.panelPosition}` : displayId ? `#${displayId}` : null}
+          <div className="flex flex-col items-center gap-1.5">
+            {hasPanelPosition ? (
+              <Badge
+                variant="outline"
+                className="text-xs sm:text-sm font-bold bg-indigo-50 text-indigo-700 border-indigo-300 px-2.5 py-1.5 shadow-sm"
+              >
+                <Hash className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5" />
+                Panel {juror.panelPosition}
+              </Badge>
+            ) : (
+              displayId && (
+                <span className="font-semibold text-gray-900 truncate max-w-full">#{displayId}</span>
+              )
+            )}
           </div>
           <div className="text-xs text-gray-600 mt-1">
             {juror.name}

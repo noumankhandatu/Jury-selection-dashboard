@@ -4,25 +4,43 @@ import type React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, Brain, Sparkles, Loader2, CheckCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Upload, Brain, Sparkles, Loader2, CheckCircle, CheckCircle2, XCircle } from "lucide-react";
 import CardHeaderTag from "@/components/shared/card-header";
 import { itemVariants } from "@/utils/fn";
+import { toast } from "sonner";
 
-export function PDFUploader({ selectedCase, onFileUpload, isUploading, isSubmitting, uploadError, uploadSuccess }: any) {
+const isImageFile = (f: File) =>
+  f.type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(f.name);
+const isPdfFile = (f: File) =>
+  f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
+
+export function PDFUploader({
+  selectedCase,
+  onFileUpload,
+  onMultipleImageUpload,
+  imageUploads,
+  isUploading,
+  isSubmitting,
+  uploadError,
+  uploadSuccess,
+}: any) {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const list = event.target.files;
+    if (!list?.length) return;
 
-    // Accept PDFs and images
-    const isPDF = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-    const isImage = file.type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name);
-    
-    if (!isPDF && !isImage) {
-      return;
+    const files = Array.from(list);
+    const images = files.filter(isImageFile);
+    const pdfs = files.filter(isPdfFile);
+
+    if (images.length >= 1) {
+      const capped = images.slice(0, 5);
+      await onMultipleImageUpload(capped);
+    } else if (pdfs.length >= 1) {
+      await onFileUpload(pdfs[0]);
+    } else {
+      toast.error("Please upload a PDF or image (JPG, PNG, etc.).");
     }
-
-    await onFileUpload(file);
-    // Clear the file input
     event.target.value = "";
   };
 
@@ -35,8 +53,76 @@ export function PDFUploader({ selectedCase, onFileUpload, isUploading, isSubmitt
       />
 
       <CardContent className="p-4 sm:p-6">
-        {/* Loading State */}
-        {(isUploading || isSubmitting) && (
+        {/* Multi-image progress: per-file bars (0–100%), each updates independently */}
+        {(imageUploads || []).length > 0 && (isUploading || isSubmitting) && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="border-2 border-dashed border-purple-300 rounded-lg p-6 sm:p-8 bg-gradient-to-br from-purple-50/50 to-blue-50/50 backdrop-blur-sm"
+          >
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="relative mb-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                  {isSubmitting ? (
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  ) : (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  )}
+                </div>
+                <div className="absolute -top-1 -right-1">
+                  <Sparkles className="h-4 w-4 text-yellow-500 animate-pulse" />
+                </div>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">
+                {isSubmitting ? "Saving jurors…" : "Processing images…"}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {isSubmitting
+                  ? "Uploading extracted jurors to database"
+                  : "Each image is processed in parallel. Progress updates independently."}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {(imageUploads || []).map((u: any) => (
+                <div key={u.id} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-gray-700 truncate flex-1" title={u.name}>
+                      {u.name}
+                    </span>
+                    <span className="text-xs text-gray-500 shrink-0">
+                      {u.status === "uploading" && `${u.progress}%`}
+                      {u.status === "done" && (
+                        <span className="flex items-center gap-1 text-green-600">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Done
+                        </span>
+                      )}
+                      {u.status === "error" && (
+                        <span className="flex items-center gap-1 text-red-600" title={u.error}>
+                          <XCircle className="h-3.5 w-3.5" /> Failed
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <Progress
+                    value={u.progress}
+                    className="h-2"
+                    indicatorClassName={
+                      u.status === "error"
+                        ? "bg-red-500"
+                        : u.status === "done"
+                          ? "bg-green-500"
+                          : "bg-gradient-to-r from-purple-500 to-blue-600"
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Single-file loading state (PDF or one image) */}
+        {(isUploading || isSubmitting) && (imageUploads || []).length === 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -92,7 +178,6 @@ export function PDFUploader({ selectedCase, onFileUpload, isUploading, isSubmitt
                 )}
               </div>
 
-              {/* Progress Animation */}
               <div className="w-full max-w-xs">
                 <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
                   <div className="bg-gradient-to-r from-purple-500 to-blue-600 h-full rounded-full animate-pulse"></div>
@@ -122,6 +207,7 @@ export function PDFUploader({ selectedCase, onFileUpload, isUploading, isSubmitt
                 </p>
                 <p className="text-sm text-gray-600">Upload any juror questionnaire PDF or image and AI will extract all information</p>
                 <p className="text-xs text-purple-600 font-medium">✨ Powered by OpenAI GPT-4 Vision</p>
+                <p className="text-xs text-gray-500">Supports parallel image uploads (max 5). Each image has its own progress.</p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -133,12 +219,19 @@ export function PDFUploader({ selectedCase, onFileUpload, isUploading, isSubmitt
                 >
                   <label htmlFor="pdfUpload" className="cursor-pointer flex items-center">
                     <Upload className="mr-2 h-4 w-4" />
-                    Upload PDF or Image
+                    Upload PDF or Images (max 5)
                   </label>
                 </Button>
               </div>
 
-              <input id="pdfUpload" type="file" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.bmp,image/*" onChange={handleFileChange} className="hidden" />
+              <input
+                id="pdfUpload"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.bmp,image/*"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+              />
 
               {/* AI Processing Info */}
               <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">

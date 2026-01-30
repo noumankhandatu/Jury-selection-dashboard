@@ -25,6 +25,36 @@ import TagBtnJuror from "@/components/shared/tag/tag-btn-manage-juror";
 import { createJurorsApi, getCasesApi } from "@/api/api";
 import { toast } from "sonner";
 
+/** User-friendly message when create jurors API fails (e.g. duplicate TDL). */
+function getJurorCreateErrorDisplay(
+  err: any,
+  fallbackToast: string
+): { toast: string; uploadErrorDetail: string } {
+  const data = err?.response?.data;
+  const errors = data?.errors;
+  if (Array.isArray(errors) && errors.length > 0) {
+    const hasDuplicate = errors.some(
+      (e: any) =>
+        typeof e?.error === "string" &&
+        /already exists|TDL number/i.test(e.error)
+    );
+    if (hasDuplicate) {
+      const msg = "Can't add a juror that already exists.";
+      return { toast: msg, uploadErrorDetail: msg };
+    }
+  }
+  const detail =
+    errors?.[0]?.error ||
+    data?.message ||
+    err?.error ||
+    err?.message ||
+    "Unknown error";
+  return {
+    toast: fallbackToast,
+    uploadErrorDetail: `Failed to save jurors: ${detail}`,
+  };
+}
+
 export default function ManageJurorsPage() {
   const [searchParams] = useSearchParams();
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
@@ -73,7 +103,10 @@ export default function ManageJurorsPage() {
   const [hasUploadedOnce, setHasUploadedOnce] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [successDialogData, setSuccessDialogData] = useState<{ count: number; fileName: string } | null>(null);
+  const [successDialogData, setSuccessDialogData] = useState<{ count: number; fileName: string; imageCount?: number } | null>(null);
+
+  /** Per-image upload state for multi-image flow (max 5). Progress 0–100, updates independently. */
+  const [imageUploads, setImageUploads] = useState<{ id: string; name: string; progress: number; status: "uploading" | "done" | "error"; error?: string }[]>([]);
   const handleViewJurorDetails = (juror: Juror) => {
     setSelectedJuror(juror);
     setIsJurorDetailsOpen(true);
@@ -86,6 +119,7 @@ export default function ManageJurorsPage() {
     setHasUploadedOnce(caseJurors.length > 0);
     setUploadError("");
     setUploadSuccess("");
+    setImageUploads([]);
   };
 
   const handleFileUpload = async (file: File) => {
@@ -166,10 +200,14 @@ export default function ManageJurorsPage() {
         const currentCaseJurors = updatedJurorsByCase[selectedCase.id] || [];
         updatedJurorsByCase[selectedCase.id] = sortJurorsByNumber([...currentCaseJurors, ...parsedJurors]);
         setJurorsByCase(updatedJurorsByCase);
-        
-        setUploadError(`Failed to save jurors: ${submitErr?.error || submitErr?.message || "Unknown error"}`);
+
+        const { toast: toastMsg, uploadErrorDetail } = getJurorCreateErrorDisplay(
+          submitErr,
+          "Failed to save jurors. Please try submitting manually."
+        );
+        setUploadError(uploadErrorDetail);
         setHasUploadedOnce(true);
-        toast.error("Failed to save jurors. Please try submitting manually.");
+        toast.error(toastMsg);
       } finally {
         setIsSubmitting(false);
       }
@@ -178,6 +216,137 @@ export default function ManageJurorsPage() {
       setHasUploadedOnce(true);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  /** Process 1–5 images in parallel. Each has its own progress bar (0–100%). */
+  const handleMultipleImageUpload = async (files: File[]) => {
+    if (!selectedCase) {
+      setUploadError("Please select a case first");
+      return;
+    }
+    const images = files.filter((f) => f.type.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(f.name));
+    const capped = images.slice(0, 5);
+    if (capped.length === 0) {
+      setUploadError("Please upload at least one image (JPG, PNG, etc.).");
+      return;
+    }
+    if (images.length > 5) {
+      toast.info("Only the first 5 images will be processed.");
+    }
+
+    setUploadError("");
+    setUploadSuccess("");
+    setIsUploading(true);
+    const PROGRESS_CAP = 90;
+    const PROGRESS_INTERVAL_MS = 80;
+    const PROGRESS_STEP = 4;
+
+    const initial = capped.map((f, i) => ({
+      id: `img-${Date.now()}-${i}-${f.name}`,
+      name: f.name,
+      progress: 0,
+      status: "uploading" as const,
+    }));
+    setImageUploads(initial);
+
+    const updateProgress = (id: string, progress: number, status: "uploading" | "done" | "error", error?: string) => {
+      setImageUploads((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, progress, status, error } : u))
+      );
+    };
+
+    const runOne = async (file: File, id: string): Promise<Juror[]> => {
+      let cancelled = false;
+      const timer = window.setInterval(() => {
+        if (cancelled) return;
+        setImageUploads((prev) => {
+          const u = prev.find((x) => x.id === id);
+          if (!u || u.status !== "uploading") return prev;
+          const next = Math.min(u.progress + PROGRESS_STEP, PROGRESS_CAP);
+          return prev.map((x) => (x.id === id ? { ...x, progress: next } : x));
+        });
+      }, PROGRESS_INTERVAL_MS);
+
+      try {
+        const jurors = await extractAndParseJurorsFromImage(file, selectedCase.id);
+        cancelled = true;
+        clearInterval(timer);
+        updateProgress(id, 100, "done");
+        return jurors.map((j) => ({ ...j, submitted: false }));
+      } catch (e) {
+        cancelled = true;
+        clearInterval(timer);
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        updateProgress(id, 100, "error", msg);
+        return [];
+      }
+    };
+
+    const allResults = await Promise.all(capped.map((f, i) => runOne(f, initial[i].id)));
+    const parsedJurors = allResults.flat();
+    const okCount = allResults.filter((r) => r.length > 0).length;
+    const failCount = capped.length - okCount;
+
+    if (parsedJurors.length === 0) {
+      setUploadError("No juror data found in any of the images.");
+      setHasUploadedOnce(true);
+      setIsUploading(false);
+      setImageUploads([]);
+      return;
+    }
+
+    if (failCount > 0) {
+      toast.warning(`${failCount} image(s) had no juror data or failed. Added jurors from ${okCount} image(s).`);
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        caseId: selectedCase.id,
+        caseName: selectedCase.name,
+        caseNumber: selectedCase.number,
+        totalJurors: parsedJurors.length,
+        submissionDate: new Date().toISOString(),
+        jurors: parsedJurors.map((j) => ({
+          ...j,
+          source: "Image Extraction",
+          createdAt: new Date().toISOString(),
+        })),
+      };
+      await createJurorsApi(payload);
+
+      const updatedJurorsByCase = { ...jurorsByCase };
+      const currentCaseJurors = updatedJurorsByCase[selectedCase.id] || [];
+      const submittedJurors = parsedJurors.map((j) => ({ ...j, submitted: true }));
+      updatedJurorsByCase[selectedCase.id] = sortJurorsByNumber([...currentCaseJurors, ...submittedJurors]);
+      setJurorsByCase(updatedJurorsByCase);
+
+      setSuccessDialogData({
+        count: parsedJurors.length,
+        fileName: capped.length === 1 ? capped[0].name : `${capped.length} images`,
+        imageCount: capped.length,
+      });
+      setShowSuccessDialog(true);
+      setHasUploadedOnce(true);
+      toast.success(`${parsedJurors.length} jurors uploaded successfully!`);
+    } catch (submitErr: any) {
+      const updatedJurorsByCase = { ...jurorsByCase };
+      const currentCaseJurors = updatedJurorsByCase[selectedCase.id] || [];
+      updatedJurorsByCase[selectedCase.id] = sortJurorsByNumber([...currentCaseJurors, ...parsedJurors]);
+      setJurorsByCase(updatedJurorsByCase);
+
+      const { toast: toastMsg, uploadErrorDetail } = getJurorCreateErrorDisplay(
+        submitErr,
+        "Failed to save jurors. Please try submitting manually."
+      );
+      setUploadError(uploadErrorDetail);
+      setHasUploadedOnce(true);
+      toast.error(toastMsg);
+    } finally {
+      setIsSubmitting(false);
+      setIsUploading(false);
+      setImageUploads([]);
     }
   };
 
@@ -240,7 +409,11 @@ export default function ManageJurorsPage() {
       setUploadSuccess(`✅ Submitted ${jurors.length} jurors!`);
       setTimeout(() => setUploadSuccess(""), 10000);
     } catch (err: any) {
-      toast.error(err?.error || "Failed to submit jurors.");
+      const { toast: toastMsg } = getJurorCreateErrorDisplay(
+        err,
+        "Failed to submit jurors."
+      );
+      toast.error(toastMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -316,6 +489,8 @@ export default function ManageJurorsPage() {
             <PDFUploader
               selectedCase={selectedCase}
               onFileUpload={handleFileUpload}
+              onMultipleImageUpload={handleMultipleImageUpload}
+              imageUploads={imageUploads}
               isUploading={isUploading}
               isSubmitting={isSubmitting}
               uploadError={uploadError}

@@ -8,14 +8,14 @@ export const generateAvatar = (name: string, gender?: string | null) => {
   // Gender is normalized to "male" | "female" | null
   const normalizedGender = gender?.toLowerCase() || "";
 
-  // Return local images from public folder based on gender
   if (normalizedGender === "female") {
-    // Female placeholder from public folder
     return "/female.png";
-  } else {
-    // Male placeholder from public folder (default for male or null/undefined)
+  }
+  if (normalizedGender === "male") {
     return "/male.png";
   }
+  // Not specified (null, undefined, empty, or other) → neutral
+  return "/neutral.jpg";
 };
 
 export const getBiasColor = (status: string) => {

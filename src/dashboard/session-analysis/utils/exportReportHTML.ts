@@ -18,8 +18,9 @@ export async function exportSessionReportHTML({
       throw new Error("html2pdf.js failed to load");
     }
 
-    const sessionName = session?.name || sessionStats?.session?.name || "Untitled Session";
-    const caseName = session?.caseName || "—";
+    const sessionName =
+      session?.name || sessionStats?.session?.name || "Untitled Session";
+    // const caseName = session?.caseName || "—";
     const issued = new Date().toLocaleString("en-US", {
       dateStyle: "long",
       timeStyle: "short",
@@ -391,10 +392,6 @@ export async function exportSessionReportHTML({
         <span class="metadata-value">${sessionName}</span>
       </div>
       <div class="metadata-row">
-        <span class="metadata-label">Case:</span>
-        <span class="metadata-value">${caseName}</span>
-      </div>
-      <div class="metadata-row">
         <span class="metadata-label">Report Generated:</span>
         <span class="metadata-value">${issued}</span>
       </div>
@@ -404,12 +401,14 @@ export async function exportSessionReportHTML({
       </div>
     </div>
 
-    <!-- Executive Summary -->
+    <!-- Session Summary -->
     <div class="section-header">
-      <span class="icon">📋</span>Executive Summary
+      <span class="icon">📋</span>Session Summary
     </div>
     <div class="content-box">
-      <p class="summary-text">${session?.summary || "No session summary provided."}</p>
+      <p class="summary-text">${
+        session?.summary || "No session summary provided."
+      }</p>
     </div>
 
     <!-- Key Metrics -->
@@ -432,11 +431,15 @@ export async function exportSessionReportHTML({
         </div>
         <div class="metric-item">
           <span class="metric-label">Avg. Suitability</span>
-          <span class="metric-value">${Math.round(perf.averageScore ?? 0)}%</span>
+          <span class="metric-value">${Math.round(
+            perf.averageScore ?? 0,
+          )}%</span>
         </div>
         <div class="metric-item">
           <span class="metric-label">Completion Rate</span>
-          <span class="metric-value">${Math.round(ov.completionRate ?? 0)}%</span>
+          <span class="metric-value">${Math.round(
+            ov.completionRate ?? 0,
+          )}%</span>
         </div>
       </div>
     </div>
@@ -451,25 +454,33 @@ export async function exportSessionReportHTML({
           <span class="performance-indicator indicator-success"></span>
           <span> Ideal for Case (80%+)</span>
         </div>
-        <span class="performance-count count-success">${perf.highPerformers ?? 0}</span>
+        <span class="performance-count count-success">${
+          perf.highPerformers ?? 0
+        }</span>
       </div>
       <div class="performance-item">
         <div class="performance-label">
           <span class="performance-indicator indicator-warning"></span>
           <span> Neutral (60-79%)</span>
         </div>
-        <span class="performance-count count-warning">${perf.mediumPerformers ?? 0}</span>
+        <span class="performance-count count-warning">${
+          perf.mediumPerformers ?? 0
+        }</span>
       </div>
       <div class="performance-item">
         <div class="performance-label">
           <span class="performance-indicator indicator-danger"></span>
           <span> Recommend Strike (<60%)</span>
         </div>
-        <span class="performance-count count-danger">${perf.lowPerformers ?? 0}</span>
+        <span class="performance-count count-danger">${
+          perf.lowPerformers ?? 0
+        }</span>
       </div>
     </div>
 
-    ${strikeRecommendations ? `
+    ${
+      strikeRecommendations
+        ? `
     <!-- Strike Recommendations -->
     <div class="section-header">
       <span class="icon">⚖️</span>Strike Recommendations
@@ -487,39 +498,46 @@ export async function exportSessionReportHTML({
         </div>
         <div class="strike-summary-item">
           <span class="strike-summary-label">Total Reviewed:</span>
-          <span class="strike-summary-value strike-summary-total">${summary.total}</span>
+          <span class="strike-summary-value strike-summary-total">${
+            summary.total
+          }</span>
         </div>
       </div>
     </div>
 
-    ${Array.isArray(strikeRecommendations.results) && strikeRecommendations.results.length > 0
-      ? strikeRecommendations.results.map((rec: any, idx: number) => {
-          const jurorIdentifier =
-            rec.panelPosition !== null && rec.panelPosition !== undefined
-              ? `Panel #${rec.panelPosition}`
-              : rec.jurorNumber
-              ? `Juror #${rec.jurorNumber}`
-              : "—";
+    ${
+      Array.isArray(strikeRecommendations.results) &&
+      strikeRecommendations.results.length > 0
+        ? strikeRecommendations.results
+            .map((rec: any, idx: number) => {
+              const jurorIdentifier =
+                rec.panelPosition !== null && rec.panelPosition !== undefined
+                  ? `Panel #${rec.panelPosition}`
+                  : rec.jurorNumber
+                  ? `Juror #${rec.jurorNumber}`
+                  : "—";
 
-          const readable =
-            rec.recommendation === "STRIKE_FOR_CAUSE"
-              ? "Strike for Cause"
-              : rec.recommendation === "PEREMPTORY_STRIKE"
-              ? "Peremptory Strike"
-              : "No Strike";
+              const readable =
+                rec.recommendation === "STRIKE_FOR_CAUSE"
+                  ? "Strike for Cause"
+                  : rec.recommendation === "PEREMPTORY_STRIKE"
+                  ? "Peremptory Strike"
+                  : "No Strike";
 
-          const badgeClass =
-            rec.recommendation === "STRIKE_FOR_CAUSE"
-              ? "badge-strike-cause"
-              : rec.recommendation === "PEREMPTORY_STRIKE"
-              ? "badge-peremptory"
-              : "badge-no-strike";
+              const badgeClass =
+                rec.recommendation === "STRIKE_FOR_CAUSE"
+                  ? "badge-strike-cause"
+                  : rec.recommendation === "PEREMPTORY_STRIKE"
+                  ? "badge-peremptory"
+                  : "badge-no-strike";
 
-          return `
+              return `
     <div class="recommendation-card">
       <div class="rec-header">
         <div>
-          <span class="rec-juror-name">${idx + 1}. ${rec.jurorName || "Unknown Juror"}</span>
+          <span class="rec-juror-name">${idx + 1}. ${
+                rec.jurorName || "Unknown Juror"
+              }</span>
           <span class="rec-juror-id">(${jurorIdentifier})</span>
         </div>
         <span class="rec-badge ${badgeClass}">${readable}</span>
@@ -527,46 +545,70 @@ export async function exportSessionReportHTML({
 
       <div class="rec-section">
         <div class="rec-section-title">Reason:</div>
-        <div class="rec-section-content">${rec.reason || "No reason provided."}</div>
+        <div class="rec-section-content">${
+          rec.reason || "No reason provided."
+        }</div>
       </div>
 
-      ${Array.isArray(rec.jurorNotes) && rec.jurorNotes.length > 0
-        ? `
+      ${
+        Array.isArray(rec.jurorNotes) && rec.jurorNotes.length > 0
+          ? `
       <div class="rec-section">
         <div class="rec-section-title">Notes:</div>
         <div class="rec-section-content">
-          ${rec.jurorNotes.map((n: any) => `
-          <div class="rec-note-item">${n.note} (${new Date(n.createdAt).toLocaleDateString()})</div>
-          `).join("")}
+          ${rec.jurorNotes
+            .map(
+              (n: any) => `
+          <div class="rec-note-item">${n.note} (${new Date(
+                n.createdAt,
+              ).toLocaleDateString()})</div>
+          `,
+            )
+            .join("")}
         </div>
       </div>
-      ` : ""}
+      `
+          : ""
+      }
 
-      ${Array.isArray(rec.questionsAndAnswers) && rec.questionsAndAnswers.length > 0
-        ? `
+      ${
+        Array.isArray(rec.questionsAndAnswers) &&
+        rec.questionsAndAnswers.length > 0
+          ? `
       <div class="rec-section">
         <div class="rec-section-title">Questions & Answers:</div>
         <div class="rec-section-content">
-          ${rec.questionsAndAnswers.map((qa: any, qaIdx: number) => `
+          ${rec.questionsAndAnswers
+            .map(
+              (qa: any, qaIdx: number) => `
           <div class="qa-item">
             <div class="qa-question">Q${qaIdx + 1}: ${qa.question}</div>
             <div class="qa-answer">A: ${qa.answer}</div>
           </div>
-          `).join("")}
+          `,
+            )
+            .join("")}
         </div>
       </div>
-      ` : ""}
+      `
+          : ""
+      }
     </div>
           `;
-        }).join("")
-      : `<div class="content-box"><p class="summary-text">No strike recommendations available for this session.</p></div>`
+            })
+            .join("")
+        : `<div class="content-box"><p class="summary-text">No strike recommendations available for this session.</p></div>`
     }
-    ` : ""}
+    `
+        : ""
+    }
 
     <!-- Footer -->
     <div class="footer">
       <span>Generated by Jury AI</span>
-      <span>Report Issued: ${new Date().toLocaleDateString("en-US", { dateStyle: "medium" })}</span>
+      <span>Report Issued: ${new Date().toLocaleDateString("en-US", {
+        dateStyle: "medium",
+      })}</span>
     </div>
   </div>
 </body>
@@ -581,10 +623,17 @@ export async function exportSessionReportHTML({
     // Configure PDF options
     const opt = {
       margin: 0,
-      filename: `Jury-Analysis-${sessionName.replace(/[^a-z0-9]/gi, "-")}-${Date.now()}.pdf`,
+      filename: `Jury-Analysis-${sessionName.replace(
+        /[^a-z0-9]/gi,
+        "-",
+      )}-${Date.now()}.pdf`,
       image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },
+      jsPDF: {
+        unit: "mm" as const,
+        format: "a4" as const,
+        orientation: "portrait" as const,
+      },
       pagebreak: { mode: ["avoid-all", "css", "legacy"] },
     };
 
@@ -601,8 +650,12 @@ export async function exportSessionReportHTML({
     console.error("PDF export failed:", err);
     console.error("Error details:", {
       message: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : undefined
+      stack: err instanceof Error ? err.stack : undefined,
     });
-    alert(`PDF export failed: ${err instanceof Error ? err.message : String(err)}\n\nCheck the console for more details.`);
+    alert(
+      `PDF export failed: ${
+        err instanceof Error ? err.message : String(err)
+      }\n\nCheck the console for more details.`,
+    );
   }
 }

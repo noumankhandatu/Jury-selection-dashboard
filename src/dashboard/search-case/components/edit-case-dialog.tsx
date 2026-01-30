@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useEffect, useState } from "react";
-import { FileText, Plus, Edit, Trash2, X, Save, Type, Percent, Tag as TagIcon, Pencil } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { FileText, Plus, FileUp, Loader2, Edit, Trash2, X, Save, Type, Percent, Tag as TagIcon, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { getCaseQuestionsApi, createQuestionApi, updateQuestionApi, deleteQuestionApi } from "@/api/api";
+import { toast } from "sonner";
+import { getCaseQuestionsApi, createQuestionApi, updateQuestionApi, deleteQuestionApi, extractQuestionsFromPDFApi } from "@/api/api";
+import { convertPDFToImages } from "@/utils/convertPdfToImages";
 
 interface Case {
   id: string;
@@ -65,6 +67,10 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
     tags: [] as string[],
     percentage: 5,
   });
+  const [isProcessingPDF, setIsProcessingPDF] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0 });
+  const [currentStep, setCurrentStep] = useState("");
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const getQuestionTypeDisplay = (type: QuestionType) => {
     switch (type) {
@@ -166,6 +172,96 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
     setEditingQuestion(null);
   };
 
+  const handlePDFUpload = (file: File) => {
+    if (!file.type.includes("pdf")) {
+      toast.error("Please upload a PDF file");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+    processPDF(file);
+  };
+
+  const processPDF = async (file: File) => {
+    if (!editingCase) return;
+    setIsProcessingPDF(true);
+    setCurrentStep("Initializing...");
+    setProcessingProgress({ current: 0, total: 0 });
+    try {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error("OpenAI API key is not configured");
+      }
+      setCurrentStep("Converting PDF to images...");
+      const images = await convertPDFToImages(file);
+      if (images.length === 0) throw new Error("Could not convert PDF to images");
+      setProcessingProgress({ current: 0, total: images.length });
+      setCurrentStep(`Processing ${images.length} page(s) with AI...`);
+      toast.info(`Processing ${images.length} page(s) from PDF...`);
+      let allExtracted: { question: string; tags: string[]; percentage: number; questionType: QuestionType }[] = [];
+      for (let i = 0; i < images.length; i++) {
+        setProcessingProgress({ current: i + 1, total: images.length });
+        setCurrentStep(`Analyzing page ${i + 1} of ${images.length}...`);
+        try {
+          const data = await extractQuestionsFromPDFApi(images[i], i + 1);
+          if (data.questions && Array.isArray(data.questions)) {
+            const validated = data.questions
+              .filter((q: any) => q && typeof q.question === "string" && q.question.trim().length > 5)
+              .map((q: any) => ({
+                question: q.question.trim(),
+                tags: Array.isArray(q.tags) ? q.tags.slice(0, 3) : [],
+                percentage: typeof q.percentage === "number" ? Math.min(100, Math.max(0, q.percentage)) : 75,
+                questionType: (q.type || "YES_NO") as QuestionType,
+              }));
+            allExtracted = [...allExtracted, ...validated];
+          }
+        } catch (pageErr: any) {
+          console.error(`Error processing page ${i + 1}:`, pageErr);
+          if (pageErr?.response?.status === 429) {
+            toast.error("Insufficient AI tokens. Please upgrade your plan or wait for tokens to reset.");
+            break;
+          }
+        }
+      }
+      setCurrentStep("Finalizing...");
+      const unique = allExtracted.reduce((acc, cur) => {
+        if (!acc.find((q) => q.question === cur.question)) acc.push(cur);
+        return acc;
+      }, [] as typeof allExtracted);
+      if (unique.length === 0) {
+        toast.warning("No questions found in the PDF. Add questions manually or try another file.");
+        return;
+      }
+      const baseOrder = questions.length;
+      for (let i = 0; i < unique.length; i++) {
+        const q = unique[i];
+        const percentage = Math.max(10, Math.min(100, q.percentage));
+        await createQuestionApi(editingCase.id, {
+          question: q.question,
+          questionType: q.questionType,
+          tags: q.tags,
+          percentage,
+          order: baseOrder + 1 + i,
+        });
+      }
+      await fetchQuestions();
+      toast.success(`Added ${unique.length} question(s) from PDF.`);
+    } catch (err) {
+      console.error("PDF processing error:", err);
+      if (err instanceof Error) {
+        if (err.message.includes("Insufficient AI tokens")) toast.error(err.message);
+        else toast.error(`Failed to extract questions: ${err.message}`);
+      } else toast.error("An unexpected error occurred while processing the PDF.");
+    } finally {
+      setIsProcessingPDF(false);
+      setCurrentStep("");
+      setProcessingProgress({ current: 0, total: 0 });
+      if (pdfInputRef.current) pdfInputRef.current.value = "";
+    }
+  };
+
   if (!editingCase) return null;
 
   return (
@@ -183,10 +279,53 @@ export default function EditCaseDialog({ isOpen, onOpenChange, editingCase, edit
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b pb-2">
               <h3 className="text-lg font-semibold text-gray-800">My Questions</h3>
-              <Button variant="outline" size="sm" onClick={() => setIsAddingQuestion(true)} className="flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Add Question</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={pdfInputRef}
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handlePDFUpload(f);
+                  }}
+                  disabled={isProcessingPDF}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pdfInputRef.current?.click()}
+                  disabled={isProcessingPDF}
+                  className="flex items-center space-x-2"
+                >
+                  {isProcessingPDF ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>{currentStep || "Processing…"}</span>
+                      {processingProgress.total > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {processingProgress.current}/{processingProgress.total}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <FileUp className="h-4 w-4" />
+                      <span>Upload Question</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddingQuestion(true)}
+                  disabled={isProcessingPDF}
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Question</span>
+                </Button>
+              </div>
             </div>
 
             {/* Add Question Form - Shows at top */}

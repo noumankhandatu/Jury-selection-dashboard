@@ -32,7 +32,7 @@ const SessionAnalysisPage = () => {
   } = useSessionAnalysis();
 
   const [selectedBucket, setSelectedBucket] = useState<
-    "low" | "mid" | "high" | null
+    "all" | "low" | "mid" | "high" | null
   >(null);
 const [strikeRecommendations, setStrikeRecommendations] =
   useState<StrikeRecommendationsResponse | null>(null);
@@ -103,6 +103,7 @@ const [strikeRecommendations, setStrikeRecommendations] =
               selectedBucket={selectedBucket}
               onBucketClick={(bucket) => {
                 setSelectedBucket(bucket);
+                if (bucket === "all") return fetchBestJurors(0, 100);
                 if (bucket === "low") return fetchBestJurors(0, 59);
                 if (bucket === "mid") return fetchBestJurors(60, 79);
                 if (bucket === "high") return fetchBestJurors(80);

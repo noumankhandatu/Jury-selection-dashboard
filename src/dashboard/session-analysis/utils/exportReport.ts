@@ -4,10 +4,17 @@ export async function exportSessionReport({
   session,
   sessionStats,
   strikeRecommendations,
+  selectedJurors = [],
 }: {
   session: any | null;
   sessionStats: any | null;
   strikeRecommendations: any | null;
+  selectedJurors?: Array<{
+    id: string;
+    name: string;
+    jurorNumber?: string | null;
+    panelPosition?: number | null;
+  }>;
 }) {
   try {
     const jsPDFMod: any = await import("jspdf");
@@ -28,14 +35,14 @@ export async function exportSessionReport({
 
     // Color palette for professional legal documents
     const colors = {
-      primary: [31, 78, 121],      // Dark blue
-      secondary: [70, 130, 180],   // Steel blue
-      accent: [220, 53, 69],       // Red for strikes
-      success: [40, 167, 69],      // Green for ideal
-      warning: [255, 193, 7],      // Amber for neutral
-      text: [33, 37, 41],          // Dark gray
-      lightGray: [248, 249, 250],  // Light background
-      border: [206, 212, 218],     // Border gray
+      primary: [31, 78, 121], // Dark blue
+      secondary: [70, 130, 180], // Steel blue
+      accent: [220, 53, 69], // Red for strikes
+      success: [40, 167, 69], // Green for ideal
+      warning: [255, 193, 7], // Amber for neutral
+      text: [33, 37, 41], // Dark gray
+      lightGray: [248, 249, 250], // Light background
+      border: [206, 212, 218], // Border gray
     };
 
     let y = PAGE_TOP;
@@ -49,12 +56,9 @@ export async function exportSessionReport({
       const oldY = y;
       setFont(false, 9);
       doc.setTextColor(128, 128, 128);
-      doc.text(
-        `Page ${pageNumber}`,
-        pageWidth - marginRight,
-        pageHeight - 30,
-        { align: "right" }
-      );
+      doc.text(`Page ${pageNumber}`, pageWidth - marginRight, pageHeight - 30, {
+        align: "right",
+      });
       doc.setTextColor(...colors.text);
       y = oldY;
       pageNumber++;
@@ -89,7 +93,13 @@ export async function exportSessionReport({
       y += 8;
     };
 
-    const text = (t: string, x: number, bold = false, size = 11, color = colors.text) => {
+    const text = (
+      t: string,
+      x: number,
+      bold = false,
+      size = 11,
+      color = colors.text
+    ) => {
       ensurePage();
       setFont(bold, size);
       doc.setTextColor(...color);
@@ -98,7 +108,12 @@ export async function exportSessionReport({
       doc.setTextColor(...colors.text);
     };
 
-    const textRight = (t: string, bold = false, size = 11, color = colors.text) => {
+    const textRight = (
+      t: string,
+      bold = false,
+      size = 11,
+      color = colors.text
+    ) => {
       ensurePage();
       setFont(bold, size);
       doc.setTextColor(...color);
@@ -107,7 +122,12 @@ export async function exportSessionReport({
       doc.setTextColor(...colors.text);
     };
 
-    const textCenter = (t: string, bold = false, size = 11, color = colors.text) => {
+    const textCenter = (
+      t: string,
+      bold = false,
+      size = 11,
+      color = colors.text
+    ) => {
       ensurePage();
       setFont(bold, size);
       doc.setTextColor(...color);
@@ -214,7 +234,8 @@ export async function exportSessionReport({
        DOCUMENT METADATA TABLE
     =============================== */
 
-    const sessionName = session?.name || sessionStats?.session?.name || "Untitled Session";
+    const sessionName =
+      session?.name || sessionStats?.session?.name || "Untitled Session";
     const caseName = session?.caseName || "—";
     const issued = new Date().toLocaleString("en-US", {
       dateStyle: "long",
@@ -223,13 +244,13 @@ export async function exportSessionReport({
 
     ensureSpace(60);
     const metaBoxStart = y;
-    
+
     // Draw box background first
     doc.setFillColor(250, 250, 252);
     doc.rect(marginX, metaBoxStart, contentWidth, 60, "F");
     doc.setDrawColor(...colors.border);
     doc.rect(marginX, metaBoxStart, contentWidth, 60, "S");
-    
+
     y += 8;
 
     // Then draw text on top
@@ -267,13 +288,13 @@ export async function exportSessionReport({
 
     ensureSpace(80);
     const metricsBoxStart = y;
-    
+
     // Draw box background first
     doc.setFillColor(248, 250, 252);
     doc.rect(marginX, metricsBoxStart, contentWidth, 80, "F");
     doc.setDrawColor(...colors.border);
     doc.rect(marginX, metricsBoxStart, contentWidth, 80, "S");
-    
+
     y += 10;
 
     // Create a compact 2-column layout
@@ -292,7 +313,7 @@ export async function exportSessionReport({
     metrics.forEach(([label, value], idx) => {
       const x = idx % 2 === 0 ? col1X : col2X;
       if (idx % 2 === 0 && idx > 0) y += 14;
-      
+
       setFont(false, 9);
       doc.setTextColor(100, 100, 100);
       doc.text(label, x, y);
@@ -312,13 +333,13 @@ export async function exportSessionReport({
 
     ensureSpace(70);
     const perfBoxStart = y;
-    
+
     // Draw box background first
     doc.setFillColor(255, 255, 255);
     doc.rect(marginX, perfBoxStart, contentWidth, 70, "F");
     doc.setDrawColor(...colors.border);
     doc.rect(marginX, perfBoxStart, contentWidth, 70, "S");
-    
+
     y += 10;
 
     const perfData = [
@@ -344,18 +365,18 @@ export async function exportSessionReport({
 
     perfData.forEach((item) => {
       ensurePage();
-      
+
       // Color indicator
       doc.setFillColor(...item.color);
       doc.circle(marginX + 12, y - 3, 4, "F");
-      
+
       setFont(false, 10);
       doc.text(`${item.icon} ${item.label}`, marginX + 24, y);
       setFont(true, 11);
       doc.setTextColor(...item.color);
       doc.text(String(item.count), pageWidth - marginRight - 40, y);
       doc.setTextColor(...colors.text);
-      
+
       y += 16;
     });
 
@@ -376,14 +397,14 @@ export async function exportSessionReport({
 
       ensureSpace(40);
       const summaryBoxStart = y;
-      
+
       // Draw box background first
       doc.setFillColor(255, 248, 248);
       doc.rect(marginX, summaryBoxStart, contentWidth, 38, "F");
       doc.setDrawColor(...colors.accent);
       doc.setLineWidth(1);
       doc.rect(marginX, summaryBoxStart, contentWidth, 38, "S");
-      
+
       y += 10;
 
       setFont(false, 9);
@@ -410,22 +431,25 @@ export async function exportSessionReport({
       y += 14 + 12;
 
       // Individual Strike Recommendations
-      if (Array.isArray(strikeRecommendations.results) && strikeRecommendations.results.length > 0) {
+      if (
+        Array.isArray(strikeRecommendations.results) &&
+        strikeRecommendations.results.length > 0
+      ) {
         strikeRecommendations.results.forEach((rec: any, idx: number) => {
           ensureSpace(100);
 
           const recBoxStart = y;
-          
+
           // Calculate approximate box height first
           const estimatedHeight = 120; // Base height for juror info
-          
+
           // Draw box background first
           doc.setFillColor(252, 252, 253);
           doc.rect(marginX, recBoxStart, contentWidth, estimatedHeight, "F");
           doc.setDrawColor(...colors.border);
           doc.setLineWidth(0.5);
           doc.rect(marginX, recBoxStart, contentWidth, estimatedHeight, "S");
-          
+
           y += 10;
 
           // Juror Header
@@ -517,7 +541,7 @@ export async function exportSessionReport({
 
             rec.questionsAndAnswers.forEach((qa: any, qaIdx: number) => {
               ensureSpace(25);
-              
+
               // Question
               setFont(true, 9);
               doc.setTextColor(...colors.primary);
@@ -529,7 +553,7 @@ export async function exportSessionReport({
                 9,
                 1.3
               );
-              
+
               // Answer
               setFont(false, 9);
               doc.setTextColor(...colors.text);
@@ -541,7 +565,7 @@ export async function exportSessionReport({
                 9,
                 1.3
               );
-              
+
               if (qaIdx < rec.questionsAndAnswers.length - 1) {
                 y += 4;
               }
@@ -556,7 +580,7 @@ export async function exportSessionReport({
           doc.setDrawColor(...colors.border);
           doc.setLineWidth(0.5);
           doc.rect(marginX, recBoxStart, contentWidth, recBoxHeight, "S");
-          
+
           y += 10;
         });
       } else {
@@ -572,24 +596,69 @@ export async function exportSessionReport({
     }
 
     /* ===============================
+       SELECTED JURORS FROM BOARD
+    =============================== */
+
+    if (Array.isArray(selectedJurors) && selectedJurors.length > 0) {
+      ensureSpace(50);
+      sectionHeader("Selected Jurors from Board", "✓");
+      ensureSpace(20);
+      setFont(false, 10);
+      doc.setTextColor(80, 80, 80);
+      wrapText(
+        "The following jurors were selected for final jury selection from the courtroom grid.",
+        marginX,
+        contentWidth,
+        false,
+        10,
+        1.4
+      );
+      doc.setTextColor(...colors.text);
+      y += 16;
+
+      selectedJurors.forEach((j: any, idx: number) => {
+        ensureSpace(18);
+        const ident =
+          j.panelPosition != null
+            ? `Panel #${j.panelPosition}`
+            : j.jurorNumber
+            ? `Juror #${j.jurorNumber}`
+            : "";
+        const line = `${idx + 1}. ${j.name || "Unknown Juror"}${
+          ident ? ` (${ident})` : ""
+        }`;
+        doc.text(line, marginX + 8, y);
+        y += 14;
+      });
+      y += 8;
+    }
+
+    /* ===============================
        FOOTER ON ALL PAGES
     =============================== */
 
     const totalPages = doc.internal.pages.length - 1;
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
-      
+
       // Footer line
       doc.setDrawColor(...colors.border);
       doc.setLineWidth(0.5);
-      doc.line(marginX, pageHeight - 40, pageWidth - marginRight, pageHeight - 40);
-      
+      doc.line(
+        marginX,
+        pageHeight - 40,
+        pageWidth - marginRight,
+        pageHeight - 40
+      );
+
       // Footer text
       setFont(false, 8);
       doc.setTextColor(120, 120, 120);
       doc.text("Generated by Jury AI", marginX, pageHeight - 25);
       doc.text(
-        `Report Issued: ${new Date().toLocaleDateString("en-US", { dateStyle: "medium" })}`,
+        `Report Issued: ${new Date().toLocaleDateString("en-US", {
+          dateStyle: "medium",
+        })}`,
         centerX,
         pageHeight - 25,
         { align: "center" }
@@ -607,7 +676,10 @@ export async function exportSessionReport({
        SAVE DOCUMENT
     =============================== */
 
-    const fileName = `Jury-Analysis-${sessionName.replace(/[^a-z0-9]/gi, "-")}-${Date.now()}.pdf`;
+    const fileName = `Jury-Analysis-${sessionName.replace(
+      /[^a-z0-9]/gi,
+      "-"
+    )}-${Date.now()}.pdf`;
     doc.save(fileName);
   } catch (err) {
     alert("PDF export requires 'jspdf'. Please install it and retry.");

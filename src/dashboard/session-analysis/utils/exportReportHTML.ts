@@ -1,13 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+export type SelectedJurorForExport = {
+  id: string;
+  name: string;
+  jurorNumber?: string | null;
+  panelPosition?: number | null;
+};
+
 export async function exportSessionReportHTML({
   session,
   sessionStats,
   strikeRecommendations,
+  selectedJurors = [],
 }: {
   session: any | null;
   sessionStats: any | null;
   strikeRecommendations: any | null;
+  selectedJurors?: SelectedJurorForExport[];
 }) {
   try {
     // Dynamically import html2pdf - handle both default and named exports
@@ -432,13 +441,13 @@ export async function exportSessionReportHTML({
         <div class="metric-item">
           <span class="metric-label">Avg. Suitability</span>
           <span class="metric-value">${Math.round(
-            perf.averageScore ?? 0,
+            perf.averageScore ?? 0
           )}%</span>
         </div>
         <div class="metric-item">
           <span class="metric-label">Completion Rate</span>
           <span class="metric-value">${Math.round(
-            ov.completionRate ?? 0,
+            ov.completionRate ?? 0
           )}%</span>
         </div>
       </div>
@@ -560,9 +569,9 @@ export async function exportSessionReportHTML({
             .map(
               (n: any) => `
           <div class="rec-note-item">${n.note} (${new Date(
-                n.createdAt,
+                n.createdAt
               ).toLocaleDateString()})</div>
-          `,
+          `
             )
             .join("")}
         </div>
@@ -585,7 +594,7 @@ export async function exportSessionReportHTML({
             <div class="qa-question">Q${qaIdx + 1}: ${qa.question}</div>
             <div class="qa-answer">A: ${qa.answer}</div>
           </div>
-          `,
+          `
             )
             .join("")}
         </div>
@@ -599,6 +608,35 @@ export async function exportSessionReportHTML({
             .join("")
         : `<div class="content-box"><p class="summary-text">No strike recommendations available for this session.</p></div>`
     }
+    `
+        : ""
+    }
+
+    ${
+      Array.isArray(selectedJurors) && selectedJurors.length > 0
+        ? `
+    <!-- Selected Jurors from Board -->
+    <div class="section-header">
+      <span class="icon">✓</span>Selected Jurors from Board
+    </div>
+    <div class="content-box">
+      <p class="summary-text">The following jurors were selected for final jury selection from the courtroom grid.</p>
+      <ul class="selected-jurors-list" style="margin-top: 12px; padding-left: 20px;">
+        ${selectedJurors
+          .map((j: SelectedJurorForExport, idx: number) => {
+            const ident =
+              j.panelPosition != null
+                ? `Panel #${j.panelPosition}`
+                : j.jurorNumber
+                ? `Juror #${j.jurorNumber}`
+                : "";
+            return `<li style="margin-bottom: 6px;">${idx + 1}. ${
+              j.name || "Unknown Juror"
+            }${ident ? ` (${ident})` : ""}</li>`;
+          })
+          .join("")}
+      </ul>
+    </div>
     `
         : ""
     }
@@ -625,7 +663,7 @@ export async function exportSessionReportHTML({
       margin: 0,
       filename: `Jury-Analysis-${sessionName.replace(
         /[^a-z0-9]/gi,
-        "-",
+        "-"
       )}-${Date.now()}.pdf`,
       image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true },
@@ -655,7 +693,7 @@ export async function exportSessionReportHTML({
     alert(
       `PDF export failed: ${
         err instanceof Error ? err.message : String(err)
-      }\n\nCheck the console for more details.`,
+      }\n\nCheck the console for more details.`
     );
   }
 }

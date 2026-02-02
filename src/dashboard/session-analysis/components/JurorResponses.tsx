@@ -108,6 +108,7 @@ export const JurorResponses = ({
           name: tj.juror?.name,
           jurorNumber: tj.juror?.jurorNumber,
           panelPosition: tj.juror?.panelPosition, // Include panelPosition
+          gender: tj.juror?.gender, // Include gender for avatar display
         },
         question: undefined,
         responseText: undefined,

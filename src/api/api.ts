@@ -46,7 +46,10 @@ export const getJurorsApi = async () => {
 };
 
 // Update a juror
-export const updateJurorApi = async (jurorId: string, jurorData: Partial<any>) => {
+export const updateJurorApi = async (
+  jurorId: string,
+  jurorData: Partial<any>
+) => {
   try {
     const response = await BaseUrl.put(`/jurors/update/${jurorId}`, jurorData);
     return response.data;
@@ -68,9 +71,14 @@ export const getCaseJurorsApi = async (caseId: string) => {
 };
 
 // Add this to your API functions file (e.g., api.ts)
-export const postSessionSummaryApi = async (sessionId: string, summary: string) => {
+export const postSessionSummaryApi = async (
+  sessionId: string,
+  summary: string
+) => {
   try {
-    const response = await BaseUrl.put(`/sessions/${sessionId}/summary`, { summary });
+    const response = await BaseUrl.put(`/sessions/${sessionId}/summary`, {
+      summary,
+    });
     return response.data;
   } catch (error: any) {
     console.error("Error posting session summary:", error);
@@ -103,7 +111,7 @@ export const createQuestionApi = async (
     questionType: string;
     options?: string[];
     tags?: string[];
-    percentage?:number;
+    percentage?: number;
     isRequired?: boolean;
     order?: number;
   }
@@ -150,7 +158,7 @@ export const updateQuestionApi = async (
     questionType?: string;
     options?: string[];
     tags?: string[];
-    percentage?:number;
+    percentage?: number;
     isRequired?: boolean;
     order?: number;
   }
@@ -230,7 +238,6 @@ export const assignQuestionsToJurorsApi = async (payload: {
   }
 };
 
-
 // Add Juror NoteApi
 export const addJurorNoteApi = async (payload: {
   sessionId: string;
@@ -245,7 +252,6 @@ export const addJurorNoteApi = async (payload: {
     throw error;
   }
 };
-
 
 // Save a juror response
 export const saveJurorResponseApi = async (payload: {
@@ -417,6 +423,41 @@ export const updateJurorStrikeApi = async (
     return response.data;
   } catch (error: any) {
     console.error("Error updating juror strike:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get juror IDs selected for final jury in a session
+ */
+export const getSessionSelectedJurorsApi = async (sessionId: string) => {
+  try {
+    const response = await BaseUrl.get(
+      `/scores/session/${sessionId}/selected-jurors`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching selected jurors:", error);
+    throw error;
+  }
+};
+
+/**
+ * Set juror selected for final jury (persisted in database)
+ */
+export const setJurorSelectedForFinalApi = async (
+  sessionId: string,
+  jurorId: string,
+  selectedForFinal: boolean
+) => {
+  try {
+    const response = await BaseUrl.put(
+      `/scores/session/${sessionId}/juror/${jurorId}/selected-for-final`,
+      { selectedForFinal }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error updating selected for final:", error);
     throw error;
   }
 };
@@ -1098,7 +1139,9 @@ export const verifyTokenPackPurchaseApi = async (sessionId: string) => {
  */
 export const getTokenPackHistoryApi = async (organizationId: string) => {
   try {
-    const response = await BaseUrl.get(`/token-packs/history/${organizationId}`);
+    const response = await BaseUrl.get(
+      `/token-packs/history/${organizationId}`
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error fetching token pack history:", error);

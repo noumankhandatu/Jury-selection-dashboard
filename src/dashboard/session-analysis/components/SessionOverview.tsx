@@ -72,7 +72,7 @@ type SortOrder = "asc" | "desc";
 // helper to map bestJurors API item to display juror
 const mapBestJurorToDisplay = (
   item: any,
-  session: any,
+  session: any
 ): { juror: Juror; score: number | null; id: string } => {
   const j = item?.juror || {};
   const scoreVal =
@@ -149,17 +149,27 @@ export function SessionOverview({
   bestJurors,
   onBucketClick,
   selectedBucket,
+  selectedJurorIds,
+  onSelectForFinal,
+  onUnselectForFinal,
 }: {
   sessionStats: any | null;
   session?: any | null;
   bestJurors?: any[] | null;
   onBucketClick?: (bucket: "all" | "low" | "mid" | "high") => void;
   selectedBucket?: "all" | "low" | "mid" | "high" | null;
+  selectedJurorIds?: Set<string>;
+  onSelectForFinal?: (juror: {
+    id: string;
+    name: string;
+    jurorNumber?: string;
+  }) => void;
+  onUnselectForFinal?: (jurorId: string) => void;
 }) {
   // Keep a local copy of sessionStats so we can refresh
   // counts (like Ideal for Strike) after manual strikes
   const [localSessionStats, setLocalSessionStats] = useState<any | null>(
-    sessionStats,
+    sessionStats
   );
 
   const [activeResponse, setActiveResponse] = useState<any | null>(null);
@@ -307,19 +317,19 @@ export function SessionOverview({
   const avg = Number(performance.averageScore ?? 0);
 
   // Simple board data (all jurors, ignoring current filters)
+  const selectedSet = selectedJurorIds ?? new Set<string>();
   const allBoardJurors: BoardJuror[] = Array.isArray(bestJurors)
     ? bestJurors.map((bj: any) => {
         const mapped = mapBestJurorToDisplay(bj, session);
         const strikeData = strikesByJurorId[mapped.juror.id];
         const strikeRecommendation =
-          bj.strikeRecommendation ||
-          strikeData?.strikeRecommendation ||
-          null;
+          bj.strikeRecommendation || strikeData?.strikeRecommendation || null;
         return {
           id: mapped.id,
           juror: mapped.juror,
           score: typeof mapped.score === "number" ? mapped.score : null,
           strikeRecommendation,
+          selectedForFinal: selectedSet.has(mapped.juror.id),
         };
       })
     : [];
@@ -433,13 +443,13 @@ export function SessionOverview({
                     const [causeResult, peremptoryResult] = await Promise.all([
                       getJurorsByStrikeTypeApi(
                         effectiveSessionId,
-                        "STRIKE_FOR_CAUSE",
+                        "STRIKE_FOR_CAUSE"
                       ).catch(() => ({
                         performanceData: { lowPerformers: [] },
                       })),
                       getJurorsByStrikeTypeApi(
                         effectiveSessionId,
-                        "PEREMPTORY_STRIKE",
+                        "PEREMPTORY_STRIKE"
                       ).catch(() => ({
                         performanceData: { lowPerformers: [] },
                       })),
@@ -533,14 +543,14 @@ export function SessionOverview({
                     try {
                       const result = await getJurorsByStrikeTypeApi(
                         effectiveSessionId,
-                        "STRIKE_FOR_CAUSE",
+                        "STRIKE_FOR_CAUSE"
                       );
                       const jurors =
                         result?.performanceData?.lowPerformers || [];
                       setStrikeJurors(jurors);
                       setStrikeCounts(
                         (prev) =>
-                          ({ ...prev, strikeForCause: jurors.length } as any),
+                          ({ ...prev, strikeForCause: jurors.length } as any)
                       );
                     } catch (error: any) {
                       toast.error("Failed to fetch strike for cause jurors");
@@ -580,14 +590,14 @@ export function SessionOverview({
                     try {
                       const result = await getJurorsByStrikeTypeApi(
                         effectiveSessionId,
-                        "PEREMPTORY_STRIKE",
+                        "PEREMPTORY_STRIKE"
                       );
                       const jurors =
                         result?.performanceData?.lowPerformers || [];
                       setStrikeJurors(jurors);
                       setStrikeCounts(
                         (prev) =>
-                          ({ ...prev, peremptoryStrike: jurors.length } as any),
+                          ({ ...prev, peremptoryStrike: jurors.length } as any)
                       );
                     } catch (error: any) {
                       toast.error("Failed to fetch peremptory strike jurors");
@@ -680,7 +690,7 @@ export function SessionOverview({
                       if (!q) return true;
                       const name = (mapped.juror.name || "").toLowerCase();
                       const jn = String(
-                        mapped.juror.jurorNumber || mapped.juror.id || "",
+                        mapped.juror.jurorNumber || mapped.juror.id || ""
                       ).toLowerCase();
                       return name.includes(q) || jn.includes(q);
                     });
@@ -718,7 +728,7 @@ export function SessionOverview({
                               {filtered.map((bj: any, idx: number) => {
                                 const mapped = mapBestJurorToDisplay(
                                   bj,
-                                  session,
+                                  session
                                 );
                                 const scoreNum =
                                   typeof mapped.score === "number"
@@ -747,7 +757,7 @@ export function SessionOverview({
                                           <AvatarImage
                                             src={generateAvatar(
                                               mapped.juror.name,
-                                              mapped.juror.gender,
+                                              mapped.juror.gender
                                             )}
                                             alt={mapped.juror.name}
                                           />
@@ -1029,7 +1039,7 @@ export function SessionOverview({
                     if (!q) return true;
                     const name = (mapped.juror.name || "").toLowerCase();
                     const jn = String(
-                      mapped.juror.jurorNumber || mapped.juror.id || "",
+                      mapped.juror.jurorNumber || mapped.juror.id || ""
                     ).toLowerCase();
                     return name.includes(q) || jn.includes(q);
                   });
@@ -1133,7 +1143,7 @@ export function SessionOverview({
                                         <AvatarImage
                                           src={generateAvatar(
                                             mapped.juror.name,
-                                            mapped.juror.gender,
+                                            mapped.juror.gender
                                           )}
                                           alt={mapped.juror.name}
                                         />
@@ -1326,6 +1336,8 @@ export function SessionOverview({
                   jurorNumber: jurorInfo.jurorNumber,
                 });
               }}
+              onSelectForFinal={onSelectForFinal}
+              onUnselectForFinal={onUnselectForFinal}
             />
           </div>
         </DialogContent>

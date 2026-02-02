@@ -11,6 +11,7 @@ export interface BoardJuror {
   juror: Juror;
   score: number | null;
   strikeRecommendation: StrikeType;
+  selectedForFinal?: boolean;
 }
 
 interface JuryBoardProps {
@@ -168,4 +169,3 @@ const JuryBoard = ({ jurors, onStrike }: JuryBoardProps) => {
 };
 
 export default JuryBoard;
-

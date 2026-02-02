@@ -3,7 +3,7 @@ import GaugeChart from "react-gauge-chart";
 
 interface OverallGaugeProps {
   valuePercent: number; // 0-100
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   showLabel?: boolean;
 }
 
@@ -16,6 +16,8 @@ export const OverallGauge: React.FC<OverallGaugeProps> = ({
 
   const getSizeConfig = () => {
     switch (size) {
+      case "xs":
+        return { width: 40, height: 28, fontSize: "8px", marginTop: -4 };
       case "sm":
         return { width: 60, height: 40, fontSize: "10px", marginTop: -5 };
       case "md":

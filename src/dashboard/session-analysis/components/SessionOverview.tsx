@@ -1322,7 +1322,7 @@ export function SessionOverview({
         />
       )}
       <Dialog open={isBoardModalOpen} onOpenChange={setIsBoardModalOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-[95vw] sm:max-w-[92vw] md:max-w-[90vw] lg:max-w-6xl max-h-[90vh] p-3 sm:p-6 flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Courtroom Grid</DialogTitle>
           </DialogHeader>

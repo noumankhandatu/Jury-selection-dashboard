@@ -177,7 +177,7 @@ const SessionCourtroomGrid = ({
           return (
             <div
               key={item.id}
-              className={`relative flex items-center justify-between gap-1.5 px-2 py-1 rounded-md border bg-white cursor-default transition
+              className={`relative flex flex-col items-center gap-1.5 px-2 py-2 rounded-md border bg-white cursor-default transition w-full max-w-[140px] justify-self-center
                 ${cardBorder}
                 ${
                   isStruck
@@ -188,27 +188,33 @@ const SessionCourtroomGrid = ({
                 }
               `}
             >
-              {/* Strike button (top-right) - only on unstruck jurors */}
-              {!isStruck && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    onStrike({
-                      id: juror.id,
-                      name: displayName,
-                      jurorNumber: juror.jurorNumber
-                        ? String(juror.jurorNumber)
-                        : juror.panelPosition
-                        ? String(juror.panelPosition)
-                        : undefined,
-                    })
-                  }
-                  className="absolute -top-1 -right-1 p-1 rounded-full bg-white border border-amber-500 bg-amber-50 shadow hover:bg-gray-50 z-10"
-                  title="Strike / update strike"
-                >
-                  <Gavel className="h-3 w-3 text-amber-600" />
-                </button>
-              )}
+              {/* Strike / edit button (top-right) - also allows unstrike */}
+              <button
+                type="button"
+                onClick={() =>
+                  onStrike({
+                    id: juror.id,
+                    name: displayName,
+                    jurorNumber: juror.jurorNumber
+                      ? String(juror.jurorNumber)
+                      : juror.panelPosition
+                      ? String(juror.panelPosition)
+                      : undefined,
+                  })
+                }
+                className={`absolute -top-1 -right-1 p-1 rounded-full bg-white border shadow hover:bg-gray-50 z-10 ${
+                  isStruck
+                    ? "border-red-500 bg-red-50 hover:bg-red-100"
+                    : "border-amber-500 bg-amber-50"
+                }`}
+                title={isStruck ? "Update / remove strike" : "Strike / update strike"}
+              >
+                <Gavel
+                  className={`h-3 w-3 ${
+                    isStruck ? "text-red-700" : "text-amber-600"
+                  }`}
+                />
+              </button>
               {/* Check button (top-left) - add to final jury, only on unstruck jurors */}
               {!isStruck && (onSelectForFinal || onUnselectForFinal) && (
                 <button
@@ -267,24 +273,22 @@ const SessionCourtroomGrid = ({
                 </div>
               )}
 
-              {/* Left side: avatar + seat label */}
-              <div className="flex items-center gap-1.5">
-                <div className="relative">
-                  <Avatar className="h-8 w-8 border shadow-sm">
-                    <AvatarImage
-                      src={generateAvatar(juror.name, juror.gender)}
-                      alt={juror.name}
-                    />
-                    <AvatarFallback>{initials}</AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="text-xs font-bold text-gray-900">
+              {/* Top: avatar + seat label */}
+              <div className="flex flex-col items-center gap-1 pt-1">
+                <Avatar className="h-8 w-8 border shadow-sm">
+                  <AvatarImage
+                    src={generateAvatar(juror.name, juror.gender)}
+                    alt={juror.name}
+                  />
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+                <div className="text-xs font-bold text-gray-900 leading-none">
                   #{seatLabel}
                 </div>
               </div>
 
-              {/* Right side: compact gauge + percent */}
-              <div className="flex flex-col items-center gap-0 mr-2">
+              {/* Bottom: compact gauge + percent */}
+              <div className="flex flex-col items-center gap-0.5 pb-1">
                 <OverallGauge
                   valuePercent={overallScore ?? 0}
                   size="xs"

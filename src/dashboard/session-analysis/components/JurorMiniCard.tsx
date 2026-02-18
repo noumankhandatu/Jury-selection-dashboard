@@ -62,17 +62,21 @@ export function JurorMiniCard({
       className={`relative h-full bg-white shadow-sm border ${borderColorClass} ${isHighlighted ? "ring-2 ring-blue-500" : ""
         } transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-opacity-80`}
     >
-      {/* Strike Button - Top right corner for unstruck jurors */}
-      {!isStruck && onStrike && (
+      {/* Strike Button - Top right corner (also allows unstrike) */}
+      {onStrike && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onStrike();
           }}
-          className="absolute top-2 right-2 p-1.5 rounded-full bg-white border border-gray-300 shadow-md hover:bg-gray-50 hover:border-red-400 z-10 transition-colors"
-          title="Strike juror"
+          className={`absolute top-2 right-2 p-1.5 rounded-full bg-white border shadow-md z-10 transition-colors ${
+            isStruck
+              ? "border-red-400 bg-red-50 hover:bg-red-100"
+              : "border-gray-300 hover:bg-gray-50 hover:border-red-400"
+          }`}
+          title={isStruck ? "Update / remove strike" : "Strike juror"}
         >
-          <Gavel className="h-4 w-4 text-red-600" />
+          <Gavel className={`h-4 w-4 ${isStruck ? "text-red-700" : "text-red-600"}`} />
         </button>
       )}
       
